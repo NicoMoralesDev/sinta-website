@@ -5,7 +5,7 @@ const NavBar = () => {
         <div className="text-5xl mr-8 lg:mr-0">
           <a href="#inicio">SINTA</a>
         </div>
-        <ul className="flex justify-evenly items-center h-full gap-x-5 uppercase ">
+        <ul className="hidden md:flex md:justify-evenly md:items-center h-full md:gap-x-3 lg:gap-x-6 uppercase ">
           <li>
             <a href="#quienes-somos">Quienes Somos</a>
           </li>
