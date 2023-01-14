@@ -1,5 +1,11 @@
 import "./globals.css";
 import NavBar from "./components/navBar/NavBar";
+import { Roboto_Flex } from "@next/font/google";
+
+const roboto = Roboto_Flex({
+  subsets: ["latin"],
+  variable: "--font-roboto_flex",
+});
 
 export default function RootLayout({ children }) {
   return (
@@ -9,7 +15,7 @@ export default function RootLayout({ children }) {
         head.jsx. Find out more at https://beta.nextjs.org/docs/api-reference/file-conventions/head
       */}
       <head />
-      <body className="bg-black text-white">
+      <body className={`${roboto.variable} font-sans bg-black text-white`}>
         <NavBar />
         {children}
       </body>
