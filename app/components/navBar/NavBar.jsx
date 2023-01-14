@@ -1,8 +1,8 @@
 const NavBar = () => {
   return (
-    <nav className="top-0 sticky h-[140px] w-full bg-yellow-400 text-black px-16">
-      <div className="flex justify-between items-center h-full px-16">
-        <div className="text-5xl">
+    <nav className="top-0 sticky h-[140px] w-full bg-yellow-400 text-black">
+      <div className="flex justify-between items-center h-full p-4 md:p-8 lg:px-16">
+        <div className="text-5xl mr-8 lg:mr-0">
           <a href="#inicio">SINTA</a>
         </div>
         <ul className="flex justify-evenly items-center h-full gap-x-5 uppercase ">

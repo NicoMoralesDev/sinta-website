@@ -7,19 +7,14 @@ const inter = Inter({ subsets: ["latin"] });
 
 export default function Home() {
   return (
-    <main className="flex justify-center align-center flex-col mx-16">
+    <main className="flex justify-center align-center flex-col">
       <Inicio />
-      <section
-        id="quienes-somos"
-        className="flex flex-col items-center bg-yellow-400 text-black scroll-mt-24 p-16"
-      >
+      <section id="quienes-somos" className="section color-yellow">
         <h2>¿Quiénes somos?</h2>
+        <Image src="/sinta-toyotagt86.webp" width="1000" height="500" />
         <div>https://www.instagram.com/sinta.esport/</div>
       </section>
-      <section
-        id="miembros"
-        className="flex flex-col items-center bg-zinc-900 text-white scroll-mt-24 p-16"
-      >
+      <section id="miembros" className="section color-zinc">
         <h2>Miembros</h2>
         <p>
           Lorem Ipsum is simply dummy text of the printing and typesetting
@@ -41,10 +36,7 @@ export default function Home() {
           <li>Facundo Zanuttini</li>
         </ul>
       </section>
-      <section
-        id="resultados"
-        className="flex flex-col items-center bg-yellow-400 text-black scroll-mt-24 p-16"
-      >
+      <section id="resultados" className="section color-yellow">
         <h2>Últimos Resultados</h2>
         <p>
           Lorem Ipsum is simply dummy text of the printing and typesetting
@@ -58,10 +50,7 @@ export default function Home() {
           including versions of Lorem Ipsum.
         </p>
       </section>
-      <section
-        id="calendario"
-        className="flex flex-col items-center bg-zinc-900 text-white scroll-mt-24 p-16"
-      >
+      <section id="calendario" className="section color-zinc">
         <h2>Calendario</h2>
         <p>
           Lorem Ipsum is simply dummy text of the printing and typesetting
@@ -75,10 +64,7 @@ export default function Home() {
           including versions of Lorem Ipsum.
         </p>
       </section>
-      <section
-        id="contacto"
-        className="flex flex-col items-center bg-yellow-400 text-black scroll-mt-24 p-16"
-      >
+      <section id="contacto" className="section color-yellow">
         <h2>Contacto</h2>
         <div className="w-12 h-12 cursor-pointer">
           <Link href="https://www.instagram.com/sinta.esport/" legacyBehavior>

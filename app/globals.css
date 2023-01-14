@@ -2,4 +2,18 @@
 
 @tailwind components;
 
+@layer components {
+  .section {
+    @apply flex flex-col items-center p-4 md:p-8 lg:scroll-mt-24 lg:p-16;
+  }
+
+  .color-zinc {
+    @apply bg-zinc-900 text-white;
+  }
+
+  .color-yellow {
+    @apply bg-yellow-400 text-black;
+  }
+}
+
 @tailwind utilities;
