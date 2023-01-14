@@ -27,6 +27,7 @@ export default function Home() {
         <ul>
           <li>Kevin Fontana</li>
           <li>Humberto Marín</li>
+          <li>Kleyber Mestre</li>
           <li>Nicolás Morales</li>
           <li>Juan Manuel Pertica</li>
           <li>Marcelo Villafuerte</li>
