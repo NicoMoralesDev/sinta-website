@@ -2,8 +2,8 @@ import Link from "next/link";
 
 const NavBar = () => {
   return (
-    <nav className="sticky h-10 w-full bg-yellow-400 text-black">
-      <div className="flex justify-between items-center h-full px-10">
+    <nav className="sticky h-[140px] w-full bg-yellow-400 text-black">
+      <div className="flex justify-between items-center h-full px-12">
         <div>
           <Link href="#inicio">Logo Equipo...</Link>
         </div>
