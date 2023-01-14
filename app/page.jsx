@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export default function Home() {
   return (
-    <main className="flex justify-center align-center flex-col">
+    <main className="flex flex-col justify-center align-center">
       <Inicio />
       <section id="quienes-somos" className="section color-yellow">
         <h2>¿Quiénes somos?</h2>
@@ -72,8 +72,8 @@ export default function Home() {
               <Image
                 src="/instagram.png"
                 alt="Instagram Logo"
-                width={50}
-                height={50}
+                width={48}
+                height={48}
                 layout="responsive"
               />
             </a>
