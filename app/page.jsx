@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Inicio from "./pages/Inicio";
 import Link from "next/link";
+import "/node_modules/flag-icons/css/flag-icons.min.css";
 
 export default function Home() {
   return (
@@ -25,13 +26,27 @@ export default function Home() {
           including versions of Lorem Ipsum.
         </p>
         <ul>
-          <li>Kevin Fontana</li>
-          <li>Humberto Marín</li>
-          <li>Kleyber Mestre</li>
-          <li>Nicolás Morales</li>
-          <li>Juan Manuel Pertica</li>
-          <li>Marcelo Villafuerte</li>
-          <li>Facundo Zanuttini</li>
+          <li>
+            <span className="fi fi-ar"></span> Kevin Fontana
+          </li>
+          <li>
+            <span className="fi fi-cr"></span> Humberto Marín
+          </li>
+          <li>
+            <span className="fi fi-co"></span> Kleyber Mestre
+          </li>
+          <li>
+            <span className="fi fi-ar"></span> Nicolás Morales
+          </li>
+          <li>
+            <span className="fi fi-ar"></span> Juan Manuel Pertica
+          </li>
+          <li>
+            <span className="fi fi-ec"></span> Marcelo Villafuerte
+          </li>
+          <li>
+            <span className="fi fi-ar"></span> Facundo Zanuttini
+          </li>
         </ul>
       </section>
       <section id="resultados" className="section color-yellow">
