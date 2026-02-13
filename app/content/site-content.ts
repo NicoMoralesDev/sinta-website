@@ -81,12 +81,11 @@ export type ContactCopy = {
   titleStart: string;
   titleHighlight: string;
   description: string;
-  primaryCta: string;
   secondaryCta: string;
+  instagramAriaLabel: string;
   instagramHandle: string;
   instagramDescription: string;
   instagramCta: string;
-  emailHref: string;
   instagramHref: string;
 };
 
@@ -112,22 +111,22 @@ export type SiteCopy = {
 
 const sharedMembers = {
   es: [
-    { name: "Kevin Fontana", role: "Capitan", country: "Argentina", countryCode: "ar" },
+    { name: "Kevin Fontana", role: "Piloto", country: "Argentina", countryCode: "ar" },
     { name: "Humberto Marin", role: "Piloto", country: "Costa Rica", countryCode: "cr" },
     { name: "Kleyber Mestre", role: "Piloto", country: "Colombia", countryCode: "co" },
-    { name: "Nicolas Morales", role: "Estratega", country: "Argentina", countryCode: "ar" },
+    { name: "Nicolas Morales", role: "Digital Lead / Piloto", country: "Argentina", countryCode: "ar" },
     { name: "Juan Manuel Pertica", role: "Piloto", country: "Argentina", countryCode: "ar" },
     { name: "Marcelo Villafuerte", role: "Piloto", country: "Ecuador", countryCode: "ec" },
-    { name: "Facundo Zanuttini", role: "Piloto", country: "Argentina", countryCode: "ar" },
+    { name: "Facundo Zanuttini", role: "Capitan / Community Manager / Piloto", country: "Argentina", countryCode: "ar" },
   ],
   en: [
-    { name: "Kevin Fontana", role: "Captain", country: "Argentina", countryCode: "ar" },
+    { name: "Kevin Fontana", role: "Driver", country: "Argentina", countryCode: "ar" },
     { name: "Humberto Marin", role: "Driver", country: "Costa Rica", countryCode: "cr" },
     { name: "Kleyber Mestre", role: "Driver", country: "Colombia", countryCode: "co" },
-    { name: "Nicolas Morales", role: "Strategist", country: "Argentina", countryCode: "ar" },
+    { name: "Nicolas Morales", role: "Digital Lead / Driver", country: "Argentina", countryCode: "ar" },
     { name: "Juan Manuel Pertica", role: "Driver", country: "Argentina", countryCode: "ar" },
     { name: "Marcelo Villafuerte", role: "Driver", country: "Ecuador", countryCode: "ec" },
-    { name: "Facundo Zanuttini", role: "Driver", country: "Argentina", countryCode: "ar" },
+    { name: "Facundo Zanuttini", role: "Captain / Community Manager / Driver", country: "Argentina", countryCode: "ar" },
   ],
 } as const;
 
@@ -252,13 +251,12 @@ export const siteCopy: Record<Language, SiteCopy> = {
       titleHighlight: "a la grilla?",
       description:
         "Si eres piloto y buscas equipo, o marca interesada en colaborar, escribenos y conversemos.",
-      primaryCta: "Escribenos",
       secondaryCta: "Instagram",
+      instagramAriaLabel: "Abrir Instagram de SINTA eSports",
       instagramHandle: "@sinta.esport",
       instagramDescription:
         "Seguinos para ver resultados, clips de carreras y novedades del equipo.",
       instagramCta: "Seguir en Instagram",
-      emailHref: "mailto:contacto@sintaesports.com",
       instagramHref: "https://www.instagram.com/sinta.esport/",
     },
     footer: {
@@ -393,13 +391,12 @@ export const siteCopy: Record<Language, SiteCopy> = {
       titleHighlight: "the grid?",
       description:
         "If you are a driver looking for a team, or a brand interested in partnering, reach out and let us talk.",
-      primaryCta: "Email us",
       secondaryCta: "Instagram",
+      instagramAriaLabel: "Open SINTA eSports Instagram",
       instagramHandle: "@sinta.esport",
       instagramDescription:
         "Follow us for race highlights, short clips, and team updates.",
       instagramCta: "Follow on Instagram",
-      emailHref: "mailto:contacto@sintaesports.com",
       instagramHref: "https://www.instagram.com/sinta.esport/",
     },
     footer: {

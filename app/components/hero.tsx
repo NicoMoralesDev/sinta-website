@@ -10,7 +10,7 @@ export function Hero({ copy }: HeroProps) {
   return (
     <section
       id="hero"
-      className="relative flex min-h-screen items-center overflow-hidden bg-racing-black"
+      className="relative flex min-h-[100svh] items-center overflow-hidden bg-racing-black"
     >
       <div className="absolute inset-0">
         <Image
@@ -28,16 +28,16 @@ export function Hero({ copy }: HeroProps) {
       <div className="absolute inset-0 grid-overlay" />
       <div className="absolute top-0 right-0 h-full w-1 bg-gradient-to-b from-racing-yellow/60 via-transparent to-transparent" />
 
-      <div className="relative z-10 mx-auto max-w-7xl px-6 py-32 md:py-40">
+      <div className="relative z-10 mx-auto max-w-7xl px-6 pt-28 pb-20 md:pt-36 md:pb-24">
         <div className="max-w-3xl">
-          <div className="motion-safe:animate-fade-in mb-6 flex items-center gap-3">
+          <div className="motion-safe:animate-fade-in mb-4 flex items-center gap-3">
             <span className="h-px w-8 bg-racing-yellow" />
             <span className="font-mono text-xs font-medium tracking-[0.3em] text-racing-yellow uppercase">
               {copy.eyebrow}
             </span>
           </div>
 
-          <h1 className="motion-safe:animate-slide-up mb-6 font-mono text-5xl font-bold leading-tight tracking-tight text-racing-white uppercase md:text-7xl lg:text-8xl">
+          <h1 className="motion-safe:animate-slide-up mb-5 font-mono text-4xl font-bold leading-tight tracking-tight text-racing-white uppercase md:text-6xl lg:text-7xl">
             <span className="text-balance">
               {copy.titleLine1} <span className="text-racing-yellow">{copy.highlightLine1}</span>
               <br />
@@ -45,7 +45,7 @@ export function Hero({ copy }: HeroProps) {
             </span>
           </h1>
 
-          <p className="motion-safe:animate-slide-up mb-10 max-w-xl text-lg font-medium leading-relaxed text-racing-white/60 md:text-xl [animation-delay:100ms]">
+          <p className="motion-safe:animate-slide-up mb-8 max-w-xl text-base font-medium leading-relaxed text-racing-white/60 md:text-lg [animation-delay:100ms]">
             {copy.description}
           </p>
 
@@ -66,7 +66,7 @@ export function Hero({ copy }: HeroProps) {
         </div>
       </div>
 
-      <div className="absolute bottom-8 left-1/2 z-10 -translate-x-1/2">
+      <div className="absolute bottom-4 left-1/2 z-10 -translate-x-1/2">
         <a
           href="#about"
           aria-label={copy.scrollAriaLabel}

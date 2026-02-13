@@ -22,9 +22,10 @@ export default async function Page({ searchParams }: PageProps) {
       <Navbar
         lang={lang}
         links={copy.navLinks}
-        ctaLabel={copy.navCta}
         languageLabel={copy.languageLabel}
         languageAria={copy.languageAria}
+        instagramHref={copy.contact.instagramHref}
+        instagramAriaLabel={copy.contact.instagramAriaLabel}
       />
       <main>
         <Hero copy={copy.hero} />

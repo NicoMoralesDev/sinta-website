@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Instagram, Mail } from "lucide-react";
+import { Instagram } from "lucide-react";
 import type { ContactCopy } from "../content/site-content";
 
 type ContactProps = {
@@ -30,13 +30,6 @@ export function Contact({ copy }: ContactProps) {
             </p>
 
             <div className="flex flex-wrap gap-4">
-              <a
-                href={copy.emailHref}
-                className="inline-flex items-center gap-2 rounded-sm bg-racing-yellow px-6 py-3 font-sans text-sm font-bold tracking-wider text-racing-black uppercase transition-transform hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <Mail size={16} />
-                {copy.primaryCta}
-              </a>
               <a
                 href={copy.instagramHref}
                 target="_blank"

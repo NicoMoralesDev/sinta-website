@@ -1,15 +1,16 @@
 "use client";
 
-import { Menu, X } from "lucide-react";
+import { Instagram, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { Language, NavLink } from "../content/site-content";
 
 type NavbarProps = {
   lang: Language;
   links: NavLink[];
-  ctaLabel: string;
   languageLabel: string;
   languageAria: string;
+  instagramHref: string;
+  instagramAriaLabel: string;
 };
 
 const languageOptions: Array<{ code: Language; label: string; href: string }> = [
@@ -20,9 +21,10 @@ const languageOptions: Array<{ code: Language; label: string; href: string }> = 
 export function Navbar({
   lang,
   links,
-  ctaLabel,
   languageLabel,
   languageAria,
+  instagramHref,
+  instagramAriaLabel,
 }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -92,10 +94,13 @@ export function Navbar({
           </div>
 
           <a
-            href="#contact"
-            className="rounded-sm bg-racing-yellow px-5 py-2 font-sans text-sm font-bold tracking-wider text-racing-black uppercase transition-colors hover:bg-racing-yellow/90"
+            href={instagramHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={instagramAriaLabel}
+            className="inline-flex items-center justify-center rounded-sm bg-racing-yellow p-2.5 text-racing-black transition-colors hover:bg-racing-yellow/90"
           >
-            {ctaLabel}
+            <Instagram size={18} />
           </a>
         </div>
 
@@ -149,11 +154,14 @@ export function Navbar({
             </div>
 
             <a
-              href="#contact"
+              href={instagramHref}
+              target="_blank"
+              rel="noopener noreferrer"
               onClick={() => setMobileOpen(false)}
-              className="inline-block rounded-sm bg-racing-yellow px-5 py-2 font-sans text-sm font-bold tracking-wider text-racing-black uppercase"
+              aria-label={instagramAriaLabel}
+              className="inline-flex items-center justify-center rounded-sm bg-racing-yellow p-2.5 text-racing-black"
             >
-              {ctaLabel}
+              <Instagram size={18} />
             </a>
           </div>
         </div>

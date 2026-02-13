@@ -49,7 +49,7 @@ export function Team({ copy }: TeamProps) {
                   <h3 className="font-mono text-base font-bold tracking-wide text-racing-white uppercase">
                     {member.name}
                   </h3>
-                  <p className="mt-1 text-xs font-medium tracking-wider text-racing-yellow/80 uppercase">
+                  <p className="mt-1 max-w-[14rem] text-[11px] leading-snug font-medium tracking-wide text-racing-yellow/80 uppercase">
                     {member.role}
                   </p>
                 </div>
