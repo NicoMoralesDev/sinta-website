@@ -10,7 +10,9 @@
 
 # next.js
 /.next/
+/.next-build/
 /out/
+*.tsbuildinfo
 
 # production
 /build
