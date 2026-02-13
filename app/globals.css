@@ -1,10 +1,10 @@
-@tailwind base;
-
-@tailwind components;
+@import "flag-icons/css/flag-icons.min.css";
+@import "tailwindcss";
 
 @layer components {
   .section {
-    @apply flex flex-col items-center p-4 md:p-8 lg:p-16 scroll-mt-32 md:scroll-mt-32 lg:scroll-mt-24;
+    @apply flex w-full flex-col items-center p-4 text-center md:p-8 lg:p-16;
+    @apply scroll-mt-20 md:scroll-mt-40;
   }
 
   .color-zinc {
@@ -15,5 +15,3 @@
     @apply bg-yellow-400 text-black;
   }
 }
-
-@tailwind utilities;

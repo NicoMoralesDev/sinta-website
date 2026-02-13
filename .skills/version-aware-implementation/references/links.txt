@@ -1,0 +1,26 @@
+# Keep this list short and high-signal (official docs preferred)
+
+Spring Boot docs:
+- https://docs.spring.io/spring-boot/
+
+Maven:
+- https://maven.apache.org/
+- https://maven.apache.org/guides/
+
+Gradle:
+- https://docs.gradle.org/
+
+Node.js:
+- https://nodejs.org/en/docs
+
+npm:
+- https://docs.npmjs.com/
+
+pnpm:
+- https://pnpm.io/
+
+Python:
+- https://docs.python.org/3/
+
+Poetry:
+- https://python-poetry.org/docs/
