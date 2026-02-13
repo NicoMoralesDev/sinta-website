@@ -111,22 +111,92 @@ export type SiteCopy = {
 
 const sharedMembers = {
   es: [
-    { name: "Kevin Fontana", role: "Piloto", country: "Argentina", countryCode: "ar" },
-    { name: "Humberto Marin", role: "Piloto", country: "Costa Rica", countryCode: "cr" },
-    { name: "Kleyber Mestre", role: "Piloto", country: "Colombia", countryCode: "co" },
-    { name: "Nicolas Morales", role: "Digital Lead / Piloto", country: "Argentina", countryCode: "ar" },
-    { name: "Juan Manuel Pertica", role: "Piloto", country: "Argentina", countryCode: "ar" },
-    { name: "Marcelo Villafuerte", role: "Piloto", country: "Ecuador", countryCode: "ec" },
-    { name: "Facundo Zanuttini", role: "Capitan / Community Manager / Piloto", country: "Argentina", countryCode: "ar" },
+    {
+      name: "Kevin Fontana",
+      role: "Piloto",
+      country: "Argentina",
+      countryCode: "ar",
+    },
+    {
+      name: "Humberto Marin",
+      role: "Piloto",
+      country: "Costa Rica",
+      countryCode: "cr",
+    },
+    {
+      name: "Kleyber Mestre",
+      role: "Piloto",
+      country: "Colombia",
+      countryCode: "co",
+    },
+    {
+      name: "Nicolas Morales",
+      role: "Digital Lead / Piloto",
+      country: "Argentina",
+      countryCode: "ar",
+    },
+    {
+      name: "Juan Manuel Pertica",
+      role: 'Piloto / "Una vez se lo hice a un amigo en padel jaja"',
+      country: "Argentina",
+      countryCode: "ar",
+    },
+    {
+      name: "Marcelo Villafuerte",
+      role: "Piloto",
+      country: "Ecuador",
+      countryCode: "ec",
+    },
+    {
+      name: "Facundo Zanuttini",
+      role: "Capitan / Community Manager / Piloto",
+      country: "Argentina",
+      countryCode: "ar",
+    },
   ],
   en: [
-    { name: "Kevin Fontana", role: "Driver", country: "Argentina", countryCode: "ar" },
-    { name: "Humberto Marin", role: "Driver", country: "Costa Rica", countryCode: "cr" },
-    { name: "Kleyber Mestre", role: "Driver", country: "Colombia", countryCode: "co" },
-    { name: "Nicolas Morales", role: "Digital Lead / Driver", country: "Argentina", countryCode: "ar" },
-    { name: "Juan Manuel Pertica", role: "Driver", country: "Argentina", countryCode: "ar" },
-    { name: "Marcelo Villafuerte", role: "Driver", country: "Ecuador", countryCode: "ec" },
-    { name: "Facundo Zanuttini", role: "Captain / Community Manager / Driver", country: "Argentina", countryCode: "ar" },
+    {
+      name: "Kevin Fontana",
+      role: "Driver",
+      country: "Argentina",
+      countryCode: "ar",
+    },
+    {
+      name: "Humberto Marin",
+      role: "Driver",
+      country: "Costa Rica",
+      countryCode: "cr",
+    },
+    {
+      name: "Kleyber Mestre",
+      role: "Driver",
+      country: "Colombia",
+      countryCode: "co",
+    },
+    {
+      name: "Nicolas Morales",
+      role: "Digital Lead / Driver",
+      country: "Argentina",
+      countryCode: "ar",
+    },
+    {
+      name: "Juan Manuel Pertica",
+      role: "Driver",
+      country: "Argentina",
+      countryCode: "ar",
+    },
+    {
+      name: "Marcelo Villafuerte",
+      role: "Driver",
+      country: "Ecuador",
+      countryCode: "ec",
+    },
+    {
+      name: "Facundo Zanuttini",
+      role: "Captain / Community Manager / Driver",
+      country: "Argentina",
+      countryCode: "ar",
+    },
   ],
 } as const;
 
@@ -394,8 +464,7 @@ export const siteCopy: Record<Language, SiteCopy> = {
       secondaryCta: "Instagram",
       instagramAriaLabel: "Open SINTA eSports Instagram",
       instagramHandle: "@sinta.esport",
-      instagramDescription:
-        "Follow us for race highlights, short clips, and team updates.",
+      instagramDescription: "Follow us for race highlights, short clips, and team updates.",
       instagramCta: "Follow on Instagram",
       instagramHref: "https://www.instagram.com/sinta.esport/",
     },
