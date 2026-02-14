@@ -51,7 +51,8 @@ export type RaceResult = {
   series: string;
   position: number;
   driver: string;
-  date: string;
+  date?: string;
+  badge?: string;
 };
 
 export type ResultsCopy = {
@@ -112,6 +113,12 @@ export type SiteCopy = {
 const sharedMembers = {
   es: [
     {
+      name: "Leonel Bikaluk",
+      role: "Piloto",
+      country: "Argentina",
+      countryCode: "ar",
+    },
+    {
       name: "Kevin Fontana",
       role: "Piloto",
       country: "Argentina",
@@ -130,6 +137,12 @@ const sharedMembers = {
       countryCode: "co",
     },
     {
+      name: "Carlos Miño",
+      role: "Piloto",
+      country: "Argentina",
+      countryCode: "ar",
+    },
+    {
       name: "Nicolas Morales",
       role: "Digital Lead / Piloto",
       country: "Argentina",
@@ -137,7 +150,13 @@ const sharedMembers = {
     },
     {
       name: "Juan Manuel Pertica",
-      role: 'Piloto / "Una vez se lo hice a un amigo en padel jaja"',
+      role: "Piloto",
+      country: "Argentina",
+      countryCode: "ar",
+    },
+    {
+      name: "Thomas Villafañe",
+      role: "Piloto",
       country: "Argentina",
       countryCode: "ar",
     },
@@ -156,6 +175,12 @@ const sharedMembers = {
   ],
   en: [
     {
+      name: "Leonel Bikaluk",
+      role: "Driver",
+      country: "Argentina",
+      countryCode: "ar",
+    },
+    {
       name: "Kevin Fontana",
       role: "Driver",
       country: "Argentina",
@@ -174,6 +199,12 @@ const sharedMembers = {
       countryCode: "co",
     },
     {
+      name: "Carlos Miño",
+      role: "Driver",
+      country: "Argentina",
+      countryCode: "ar",
+    },
+    {
       name: "Nicolas Morales",
       role: "Digital Lead / Driver",
       country: "Argentina",
@@ -181,6 +212,12 @@ const sharedMembers = {
     },
     {
       name: "Juan Manuel Pertica",
+      role: "Driver",
+      country: "Argentina",
+      countryCode: "ar",
+    },
+    {
+      name: "Thomas Villafañe",
       role: "Driver",
       country: "Argentina",
       countryCode: "ar",
@@ -236,7 +273,7 @@ export const siteCopy: Record<Language, SiteCopy> = {
       stats: [
         { value: "50+", label: "Carreras disputadas" },
         { value: "15+", label: "Podios" },
-        { value: "7", label: "Pilotos activos" },
+        { value: "10", label: "Pilotos activos" },
       ],
     },
     team: {
@@ -376,7 +413,7 @@ export const siteCopy: Record<Language, SiteCopy> = {
       stats: [
         { value: "50+", label: "Races completed" },
         { value: "15+", label: "Podiums" },
-        { value: "7", label: "Active drivers" },
+        { value: "10", label: "Active drivers" },
       ],
     },
     team: {

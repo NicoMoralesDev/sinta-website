@@ -38,7 +38,7 @@ export function Results({ lang, copy }: ResultsProps) {
         <div className="flex flex-col gap-3">
           {copy.results.map((result, index) => (
             <div
-              key={`${result.event}-${result.date}`}
+              key={`${result.event}-${result.series}-${result.driver}-${result.badge ?? result.date ?? index}`}
               className="motion-safe:animate-slide-up group grid grid-cols-[auto_1fr_auto] items-center gap-4 rounded-sm border border-racing-steel/20 bg-racing-black/50 px-5 py-4 transition-colors hover:border-racing-yellow/30 md:grid-cols-[auto_1fr_1fr_auto]"
               style={{ animationDelay: `${index * 60}ms` }}
             >
@@ -59,15 +59,16 @@ export function Results({ lang, copy }: ResultsProps) {
                 {result.driver}
               </p>
 
-              <time
-                dateTime={result.date}
-                className="shrink-0 text-xs font-medium tracking-wider text-racing-white/30 uppercase"
-              >
-                {new Date(result.date).toLocaleDateString(locale, {
-                  month: "short",
-                  day: "numeric",
-                })}
-              </time>
+              <span className="shrink-0 text-xs font-medium tracking-wider text-racing-white/30 uppercase">
+                {result.badge
+                  ? result.badge
+                  : result.date
+                    ? new Date(result.date).toLocaleDateString(locale, {
+                        month: "short",
+                        day: "numeric",
+                      })
+                    : ""}
+              </span>
             </div>
           ))}
         </div>

@@ -1,5 +1,5 @@
 import { Pool, type QueryResult } from "pg";
-import { readAppEnv } from "./env";
+import { readAppEnv } from "./env.ts";
 
 type HealthRow = {
   server_time: Date;

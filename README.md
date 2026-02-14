@@ -18,6 +18,8 @@ npm run typecheck
 npm run test
 npm run test:watch
 npm run test:db
+npm run import:results -- --dry-run
+npm run import:results -- --apply
 ```
 
 ## Desarrollo
@@ -67,3 +69,33 @@ Notas:
 - `lib/server/db.ts`: pool y health query para Postgres/Supabase.
 - `lib/server/env.ts`: validacion tipada de `DATABASE_URL`.
 - `pages/api/hello.ts`: endpoint API de ejemplo.
+- `db/migrations/001_results_schema.sql`: schema para historial de resultados.
+- `db/migrations/002_results_views.sql`: views para agregados y highlights.
+- `scripts/import-results-xlsx.ts`: import manual/idempotente desde `.xlsx`.
+- `app/api/v1/*`: endpoints de resultados, roster y pilotos.
+
+## Results API (v1)
+
+- `GET /api/v1/results/events`
+- `GET /api/v1/results/highlights`
+- `GET /api/v1/results/stats`
+- `GET /api/v1/results/filters`
+- `GET /api/v1/team`
+- `GET /api/v1/drivers`
+- `GET /api/v1/drivers/:slug`
+- `GET /api/v1/drivers/:slug/results`
+
+## Import workflow
+
+1. Apply SQL files from `db/migrations/` in order.
+2. Run dry-run import:
+   ```bash
+   npm run import:results -- --dry-run
+   ```
+3. Apply import:
+   ```bash
+   npm run import:results -- --apply
+   ```
+4. Verify API:
+   - `GET /api/v1/results/filters`
+   - `GET /api/v1/results/highlights`
