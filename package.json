@@ -10,12 +10,18 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:db": "node --env-file=.env scripts/run-db-test.mjs",
+    "import:results": "node --no-warnings=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --experimental-specifier-resolution=node --env-file=.env scripts/import-results-xlsx.ts",
+    "bootstrap:admin": "node --no-warnings=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --experimental-specifier-resolution=node --env-file=.env scripts/bootstrap-admin-owner.ts"
   },
   "dependencies": {
     "flag-icons": "7.5.0",
     "lucide-react": "0.554.0",
     "next": "16.1.6",
+    "pg": "^8.16.3",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
@@ -26,8 +32,10 @@
     "@types/react-dom": "19.2.3",
     "eslint": "9.39.2",
     "eslint-config-next": "16.1.6",
+    "@types/pg": "^8.15.6",
     "postcss": "8.5.6",
     "tailwindcss": "4.1.18",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vitest": "^3.2.4"
   }
 }

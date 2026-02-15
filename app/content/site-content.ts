@@ -33,6 +33,7 @@ export type AboutCopy = {
 };
 
 export type TeamMember = {
+  slug?: string;
   name: string;
   role: string;
   country: string;
@@ -46,19 +47,13 @@ export type TeamCopy = {
   members: readonly TeamMember[];
 };
 
-export type RaceResult = {
-  event: string;
-  series: string;
-  position: number;
-  driver: string;
-  date: string;
-};
-
 export type ResultsCopy = {
   eyebrow: string;
   titleStart: string;
   titleHighlight: string;
-  results: RaceResult[];
+  ctaAllResults: string;
+  ctaCurrentChampionship: string;
+  emptyMessage: string;
 };
 
 export type RaceEvent = {
@@ -97,6 +92,8 @@ export type FooterCopy = {
 
 export type SiteCopy = {
   navLinks: NavLink[];
+  homeSectionsLabel: string;
+  homeSections: NavLink[];
   navCta: string;
   languageLabel: string;
   languageAria: string;
@@ -112,6 +109,12 @@ export type SiteCopy = {
 const sharedMembers = {
   es: [
     {
+      name: "Leonel Bikaluk",
+      role: "Piloto",
+      country: "Argentina",
+      countryCode: "ar",
+    },
+    {
       name: "Kevin Fontana",
       role: "Piloto",
       country: "Argentina",
@@ -130,6 +133,12 @@ const sharedMembers = {
       countryCode: "co",
     },
     {
+      name: "Carlos Miño",
+      role: "Piloto",
+      country: "Argentina",
+      countryCode: "ar",
+    },
+    {
       name: "Nicolas Morales",
       role: "Digital Lead / Piloto",
       country: "Argentina",
@@ -137,7 +146,13 @@ const sharedMembers = {
     },
     {
       name: "Juan Manuel Pertica",
-      role: 'Piloto / "Una vez se lo hice a un amigo en padel jaja"',
+      role: "Piloto",
+      country: "Argentina",
+      countryCode: "ar",
+    },
+    {
+      name: "Thomas Villafañe",
+      role: "Piloto",
       country: "Argentina",
       countryCode: "ar",
     },
@@ -149,12 +164,18 @@ const sharedMembers = {
     },
     {
       name: "Facundo Zanuttini",
-      role: "Capitan / Community Manager / Piloto",
+      role: "Capitán / Community Manager / Piloto",
       country: "Argentina",
       countryCode: "ar",
     },
   ],
   en: [
+    {
+      name: "Leonel Bikaluk",
+      role: "Driver",
+      country: "Argentina",
+      countryCode: "ar",
+    },
     {
       name: "Kevin Fontana",
       role: "Driver",
@@ -174,6 +195,12 @@ const sharedMembers = {
       countryCode: "co",
     },
     {
+      name: "Carlos Miño",
+      role: "Driver",
+      country: "Argentina",
+      countryCode: "ar",
+    },
+    {
       name: "Nicolas Morales",
       role: "Digital Lead / Driver",
       country: "Argentina",
@@ -181,6 +208,12 @@ const sharedMembers = {
     },
     {
       name: "Juan Manuel Pertica",
+      role: "Driver",
+      country: "Argentina",
+      countryCode: "ar",
+    },
+    {
+      name: "Thomas Villafañe",
       role: "Driver",
       country: "Argentina",
       countryCode: "ar",
@@ -203,13 +236,19 @@ const sharedMembers = {
 export const siteCopy: Record<Language, SiteCopy> = {
   es: {
     navLinks: [
-      { label: "Quienes somos", href: "#about" },
-      { label: "Miembros", href: "#team" },
-      { label: "Resultados", href: "#results" },
-      { label: "Calendario", href: "#calendar" },
-      { label: "Contacto", href: "#contact" },
+      { label: "Inicio", href: "/" },
+      { label: "Pilotos", href: "/drivers" },
+      { label: "Historial", href: "/results" },
     ],
-    navCta: "Unete",
+    homeSectionsLabel: "Secciones",
+    homeSections: [
+      { label: "Quienes somos", href: "/#about" },
+      { label: "Equipo", href: "/#team" },
+      { label: "Ultimas carreras", href: "/#results" },
+      { label: "Calendario", href: "/#calendar" },
+      { label: "Contacto", href: "/#contact" },
+    ],
+    navCta: "Únete",
     languageLabel: "Idioma",
     languageAria: "Cambiar idioma",
     hero: {
@@ -219,69 +258,42 @@ export const siteCopy: Record<Language, SiteCopy> = {
       highlightLine1: "correr.",
       highlightLine2: "ganar.",
       description:
-        "SINTA eSports es un equipo competitivo de sim racing con pilotos de Latinoamerica, enfocado en consistencia, estrategia y rendimiento.",
-      primaryCta: "Conocenos",
+        "SINTA eSports es un equipo competitivo de sim racing con pilotos de Latinoamérica, enfocado en consistencia, estrategia y rendimiento.",
+      primaryCta: "Conócenos",
       secondaryCta: "Ver resultados",
       scrollLabel: "Desliza",
-      scrollAriaLabel: "Ir a la seccion de quienes somos",
+      scrollAriaLabel: "Ir a la sección de quiénes somos",
     },
     about: {
-      eyebrow: "Quienes somos",
-      titleStart: "Precision. Pasion.",
+      eyebrow: "Quiénes somos",
+      titleStart: "Precisión. Pasión.",
       titleHighlight: "Rendimiento.",
       paragraph1:
-        "Nacimos como un grupo de pilotos con la misma obsesion: competir al maximo nivel en el sim racing. Entrenamos en equipo, analizamos telemetria y cuidamos cada detalle.",
+        "Nacimos como un grupo de pilotos con la misma obsesión: competir al máximo nivel en el sim racing. Entrenamos en equipo, analizamos telemetría y cuidamos cada detalle.",
       paragraph2:
         "Desde carreras sprint hasta endurance, representamos una mentalidad profesional dentro y fuera de pista, construyendo resultados sostenidos fecha a fecha.",
       stats: [
         { value: "50+", label: "Carreras disputadas" },
         { value: "15+", label: "Podios" },
-        { value: "7", label: "Pilotos activos" },
+        { value: "10", label: "Pilotos activos" },
       ],
     },
     team: {
-      eyebrow: "Nuestro roster",
+      eyebrow: "Nuestro equipo",
       titleStart: "Conoce al",
       titleHighlight: "equipo",
       members: sharedMembers.es,
     },
     results: {
-      eyebrow: "Ultimas carreras",
-      titleStart: "Resultados",
-      titleHighlight: "recientes",
-      results: [
-        {
-          event: "Interlagos Sprint",
-          series: "iRacing GT3",
-          position: 2,
-          driver: "Kevin Fontana",
-          date: "2026-01-25",
-        },
-        {
-          event: "Spa Endurance 3H",
-          series: "ACC Endurance",
-          position: 1,
-          driver: "Morales / Pertica / Zanuttini",
-          date: "2026-01-18",
-        },
-        {
-          event: "Road Atlanta Night Race",
-          series: "iRacing IMSA",
-          position: 3,
-          driver: "Humberto Marin",
-          date: "2026-01-10",
-        },
-        {
-          event: "Monza Sprint Cup",
-          series: "ACC Sprint",
-          position: 2,
-          driver: "Marcelo Villafuerte",
-          date: "2025-12-21",
-        },
-      ],
+      eyebrow: "Últimas carreras",
+      titleStart: "Participación",
+      titleHighlight: "reciente",
+      ctaAllResults: "Ver historial completo",
+      ctaCurrentChampionship: "Ver torneo vigente",
+      emptyMessage: "Todavía no hay eventos cargados.",
     },
     calendar: {
-      eyebrow: "Proximamente",
+      eyebrow: "Próximamente",
       titleStart: "Calendario",
       titleHighlight: "de carreras",
       events: [
@@ -317,10 +329,10 @@ export const siteCopy: Record<Language, SiteCopy> = {
     },
     contact: {
       eyebrow: "Contacto",
-      titleStart: "Quieres sumarte",
+      titleStart: "¿Quieres sumarte",
       titleHighlight: "a la grilla?",
       description:
-        "Si eres piloto y buscas equipo, o marca interesada en colaborar, escribenos y conversemos.",
+        "Si eres piloto y buscas equipo, o marca interesada en colaborar, escríbenos y conversemos.",
       secondaryCta: "Instagram",
       instagramAriaLabel: "Abrir Instagram de SINTA eSports",
       instagramHandle: "@sinta.esport",
@@ -330,24 +342,32 @@ export const siteCopy: Record<Language, SiteCopy> = {
       instagramHref: "https://www.instagram.com/sinta.esport/",
     },
     footer: {
-      navLabel: "Navegacion del pie",
+      navLabel: "Navegación del pie",
       links: [
-        { label: "Quienes somos", href: "#about" },
-        { label: "Miembros", href: "#team" },
-        { label: "Resultados", href: "#results" },
-        { label: "Calendario", href: "#calendar" },
-        { label: "Contacto", href: "#contact" },
+        { label: "Quiénes somos", href: "/#about" },
+        { label: "Equipo", href: "/#team" },
+        { label: "Pilotos", href: "/drivers" },
+        { label: "Últimas carreras", href: "/#results" },
+        { label: "Historial", href: "/results" },
+        { label: "Calendario", href: "/#calendar" },
+        { label: "Contacto", href: "/#contact" },
       ],
       rights: "Todos los derechos reservados.",
     },
   },
   en: {
     navLinks: [
-      { label: "About", href: "#about" },
-      { label: "Team", href: "#team" },
-      { label: "Results", href: "#results" },
-      { label: "Calendar", href: "#calendar" },
-      { label: "Contact", href: "#contact" },
+      { label: "Home", href: "/?lang=en" },
+      { label: "Drivers", href: "/drivers?lang=en" },
+      { label: "Results", href: "/results?lang=en" },
+    ],
+    homeSectionsLabel: "Sections",
+    homeSections: [
+      { label: "About", href: "/?lang=en#about" },
+      { label: "Team", href: "/?lang=en#team" },
+      { label: "Latest races", href: "/?lang=en#results" },
+      { label: "Calendar", href: "/?lang=en#calendar" },
+      { label: "Contact", href: "/?lang=en#contact" },
     ],
     navCta: "Join us",
     languageLabel: "Language",
@@ -376,11 +396,11 @@ export const siteCopy: Record<Language, SiteCopy> = {
       stats: [
         { value: "50+", label: "Races completed" },
         { value: "15+", label: "Podiums" },
-        { value: "7", label: "Active drivers" },
+        { value: "10", label: "Active drivers" },
       ],
     },
     team: {
-      eyebrow: "Our roster",
+      eyebrow: "Our team",
       titleStart: "Meet the",
       titleHighlight: "team",
       members: sharedMembers.en,
@@ -388,37 +408,10 @@ export const siteCopy: Record<Language, SiteCopy> = {
     results: {
       eyebrow: "Latest races",
       titleStart: "Recent",
-      titleHighlight: "results",
-      results: [
-        {
-          event: "Interlagos Sprint",
-          series: "iRacing GT3",
-          position: 2,
-          driver: "Kevin Fontana",
-          date: "2026-01-25",
-        },
-        {
-          event: "Spa Endurance 3H",
-          series: "ACC Endurance",
-          position: 1,
-          driver: "Morales / Pertica / Zanuttini",
-          date: "2026-01-18",
-        },
-        {
-          event: "Road Atlanta Night Race",
-          series: "iRacing IMSA",
-          position: 3,
-          driver: "Humberto Marin",
-          date: "2026-01-10",
-        },
-        {
-          event: "Monza Sprint Cup",
-          series: "ACC Sprint",
-          position: 2,
-          driver: "Marcelo Villafuerte",
-          date: "2025-12-21",
-        },
-      ],
+      titleHighlight: "participation",
+      ctaAllResults: "Full results",
+      ctaCurrentChampionship: "Current championship",
+      emptyMessage: "No events loaded yet.",
     },
     calendar: {
       eyebrow: "Upcoming",
@@ -471,11 +464,13 @@ export const siteCopy: Record<Language, SiteCopy> = {
     footer: {
       navLabel: "Footer navigation",
       links: [
-        { label: "About", href: "#about" },
-        { label: "Team", href: "#team" },
-        { label: "Results", href: "#results" },
-        { label: "Calendar", href: "#calendar" },
-        { label: "Contact", href: "#contact" },
+        { label: "About", href: "/?lang=en#about" },
+        { label: "Team", href: "/?lang=en#team" },
+        { label: "Drivers", href: "/drivers?lang=en" },
+        { label: "Latest races", href: "/?lang=en#results" },
+        { label: "Results hub", href: "/results?lang=en" },
+        { label: "Calendar", href: "/?lang=en#calendar" },
+        { label: "Contact", href: "/?lang=en#contact" },
       ],
       rights: "All rights reserved.",
     },
@@ -485,3 +480,4 @@ export const siteCopy: Record<Language, SiteCopy> = {
 export function resolveLanguage(value?: string): Language {
   return value === "en" ? "en" : "es";
 }
+

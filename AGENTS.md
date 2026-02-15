@@ -27,6 +27,10 @@ When changing or using any technology, library, framework, CLI, or cloud service
 
 When you receive a task, follow this workflow:
 
+- For non-trivial tasks (as defined in `.skills/planning-and-verification/SKILL.md`), apply that process internally.
+- This extends this workflow and does not replace the approval gate in step 3.
+- Output only the final answer / final plan unless the user explicitly asks to see the steps.
+
 1. **Plan**
    - Propose a short plan (3–8 bullets).
    - Identify impacted files/modules.

@@ -1,11 +1,11 @@
-import { Target, Trophy, Users } from "lucide-react";
+import { Flag, Target, Trophy, Users } from "lucide-react";
 import type { AboutCopy } from "../content/site-content";
 
 type AboutProps = {
   copy: AboutCopy;
 };
 
-const statIcons = [Trophy, Target, Users] as const;
+const statIcons = [Flag, Trophy, Target, Users] as const;
 
 export function About({ copy }: AboutProps) {
   return (
