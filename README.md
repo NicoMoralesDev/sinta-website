@@ -4,7 +4,7 @@ Sitio web de SINTA eSports construido con Next.js (App Router), React y TypeScri
 
 ## Requisitos
 
-- Node.js `>=20.9.0` (recomendado LTS actual)
+- Node.js `22.x` (aligned with Vercel project runtime)
 - npm
 
 ## Scripts
@@ -44,7 +44,10 @@ npm run bootstrap:admin
 Ejemplo:
 
 ```bash
-DATABASE_URL=postgresql://postgres.<project-ref>:<url-encoded-password>@aws-0-us-west-2.pooler.supabase.com:5432/postgres?sslmode=require
+DATABASE_URL=postgresql://postgres.<project-ref>:<url-encoded-password>@aws-0-us-west-2.pooler.supabase.com:<5432-or-6543>/postgres?sslmode=require
+DB_POOL_MAX=1
+DB_POOL_IDLE_TIMEOUT_MS=5000
+DB_POOL_CONNECTION_TIMEOUT_MS=10000
 ADMIN_SESSION_SECRET=replace-with-long-random-secret
 ADMIN_PASSWORD_PEPPER=replace-with-long-random-pepper
 ADMIN_DEV_DRY_RUN=1
@@ -54,11 +57,16 @@ ADMIN_BOOTSTRAP_PASSWORD=replace-with-temporary-password
 ```
 
 Notas:
-- Para `session pooler`, usar el usuario `postgres.<project-ref>`.
+- Supabase `session pooler` usa puerto `5432`.
+- Supabase `transaction pooler` usa puerto `6543` y suele funcionar mejor en serverless (Vercel).
+- Si usas `session pooler`, mantener `DB_POOL_MAX` muy bajo para evitar `max clients reached`.
 - Si la password tiene caracteres especiales (`@`, `!`, `:`, `/`, etc), debe ir URL-encoded.
 
 Environment variables reference:
 - `DATABASE_URL`: Primary Postgres connection string used by API routes, repository layer, and scripts.
+- `DB_POOL_MAX`: Maximum clients per app instance in pg pool (recommended `1` in serverless production).
+- `DB_POOL_IDLE_TIMEOUT_MS`: Idle client timeout for pg pool (milliseconds).
+- `DB_POOL_CONNECTION_TIMEOUT_MS`: Connection acquisition timeout for pg pool (milliseconds).
 - `ADMIN_SESSION_SECRET`: Secret key used to sign and verify admin session cookies.
 - `ADMIN_PASSWORD_PEPPER`: Extra server-side secret appended before password hashing/verification.
 - `ADMIN_DEV_DRY_RUN`: Development-only write safety flag. `1` means admin writes are preview-only; `0` allows real writes.

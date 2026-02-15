@@ -7,18 +7,37 @@ type HealthRow = {
 
 let pool: Pool | null = null;
 
+function readPositiveIntEnv(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (!raw) {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return fallback;
+  }
+
+  return parsed;
+}
+
 export function getDbPool(): Pool {
   if (pool) {
     return pool;
   }
 
   const { DATABASE_URL } = readAppEnv();
+  const isProduction = process.env.NODE_ENV === "production";
+  const poolMax = readPositiveIntEnv("DB_POOL_MAX", isProduction ? 1 : 4);
+  const idleTimeoutMillis = readPositiveIntEnv("DB_POOL_IDLE_TIMEOUT_MS", 5_000);
+  const connectionTimeoutMillis = readPositiveIntEnv("DB_POOL_CONNECTION_TIMEOUT_MS", 10_000);
 
   pool = new Pool({
     connectionString: DATABASE_URL,
-    max: 4,
-    idleTimeoutMillis: 5_000,
-    connectionTimeoutMillis: 10_000,
+    max: poolMax,
+    idleTimeoutMillis,
+    connectionTimeoutMillis,
+    allowExitOnIdle: true,
     ssl: { rejectUnauthorized: false },
   });
 
