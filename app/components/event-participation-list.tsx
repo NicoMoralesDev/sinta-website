@@ -200,13 +200,15 @@ export function EventParticipationList({
                 ))}
               </div>
 
-              {event.participants.map((participant) => {
+              {event.participants.map((participant, participantIndex) => {
                 const sessionByKind = new Map(participant.sessions.map((session) => [session.sessionKind, session]));
+                const rowTone =
+                  participantIndex % 2 === 0 ? "bg-racing-carbon/70" : "bg-racing-black/75";
 
                 return (
                   <div
                     key={`${event.eventId}-${participant.driverSlug}`}
-                    className="grid items-center gap-2 rounded-sm border border-racing-steel/20 bg-racing-carbon/40 px-3 py-3"
+                    className={`grid items-center gap-2 rounded-sm border border-racing-steel/20 px-3 py-3 ${rowTone}`}
                     style={{ gridTemplateColumns }}
                   >
                     <div>

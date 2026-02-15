@@ -338,7 +338,7 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
                   <p className="mt-3 text-sm text-racing-white/60">{i18n.noLeaderboard}</p>
                 ) : (
                   <div className="mt-3 overflow-hidden rounded-sm border border-racing-steel/20 bg-racing-black/40">
-                    <table className="w-full table-fixed text-xs">
+                    <table className="w-full table-fixed border-collapse text-xs">
                       <colgroup>
                         <col />
                         <col className="w-10" />
@@ -354,8 +354,13 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
                         </tr>
                       </thead>
                       <tbody>
-                        {ranking.slice(0, 8).map((entry) => (
-                          <tr key={entry.driverSlug} className="border-b border-racing-steel/10 last:border-0">
+                        {ranking.slice(0, 8).map((entry, index) => (
+                          <tr
+                            key={entry.driverSlug}
+                            className={`border-b border-racing-steel/10 last:border-0 ${
+                              index % 2 === 0 ? "bg-racing-carbon/70" : "bg-racing-black/75"
+                            }`}
+                          >
                             <td className="px-3 py-2 text-racing-white/85">{entry.canonicalName}</td>
                             <td className="px-2 py-2 text-right font-mono text-racing-yellow">{entry.wins}</td>
                             <td className="px-2 py-2 text-right font-mono text-racing-yellow">{entry.podiums}</td>
@@ -381,7 +386,7 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
                       <p className="mt-3 text-sm text-racing-white/60">{i18n.noLeaderboard}</p>
                     ) : (
                       <div className="mt-3 overflow-hidden rounded-sm border border-racing-steel/20 bg-racing-black/40">
-                        <table className="w-full table-fixed text-xs">
+                        <table className="w-full table-fixed border-collapse text-xs">
                           <colgroup>
                             <col />
                             <col className="w-10" />
@@ -397,8 +402,13 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
                             </tr>
                           </thead>
                           <tbody>
-                            {current.leaderboard.slice(0, 8).map((entry) => (
-                              <tr key={entry.driverSlug} className="border-b border-racing-steel/10 last:border-0">
+                            {current.leaderboard.slice(0, 8).map((entry, index) => (
+                              <tr
+                                key={entry.driverSlug}
+                                className={`border-b border-racing-steel/10 last:border-0 ${
+                                  index % 2 === 0 ? "bg-racing-carbon/70" : "bg-racing-black/75"
+                                }`}
+                              >
                                 <td className="px-3 py-2 text-racing-white/85">{entry.driverName}</td>
                                 <td className="px-2 py-2 text-right font-mono text-racing-yellow">{entry.wins}</td>
                                 <td className="px-2 py-2 text-right font-mono text-racing-yellow">{entry.podiums}</td>
