@@ -244,7 +244,7 @@ export function ChampionshipsManager({ championships }: Props) {
                   ...(drafts[championship.id] ?? {}),
                 };
                 return (
-                  <tr key={championship.id} className="border-b border-racing-steel/10 align-middle odd:bg-racing-black/20 even:bg-racing-black/35">
+                  <tr key={championship.id} className="border-b border-racing-steel/10 align-middle odd:bg-racing-carbon/70 even:bg-racing-black/75">
                     <td className="px-2 py-2">
                       <input
                         type="number"
