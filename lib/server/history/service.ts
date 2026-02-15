@@ -1,32 +1,41 @@
 ﻿import {
+  getCurrentChampionshipSummary,
   getDriverBySlug,
   getDriverResultsPage,
   getDriverStats,
   getDrivers,
+  getEventParticipationPage,
   getEventResultsPage,
   getHighlights,
   getResultFilters,
+  getResultsOverview as getResultsOverviewRecord,
   getTeamMembers,
 } from "./repository";
 import { HistoryNotFoundError, HistoryValidationError } from "./errors";
 import type {
+  CurrentChampionshipSummary,
   CursorPage,
   DriverListItem,
   DriverProfile,
   DriverResultsQuery,
   DriverStats,
+  EventParticipationCard,
   EventQuery,
   EventResultItem,
+  OverviewQuery,
   ResultFilterSet,
   ResultHighlight,
   StatsQuery,
   TeamMemberRecord,
+  TeamOverviewKpis,
 } from "./types";
 
 const DEFAULT_LIMIT = 10;
 const MAX_LIMIT = 50;
 const DEFAULT_HIGHLIGHTS_LIMIT = 8;
 const MAX_HIGHLIGHTS_LIMIT = 24;
+const DEFAULT_CURRENT_EVENTS_LIMIT = 5;
+const MAX_CURRENT_EVENTS_LIMIT = 12;
 
 function parseInteger(
   value: string | null,
@@ -125,6 +134,13 @@ function toStatsQuery(searchParams: URLSearchParams): StatsQuery {
   };
 }
 
+function toOverviewQuery(searchParams: URLSearchParams): OverviewQuery {
+  return {
+    year: parseInteger(searchParams.get("year"), "year", { min: 2000, max: 2100 }),
+    championship: parseSlug(searchParams.get("championship"), "championship"),
+  };
+}
+
 function mapLanguage(value: string | null): "es" | "en" {
   return value === "en" ? "en" : "es";
 }
@@ -151,6 +167,18 @@ export async function getResultsEvents(searchParams: URLSearchParams): Promise<C
   };
 }
 
+export async function getResultsEventParticipation(
+  searchParams: URLSearchParams,
+): Promise<CursorPage<EventParticipationCard>> {
+  const query = toEventQuery(searchParams);
+  const page = await getEventParticipationPage(query);
+
+  return {
+    items: page.items,
+    nextCursor: page.hasNext ? encodeCursor(query.offset + query.limit) : null,
+  };
+}
+
 export async function getResultsHighlights(searchParams: URLSearchParams): Promise<ResultHighlight[]> {
   const limit = parseLimit(searchParams.get("limit"), DEFAULT_HIGHLIGHTS_LIMIT, MAX_HIGHLIGHTS_LIMIT);
   const year = parseInteger(searchParams.get("year"), "year", { min: 2000, max: 2100 });
@@ -167,6 +195,22 @@ export async function getResultsHighlights(searchParams: URLSearchParams): Promi
 
 export async function getResultsStats(searchParams: URLSearchParams): Promise<DriverStats[]> {
   return getDriverStats(toStatsQuery(searchParams));
+}
+
+export async function getResultsOverview(searchParams: URLSearchParams): Promise<TeamOverviewKpis> {
+  return getResultsOverviewRecord(toOverviewQuery(searchParams));
+}
+
+export async function getCurrentChampionship(
+  searchParams: URLSearchParams,
+): Promise<CurrentChampionshipSummary | null> {
+  const limit = parseLimit(
+    searchParams.get("limit"),
+    DEFAULT_CURRENT_EVENTS_LIMIT,
+    MAX_CURRENT_EVENTS_LIMIT,
+  );
+
+  return getCurrentChampionshipSummary(limit);
 }
 
 export async function getFilters(): Promise<ResultFilterSet> {
@@ -234,19 +278,21 @@ export async function getHomeTeamMembers(language: "es" | "en") {
   return members.map((member) => toTeamLanguageRecord(member, language));
 }
 
-export async function getHomeHighlights(language: "es" | "en") {
-  const highlights = await getHighlights({
-    limit: 6,
-  });
-
-  return highlights.map((item) => ({
-    event: item.circuitName,
-    series: item.championshipName,
-    position: item.bestPosition,
-    driver: item.bestDriverName,
-    badge: language === "es"
-      ? `${item.seasonYear} · Ronda ${item.roundNumber}`
-      : `${item.seasonYear} · Round ${item.roundNumber}`,
-  }));
+export async function getHomeOverviewKpis(): Promise<TeamOverviewKpis> {
+  return getResultsOverviewRecord({});
 }
 
+export async function getHomeRecentEventParticipation(
+  limit = 5,
+): Promise<EventParticipationCard[]> {
+  const page = await getEventParticipationPage({
+    limit,
+    offset: 0,
+  });
+
+  return page.items;
+}
+
+export async function getHomeCurrentChampionship(): Promise<CurrentChampionshipSummary | null> {
+  return getCurrentChampionshipSummary(DEFAULT_CURRENT_EVENTS_LIMIT);
+}

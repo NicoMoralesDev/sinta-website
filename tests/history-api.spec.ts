@@ -1,11 +1,13 @@
 ﻿import { describe, expect, it, vi } from "vitest";
 
-const { getResultsEventsMock } = vi.hoisted(() => ({
+const { getResultsEventsMock, getResultsEventParticipationMock } = vi.hoisted(() => ({
   getResultsEventsMock: vi.fn(),
+  getResultsEventParticipationMock: vi.fn(),
 }));
 
 vi.mock("@/lib/server/history/service", () => ({
   getResultsEvents: getResultsEventsMock,
+  getResultsEventParticipation: getResultsEventParticipationMock,
 }));
 
 import { HistoryValidationError } from "@/lib/server/history/errors";
@@ -39,6 +41,25 @@ describe("results events API route", () => {
     expect(body).toEqual({
       ok: false,
       error: "invalid limit",
+    });
+  });
+
+  it("returns participation payload when view=participation", async () => {
+    getResultsEventParticipationMock.mockResolvedValueOnce({
+      items: [{ eventId: "event-2" }],
+      nextCursor: null,
+    });
+
+    const response = await GET(
+      new Request("http://localhost/api/v1/results/events?view=participation&limit=1"),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({
+      ok: true,
+      items: [{ eventId: "event-2" }],
+      nextCursor: null,
     });
   });
 });

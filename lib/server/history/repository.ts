@@ -1,17 +1,21 @@
 ﻿import type { QueryResult } from "pg";
 import { getDbPool } from "@/lib/server/db";
 import type {
+  CurrentChampionshipSummary,
   DriverListItem,
   DriverProfile,
   DriverResultsQuery,
   DriverStats,
   EventQuery,
+  EventParticipationCard,
   EventResultItem,
+  OverviewQuery,
   ResultFilterSet,
   ResultHighlight,
   SessionKind,
   StatsQuery,
   TeamMemberRecord,
+  TeamOverviewKpis,
 } from "./types";
 
 type DbEventRow = {
@@ -21,6 +25,7 @@ type DbEventRow = {
   championship_name: string;
   round_number: number;
   circuit_name: string;
+  event_date: string | null;
   primary_session_label: string;
   secondary_session_label: string;
 };
@@ -84,6 +89,30 @@ type DbHighlightRow = {
   best_position: number;
 };
 
+type DbOverviewRow = {
+  races_completed: number;
+  podiums: number;
+  wins: number;
+  active_drivers: number;
+};
+
+type DbCurrentChampionshipRow = {
+  championship_id: string;
+  season_year: number;
+  championship_slug: string;
+  championship_name: string;
+};
+
+type DbCurrentLeaderboardRow = {
+  driver_slug: string;
+  driver_name: string;
+  wins: number;
+  podiums: number;
+  top_10: number;
+  completed: number;
+  avg_position: number | null;
+};
+
 function toEventResultItems(eventRows: DbEventRow[], resultRows: DbEventResultRow[]): EventResultItem[] {
   const resultsByEventId = new Map<string, DbEventResultRow[]>();
 
@@ -102,6 +131,7 @@ function toEventResultItems(eventRows: DbEventRow[], resultRows: DbEventResultRo
       championshipName: eventRow.championship_name,
       roundNumber: eventRow.round_number,
       circuitName: eventRow.circuit_name,
+      eventDate: eventRow.event_date,
       results: group.map((resultRow) => ({
         driverSlug: resultRow.driver_slug,
         driverName: resultRow.driver_name,
@@ -129,6 +159,70 @@ function toDriverStats(row: DbDriverStatsRow): DriverStats {
     dsq: Number(row.dsq ?? 0),
     absent: Number(row.absent ?? 0),
   };
+}
+
+function toParticipationCards(events: EventResultItem[]): EventParticipationCard[] {
+  return events.map((event) => {
+    const grouped = new Map<
+      string,
+      {
+        driverSlug: string;
+        driverName: string;
+        sessions: EventParticipationCard["participants"][number]["sessions"];
+        bestPosition: number | null;
+      }
+    >();
+
+    for (const entry of event.results) {
+      const current = grouped.get(entry.driverSlug) ?? {
+        driverSlug: entry.driverSlug,
+        driverName: entry.driverName,
+        sessions: [],
+        bestPosition: null,
+      };
+
+      current.sessions.push({
+        sessionKind: entry.sessionKind,
+        sessionLabel: entry.sessionLabel,
+        position: entry.position,
+        status: entry.status,
+        rawValue: entry.rawValue,
+      });
+
+      if (entry.position !== null) {
+        current.bestPosition =
+          current.bestPosition === null ? entry.position : Math.min(current.bestPosition, entry.position);
+      }
+
+      grouped.set(entry.driverSlug, current);
+    }
+
+    const participants = Array.from(grouped.values())
+      .sort((left, right) => {
+        const leftSort = left.bestPosition ?? Number.MAX_SAFE_INTEGER;
+        const rightSort = right.bestPosition ?? Number.MAX_SAFE_INTEGER;
+        if (leftSort !== rightSort) {
+          return leftSort - rightSort;
+        }
+        return left.driverName.localeCompare(right.driverName);
+      })
+      .map((participant) => ({
+        driverSlug: participant.driverSlug,
+        driverName: participant.driverName,
+        sessions: participant.sessions.sort((left, right) => left.sessionKind.localeCompare(right.sessionKind)),
+      }));
+
+    return {
+      eventId: event.eventId,
+      seasonYear: event.seasonYear,
+      championshipSlug: event.championshipSlug,
+      championshipName: event.championshipName,
+      roundNumber: event.roundNumber,
+      circuitName: event.circuitName,
+      eventDate: event.eventDate,
+      participants,
+    };
+  });
 }
 
 function appendEventFilters(query: EventQuery | DriverResultsQuery, values: unknown[], clauses: string[]): void {
@@ -160,9 +254,21 @@ function appendStatsFilters(query: StatsQuery, values: unknown[], clauses: strin
   }
 }
 
+function appendOverviewFilters(query: OverviewQuery, values: unknown[], clauses: string[]): void {
+  if (query.year !== undefined) {
+    values.push(query.year);
+    clauses.push(`c.season_year = $${values.length}`);
+  }
+
+  if (query.championship) {
+    values.push(query.championship);
+    clauses.push(`c.slug = $${values.length}`);
+  }
+}
+
 async function fetchEventRows(query: EventQuery): Promise<{ rows: DbEventRow[]; hasNext: boolean }> {
   const values: unknown[] = [];
-  const whereClauses: string[] = ["1=1"];
+  const whereClauses: string[] = ["e.is_active = true", "c.is_active = true"];
 
   appendEventFilters(query, values, whereClauses);
 
@@ -173,7 +279,7 @@ async function fetchEventRows(query: EventQuery): Promise<{ rows: DbEventRow[]; 
         select 1
         from event_results er2
         join drivers d2 on d2.id = er2.driver_id
-        where er2.event_id = e.id and d2.slug = $${values.length}
+        where er2.event_id = e.id and d2.slug = $${values.length} and er2.is_active = true and d2.is_active = true
       )`,
     );
   }
@@ -192,6 +298,7 @@ async function fetchEventRows(query: EventQuery): Promise<{ rows: DbEventRow[]; 
         c.name as championship_name,
         e.round_number,
         e.circuit_name,
+        e.event_date::text as event_date,
         c.primary_session_label,
         c.secondary_session_label
       from events e
@@ -215,7 +322,13 @@ async function fetchEventRowsForDriver(
   query: DriverResultsQuery,
 ): Promise<{ rows: DbEventRow[]; hasNext: boolean }> {
   const values: unknown[] = [slug];
-  const whereClauses: string[] = ["d.slug = $1"];
+  const whereClauses: string[] = [
+    "d.slug = $1",
+    "d.is_active = true",
+    "er.is_active = true",
+    "e.is_active = true",
+    "c.is_active = true",
+  ];
 
   appendEventFilters(query, values, whereClauses);
 
@@ -233,6 +346,7 @@ async function fetchEventRowsForDriver(
         c.name as championship_name,
         e.round_number,
         e.circuit_name,
+        e.event_date::text as event_date,
         c.primary_session_label,
         c.secondary_session_label
       from event_results er
@@ -262,7 +376,13 @@ async function fetchResultsForEvents(
   }
 
   const values: unknown[] = [eventIds];
-  const whereClauses = ["er.event_id = any($1::uuid[])"];
+  const whereClauses = [
+    "er.event_id = any($1::uuid[])",
+    "er.is_active = true",
+    "d.is_active = true",
+    "e.is_active = true",
+    "c.is_active = true",
+  ];
 
   if (driverSlug) {
     values.push(driverSlug);
@@ -310,6 +430,17 @@ export async function getEventResultsPage(query: EventQuery): Promise<{
   };
 }
 
+export async function getEventParticipationPage(query: EventQuery): Promise<{
+  items: EventParticipationCard[];
+  hasNext: boolean;
+}> {
+  const page = await getEventResultsPage(query);
+  return {
+    items: toParticipationCards(page.items),
+    hasNext: page.hasNext,
+  };
+}
+
 export async function getDriverResultsPage(
   slug: string,
   query: DriverResultsQuery,
@@ -353,7 +484,7 @@ export async function getHighlights(query: {
         select 1
         from event_results er
         join drivers d on d.id = er.driver_id
-        where er.event_id = h.event_id and d.slug = $${values.length}
+        where er.event_id = h.event_id and d.slug = $${values.length} and er.is_active = true and d.is_active = true
       )`,
     );
   }
@@ -362,18 +493,43 @@ export async function getHighlights(query: {
 
   const result: QueryResult<DbHighlightRow> = await getDbPool().query(
     `
+      with ranked as (
+        select
+          e.id as event_id,
+          c.season_year,
+          c.slug as championship_slug,
+          c.name as championship_name,
+          e.round_number,
+          e.circuit_name,
+          d.canonical_name as best_driver_name,
+          er.position as best_position,
+          row_number() over (
+            partition by e.id
+            order by er.position asc nulls last, d.canonical_name asc
+          ) as rank_in_event
+        from events e
+        join championships c on c.id = e.championship_id
+        join event_results er on er.event_id = e.id
+        join drivers d on d.id = er.driver_id
+        where
+          e.is_active = true
+          and c.is_active = true
+          and er.is_active = true
+          and d.is_active = true
+          and er.position is not null
+      )
       select
-        h.event_id,
-        h.season_year,
-        h.championship_slug,
-        h.championship_name,
-        h.round_number,
-        h.circuit_name,
-        h.best_driver_name,
-        h.best_position
-      from v_event_highlights h
-      where ${whereClauses.join(" and ")}
-      order by h.season_year desc, h.championship_slug asc, h.round_number desc, h.event_id desc
+        event_id,
+        season_year,
+        championship_slug,
+        championship_name,
+        round_number,
+        circuit_name,
+        best_driver_name,
+        best_position
+      from ranked h
+      where rank_in_event = 1 and ${whereClauses.join(" and ")}
+      order by season_year desc, championship_slug asc, round_number desc, event_id desc
       limit $${values.length}
     `,
     values,
@@ -393,7 +549,12 @@ export async function getHighlights(query: {
 
 export async function getDriverStats(query: StatsQuery): Promise<DriverStats[]> {
   const values: unknown[] = [];
-  const whereClauses: string[] = ["1=1"];
+  const whereClauses: string[] = [
+    "er.is_active = true",
+    "e.is_active = true",
+    "c.is_active = true",
+    "d.is_active = true",
+  ];
 
   appendStatsFilters(query, values, whereClauses);
 
@@ -425,13 +586,161 @@ export async function getDriverStats(query: StatsQuery): Promise<DriverStats[]> 
   return result.rows.map(toDriverStats);
 }
 
+export async function getResultsOverview(query: OverviewQuery): Promise<TeamOverviewKpis> {
+  const values: unknown[] = [];
+  const whereClauses: string[] = [
+    "er.is_active = true",
+    "e.is_active = true",
+    "c.is_active = true",
+    "d.is_active = true",
+  ];
+
+  appendOverviewFilters(query, values, whereClauses);
+
+  const scopedResult: QueryResult<DbOverviewRow> = await getDbPool().query(
+    `
+      with scoped as (
+        select
+          er.event_id,
+          er.driver_id,
+          er.position
+        from event_results er
+        join events e on e.id = er.event_id
+        join championships c on c.id = e.championship_id
+        join drivers d on d.id = er.driver_id
+        where ${whereClauses.join(" and ")}
+      )
+      select
+        count(distinct event_id) as races_completed,
+        count(*) filter (where position is not null and position <= 3) as podiums,
+        count(*) filter (where position = 1) as wins,
+        count(distinct driver_id) as active_drivers
+      from scoped
+    `,
+    values,
+  );
+
+  const activeDriversScopeResult =
+    query.year !== undefined || query.championship
+      ? scopedResult.rows.at(0)?.active_drivers ?? 0
+      : (
+          await getDbPool().query<{ active_drivers: number }>(
+            "select count(*)::int as active_drivers from drivers where is_active = true",
+          )
+        ).rows.at(0)?.active_drivers ?? 0;
+
+  const row = scopedResult.rows.at(0);
+
+  return {
+    racesCompleted: Number(row?.races_completed ?? 0),
+    podiums: Number(row?.podiums ?? 0),
+    wins: Number(row?.wins ?? 0),
+    activeDrivers: Number(activeDriversScopeResult ?? 0),
+  };
+}
+
+export async function getCurrentChampionshipSummary(
+  limitEvents = 5,
+): Promise<CurrentChampionshipSummary | null> {
+  const latestResult: QueryResult<DbCurrentChampionshipRow> = await getDbPool().query(
+    `
+      select
+        c.id as championship_id,
+        c.season_year,
+        c.slug as championship_slug,
+        c.name as championship_name
+      from events e
+      join championships c on c.id = e.championship_id
+      where e.is_active = true and c.is_active = true
+      order by c.season_year desc, e.round_number desc, e.id desc
+      limit 1
+    `,
+  );
+
+  const latest = latestResult.rows.at(0);
+  if (!latest) {
+    return null;
+  }
+
+  const eventRowsResult: QueryResult<DbEventRow> = await getDbPool().query(
+    `
+      select
+        e.id as event_id,
+        c.season_year,
+        c.slug as championship_slug,
+        c.name as championship_name,
+        e.round_number,
+        e.circuit_name,
+        e.event_date::text as event_date,
+        c.primary_session_label,
+        c.secondary_session_label
+      from events e
+      join championships c on c.id = e.championship_id
+      where c.id = $1 and e.is_active = true and c.is_active = true
+      order by e.round_number desc
+      limit $2
+    `,
+    [latest.championship_id, limitEvents],
+  );
+
+  const eventRows = eventRowsResult.rows;
+  const eventIds = eventRows.map((row) => row.event_id);
+  const resultRows = await fetchResultsForEvents(eventIds);
+  const eventResultItems = toEventResultItems(eventRows, resultRows);
+  const events = toParticipationCards(eventResultItems);
+
+  const leaderboardResult: QueryResult<DbCurrentLeaderboardRow> = await getDbPool().query(
+    `
+      select
+        d.slug as driver_slug,
+        d.canonical_name as driver_name,
+        count(*) filter (where er.position = 1) as wins,
+        count(*) filter (where er.position is not null and er.position <= 3) as podiums,
+        count(*) filter (where er.position is not null and er.position <= 10) as top_10,
+        count(*) filter (where er.position is not null) as completed,
+        avg(er.position::numeric) filter (where er.position is not null) as avg_position
+      from event_results er
+      join drivers d on d.id = er.driver_id
+      join events e on e.id = er.event_id
+      where
+        e.championship_id = $1
+        and er.is_active = true
+        and d.is_active = true
+        and e.is_active = true
+      group by d.id, d.slug, d.canonical_name
+      order by wins desc, podiums desc, top_10 desc, completed desc, avg_position asc nulls last, d.canonical_name asc
+      limit 8
+    `,
+    [latest.championship_id],
+  );
+
+  return {
+    championship: {
+      id: latest.championship_id,
+      seasonYear: latest.season_year,
+      slug: latest.championship_slug,
+      name: latest.championship_name,
+    },
+    events,
+    leaderboard: leaderboardResult.rows.map((row) => ({
+      driverSlug: row.driver_slug,
+      driverName: row.driver_name,
+      wins: Number(row.wins ?? 0),
+      podiums: Number(row.podiums ?? 0),
+      top10: Number(row.top_10 ?? 0),
+      completed: Number(row.completed ?? 0),
+      avgPosition: row.avg_position === null ? null : Number(row.avg_position),
+    })),
+  };
+}
+
 export async function getResultFilters(): Promise<ResultFilterSet> {
   const [yearsResult, championshipsResult, driversResult] = await Promise.all([
     getDbPool().query<DbFilterYearRow>(
-      "select distinct season_year from championships order by season_year desc",
+      "select distinct season_year from championships where is_active = true order by season_year desc",
     ),
     getDbPool().query<DbFilterChampionshipRow>(
-      "select id, season_year, slug, name from championships order by season_year desc, name asc",
+      "select id, season_year, slug, name from championships where is_active = true order by season_year desc, name asc",
     ),
     getDbPool().query<Pick<DbDriverRow, "slug" | "canonical_name">>(
       "select slug, canonical_name from drivers where is_active = true order by sort_name asc",
@@ -454,7 +763,7 @@ export async function getResultFilters(): Promise<ResultFilterSet> {
 }
 
 export async function getTeamMembers(activeOnly: boolean): Promise<TeamMemberRecord[]> {
-  const values: unknown[] = [activeOnly];
+  void activeOnly;
 
   const result: QueryResult<DbDriverRow> = await getDbPool().query(
     `
@@ -469,10 +778,9 @@ export async function getTeamMembers(activeOnly: boolean): Promise<TeamMemberRec
         role_en,
         is_active
       from drivers
-      where ($1::boolean = false or is_active = true)
+      where is_active = true
       order by sort_name asc
     `,
-    values,
   );
 
   return result.rows.map((row) => ({
@@ -530,7 +838,7 @@ export async function getDriverBySlug(slug: string): Promise<DriverProfile | nul
         role_en,
         is_active
       from drivers
-      where slug = $1
+      where slug = $1 and is_active = true
       limit 1
     `,
     [slug],

@@ -8,7 +8,11 @@ vi.mock("@/lib/server/db", () => ({
   }),
 }));
 
-import { getEventResultsPage } from "@/lib/server/history/repository";
+import {
+  getCurrentChampionshipSummary,
+  getEventResultsPage,
+  getResultsOverview,
+} from "@/lib/server/history/repository";
 
 describe("history repository", () => {
   beforeEach(() => {
@@ -26,6 +30,7 @@ describe("history repository", () => {
             championship_name: "TZ 4000",
             round_number: 1,
             circuit_name: "La Plata",
+            event_date: null,
             primary_session_label: "Sprint",
             secondary_session_label: "Final",
           },
@@ -82,6 +87,7 @@ describe("history repository", () => {
             championship_name: "TZ 4000",
             round_number: 1,
             circuit_name: "La Plata",
+            event_date: null,
             primary_session_label: "Sprint",
             secondary_session_label: "Final",
           },
@@ -92,6 +98,7 @@ describe("history repository", () => {
             championship_name: "TZ 4000",
             round_number: 2,
             circuit_name: "Trelew",
+            event_date: null,
             primary_session_label: "Sprint",
             secondary_session_label: "Final",
           },
@@ -111,6 +118,96 @@ describe("history repository", () => {
 
     expect(page.hasNext).toBe(true);
     expect(page.items).toHaveLength(1);
+  });
+
+  it("uses active drivers table for global overview", async () => {
+    queryMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            races_completed: 120,
+            podiums: 44,
+            wins: 12,
+            active_drivers: 8,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [{ active_drivers: 10 }],
+      });
+
+    const overview = await getResultsOverview({});
+
+    expect(overview).toEqual({
+      racesCompleted: 120,
+      podiums: 44,
+      wins: 12,
+      activeDrivers: 10,
+    });
+    expect(queryMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("builds current championship summary from latest event", async () => {
+    queryMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            championship_id: "champ-1",
+            season_year: 2026,
+            championship_slug: "tz-4000",
+            championship_name: "TZ 4000",
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            event_id: "event-1",
+            season_year: 2026,
+            championship_slug: "tz-4000",
+            championship_name: "TZ 4000",
+            round_number: 5,
+            circuit_name: "Interlagos",
+            event_date: null,
+            primary_session_label: "Sprint",
+            secondary_session_label: "Final",
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            event_id: "event-1",
+            driver_slug: "kevin-fontana",
+            driver_name: "Kevin Fontana",
+            session_kind: "primary",
+            session_label: "Sprint",
+            position: 1,
+            status: null,
+            raw_value: "1",
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            driver_slug: "kevin-fontana",
+            driver_name: "Kevin Fontana",
+            wins: 2,
+            podiums: 4,
+            top_10: 5,
+            completed: 5,
+            avg_position: 2.4,
+          },
+        ],
+      });
+
+    const summary = await getCurrentChampionshipSummary(3);
+
+    expect(summary).not.toBeNull();
+    expect(summary?.championship.slug).toBe("tz-4000");
+    expect(summary?.events).toHaveLength(1);
+    expect(summary?.leaderboard[0]?.driverSlug).toBe("kevin-fontana");
   });
 });
 

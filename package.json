@@ -14,7 +14,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:db": "node --env-file=.env scripts/run-db-test.mjs",
-    "import:results": "node --no-warnings=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --experimental-specifier-resolution=node --env-file=.env scripts/import-results-xlsx.ts"
+    "import:results": "node --no-warnings=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --experimental-specifier-resolution=node --env-file=.env scripts/import-results-xlsx.ts",
+    "bootstrap:admin": "node --no-warnings=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --experimental-specifier-resolution=node --env-file=.env scripts/bootstrap-admin-owner.ts"
   },
   "dependencies": {
     "flag-icons": "7.5.0",

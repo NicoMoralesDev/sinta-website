@@ -52,6 +52,7 @@ export type EventResultItem = {
   championshipName: string;
   roundNumber: number;
   circuitName: string;
+  eventDate: string | null;
   results: EventResultEntry[];
 };
 
@@ -98,6 +99,55 @@ export type DriverProfile = {
   stats: DriverStats;
 };
 
+export type TeamOverviewKpis = {
+  racesCompleted: number;
+  podiums: number;
+  wins: number;
+  activeDrivers: number;
+};
+
+export type EventParticipationEntry = {
+  driverSlug: string;
+  driverName: string;
+  sessions: Array<{
+    sessionKind: SessionKind;
+    sessionLabel: string;
+    position: number | null;
+    status: ResultStatus | null;
+    rawValue: string;
+  }>;
+};
+
+export type EventParticipationCard = {
+  eventId: string;
+  seasonYear: number;
+  championshipSlug: string;
+  championshipName: string;
+  roundNumber: number;
+  circuitName: string;
+  eventDate: string | null;
+  participants: EventParticipationEntry[];
+};
+
+export type CurrentChampionshipSummary = {
+  championship: {
+    id: string;
+    seasonYear: number;
+    slug: string;
+    name: string;
+  };
+  events: EventParticipationCard[];
+  leaderboard: Array<{
+    driverSlug: string;
+    driverName: string;
+    wins: number;
+    podiums: number;
+    top10: number;
+    completed: number;
+    avgPosition: number | null;
+  }>;
+};
+
 export type EventQuery = {
   year?: number;
   championship?: string;
@@ -117,6 +167,11 @@ export type StatsQuery = {
   year?: number;
   championship?: string;
   driver?: string;
+};
+
+export type OverviewQuery = {
+  year?: number;
+  championship?: string;
 };
 
 export type ParsedRaceEvent = {
