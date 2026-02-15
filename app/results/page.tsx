@@ -358,7 +358,7 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
                           <tr
                             key={entry.driverSlug}
                             className={`border-b border-racing-steel/10 last:border-0 ${
-                              index % 2 === 0 ? "bg-racing-carbon/70" : "bg-racing-black/75"
+                              index % 2 === 0 ? "bg-[#2c2c2c]" : "bg-[#202020]"
                             }`}
                           >
                             <td className="px-3 py-2 text-racing-white/85">{entry.canonicalName}</td>
@@ -406,7 +406,7 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
                               <tr
                                 key={entry.driverSlug}
                                 className={`border-b border-racing-steel/10 last:border-0 ${
-                                  index % 2 === 0 ? "bg-racing-carbon/70" : "bg-racing-black/75"
+                                  index % 2 === 0 ? "bg-[#2c2c2c]" : "bg-[#202020]"
                                 }`}
                               >
                                 <td className="px-3 py-2 text-racing-white/85">{entry.driverName}</td>

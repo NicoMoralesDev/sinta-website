@@ -184,9 +184,9 @@ export function EventParticipationList({
               ) : null}
             </header>
 
-            <div className="space-y-2 px-4 py-4">
+            <div className="mx-4 my-4 overflow-hidden rounded-sm border border-racing-steel/20">
               <div
-                className="grid items-center gap-2 rounded-sm border border-racing-steel/20 bg-racing-black/35 px-3 py-2 text-[11px] font-semibold tracking-wider text-racing-white/55 uppercase"
+                className="grid items-center gap-2 border-b border-racing-steel/20 bg-racing-carbon/80 px-3 py-2 text-[11px] font-semibold tracking-wider text-racing-white/55 uppercase"
                 style={{ gridTemplateColumns }}
               >
                 <span>{pilotLabel}</span>
@@ -203,12 +203,12 @@ export function EventParticipationList({
               {event.participants.map((participant, participantIndex) => {
                 const sessionByKind = new Map(participant.sessions.map((session) => [session.sessionKind, session]));
                 const rowTone =
-                  participantIndex % 2 === 0 ? "bg-racing-carbon/70" : "bg-racing-black/75";
+                  participantIndex % 2 === 0 ? "bg-[#2c2c2c]" : "bg-[#202020]";
 
                 return (
                   <div
                     key={`${event.eventId}-${participant.driverSlug}`}
-                    className={`grid items-center gap-2 rounded-sm border border-racing-steel/20 px-3 py-3 ${rowTone}`}
+                    className={`grid items-center gap-2 border-b border-racing-steel/20 px-3 py-3 last:border-b-0 ${rowTone}`}
                     style={{ gridTemplateColumns }}
                   >
                     <div>

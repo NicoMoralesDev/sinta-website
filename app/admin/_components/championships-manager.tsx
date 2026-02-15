@@ -238,13 +238,18 @@ export function ChampionshipsManager({ championships }: Props) {
               </tr>
             </thead>
             <tbody>
-              {championships.map((championship) => {
+              {championships.map((championship, index) => {
                 const draft = {
                   ...toDraft(championship),
                   ...(drafts[championship.id] ?? {}),
                 };
                 return (
-                  <tr key={championship.id} className="border-b border-racing-steel/10 align-middle odd:bg-racing-carbon/70 even:bg-racing-black/75">
+                  <tr
+                    key={championship.id}
+                    className={`border-b border-racing-steel/10 align-middle ${
+                      index % 2 === 0 ? "bg-[#2c2c2c]" : "bg-[#202020]"
+                    }`}
+                  >
                     <td className="px-2 py-2">
                       <input
                         type="number"

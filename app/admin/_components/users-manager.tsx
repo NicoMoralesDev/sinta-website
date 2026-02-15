@@ -237,7 +237,7 @@ export function UsersManager({ users, actorUserId }: Props) {
                   <tr
                     key={user.id}
                     className={`border-b border-racing-steel/10 align-middle ${
-                      index % 2 === 0 ? "bg-racing-carbon/70" : "bg-racing-black/75"
+                      index % 2 === 0 ? "bg-[#2c2c2c]" : "bg-[#202020]"
                     }`}
                   >
                     <td className="px-2 py-2">
