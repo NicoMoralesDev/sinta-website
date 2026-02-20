@@ -203,11 +203,14 @@ describe("history repository", () => {
       });
 
     const summary = await getCurrentChampionshipSummary(3);
+    const firstQuery = String(queryMock.mock.calls[0]?.[0] ?? "");
 
     expect(summary).not.toBeNull();
     expect(summary?.championship.slug).toBe("tz-4000");
     expect(summary?.events).toHaveLength(1);
     expect(summary?.leaderboard[0]?.driverSlug).toBe("kevin-fontana");
+    expect(firstQuery).toContain("e.event_date is not null and e.event_date <= current_date");
+    expect(firstQuery).toContain("e.event_date desc nulls last");
   });
 });
 

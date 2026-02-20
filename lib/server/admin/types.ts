@@ -1,6 +1,7 @@
 import type { ResultStatus, SessionKind } from "@/lib/server/history/types";
 
 export type AdminRole = "owner" | "editor";
+export type StreamOverrideMode = "auto" | "force_on" | "force_off";
 
 export type AdminSession = {
   userId: string;
@@ -44,11 +45,24 @@ export type AdminEvent = {
   roundNumber: number;
   circuitName: string;
   eventDate: string | null;
+  streamVideoId: string | null;
+  streamStartAt: string | null;
+  streamEndAt: string | null;
+  streamOverrideMode: StreamOverrideMode;
   isActive: boolean;
   sourceSheet: string;
   sourceRow: number;
   createdAt: string;
   updatedAt: string;
+};
+
+export type AdminLiveBroadcastConfig = {
+  eventId: string | null;
+  streamVideoId: string | null;
+  streamStartAt: string | null;
+  streamEndAt: string | null;
+  streamOverrideMode: StreamOverrideMode;
+  updatedAt: string | null;
 };
 
 export type AdminDriver = {
@@ -165,6 +179,10 @@ export type CreateEventInput = {
   roundNumber: number;
   circuitName: string;
   eventDate: string | null;
+  streamVideoId: string | null;
+  streamStartAt: string | null;
+  streamEndAt: string | null;
+  streamOverrideMode: StreamOverrideMode;
   sourceSheet: string;
   sourceRow: number;
 };
@@ -174,6 +192,18 @@ export type UpdateEventInput = {
   roundNumber?: number;
   circuitName?: string;
   eventDate?: string | null;
+  streamVideoId?: string | null;
+  streamStartAt?: string | null;
+  streamEndAt?: string | null;
+  streamOverrideMode?: StreamOverrideMode | null;
+};
+
+export type UpdateLiveBroadcastConfigInput = {
+  eventId?: string | null;
+  streamVideoId?: string | null;
+  streamStartAt?: string | null;
+  streamEndAt?: string | null;
+  streamOverrideMode?: StreamOverrideMode | null;
 };
 
 export type CreateDriverInput = {

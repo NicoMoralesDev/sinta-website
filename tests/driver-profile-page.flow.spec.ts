@@ -81,7 +81,7 @@ describe("driver profile page flow", () => {
       searchParams: {
         lang: "en",
         year: "2026",
-        championship: "tz-4000",
+        championshipId: "champ-1",
         limit: "10",
       },
     });
@@ -90,7 +90,7 @@ describe("driver profile page flow", () => {
     expect(html).toContain("Kevin Fontana");
     expect(html).toContain("Career stats");
     expect(html).toContain(
-      "/drivers/kevin-fontana?year=2026&amp;championship=tz-4000&amp;limit=10&amp;cursor=cursor-9&amp;lang=en",
+      "/drivers/kevin-fontana?year=2026&amp;championshipId=champ-1&amp;limit=10&amp;cursor=cursor-9&amp;lang=en",
     );
   });
 

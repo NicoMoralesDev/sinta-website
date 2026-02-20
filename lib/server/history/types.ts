@@ -148,9 +148,27 @@ export type CurrentChampionshipSummary = {
   }>;
 };
 
+export type StreamOverrideMode = "auto" | "force_on" | "force_off";
+export type LiveBroadcastStatus = "upcoming" | "live";
+
+export type HomeLiveBroadcast = {
+  eventId: string;
+  seasonYear: number;
+  championshipSlug: string;
+  championshipName: string;
+  roundNumber: number;
+  circuitName: string;
+  streamVideoId: string;
+  streamStartAt: string | null;
+  streamEndAt: string | null;
+  streamOverrideMode: StreamOverrideMode;
+  status: LiveBroadcastStatus;
+};
+
 export type EventQuery = {
   year?: number;
   championship?: string;
+  championshipId?: string;
   driver?: string;
   limit: number;
   offset: number;
@@ -159,6 +177,7 @@ export type EventQuery = {
 export type DriverResultsQuery = {
   year?: number;
   championship?: string;
+  championshipId?: string;
   limit: number;
   offset: number;
 };
@@ -166,12 +185,14 @@ export type DriverResultsQuery = {
 export type StatsQuery = {
   year?: number;
   championship?: string;
+  championshipId?: string;
   driver?: string;
 };
 
 export type OverviewQuery = {
   year?: number;
   championship?: string;
+  championshipId?: string;
 };
 
 export type ParsedRaceEvent = {

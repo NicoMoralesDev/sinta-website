@@ -46,6 +46,10 @@ export async function POST(request: Request) {
       roundNumber?: number;
       circuitName?: string;
       eventDate?: string | null;
+      streamVideoId?: string | null;
+      streamStartAt?: string | null;
+      streamEndAt?: string | null;
+      streamOverrideMode?: "auto" | "force_on" | "force_off" | null;
       sourceSheet?: string;
       sourceRow?: number;
     }>(request);
@@ -55,6 +59,10 @@ export async function POST(request: Request) {
       roundNumber: body.roundNumber ?? 0,
       circuitName: body.circuitName ?? "",
       eventDate: body.eventDate ?? null,
+      streamVideoId: body.streamVideoId ?? null,
+      streamStartAt: body.streamStartAt ?? null,
+      streamEndAt: body.streamEndAt ?? null,
+      streamOverrideMode: body.streamOverrideMode ?? "auto",
       sourceSheet: body.sourceSheet ?? "admin",
       sourceRow: body.sourceRow ?? 0,
     }, {
@@ -76,6 +84,10 @@ export async function PATCH(request: Request) {
       roundNumber?: number;
       circuitName?: string;
       eventDate?: string | null;
+      streamVideoId?: string | null;
+      streamStartAt?: string | null;
+      streamEndAt?: string | null;
+      streamOverrideMode?: "auto" | "force_on" | "force_off" | null;
     }>(request);
 
     const result = await updateEvent(actor, body.id ?? "", {
@@ -83,6 +95,10 @@ export async function PATCH(request: Request) {
       roundNumber: body.roundNumber,
       circuitName: body.circuitName,
       eventDate: body.eventDate,
+      streamVideoId: body.streamVideoId,
+      streamStartAt: body.streamStartAt,
+      streamEndAt: body.streamEndAt,
+      streamOverrideMode: body.streamOverrideMode,
     }, {
       requestId: readRequestId(request),
     });

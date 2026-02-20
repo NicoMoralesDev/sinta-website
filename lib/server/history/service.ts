@@ -1,4 +1,4 @@
-﻿import {
+import {
   getCurrentChampionshipSummary,
   getDriverBySlug,
   getDriverResultsPage,
@@ -6,6 +6,7 @@
   getDrivers,
   getEventParticipationPage,
   getEventResultsPage,
+  getHomeLiveBroadcastCandidate,
   getHighlights,
   getResultFilters,
   getResultsOverview as getResultsOverviewRecord,
@@ -22,6 +23,8 @@ import type {
   EventParticipationCard,
   EventQuery,
   EventResultItem,
+  HomeLiveBroadcast,
+  LiveBroadcastStatus,
   OverviewQuery,
   ResultFilterSet,
   ResultHighlight,
@@ -36,6 +39,8 @@ const DEFAULT_HIGHLIGHTS_LIMIT = 8;
 const MAX_HIGHLIGHTS_LIMIT = 24;
 const DEFAULT_CURRENT_EVENTS_LIMIT = 5;
 const MAX_CURRENT_EVENTS_LIMIT = 12;
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function parseInteger(
   value: string | null,
@@ -107,10 +112,24 @@ function parseSlug(value: string | null, field: string): string | undefined {
   return normalized;
 }
 
+function parseUuid(value: string | null, field: string): string | undefined {
+  if (value === null || value.trim() === "") {
+    return undefined;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (!UUID_REGEX.test(normalized)) {
+    throw new HistoryValidationError(`${field} must be a UUID.`);
+  }
+
+  return normalized;
+}
+
 function toEventQuery(searchParams: URLSearchParams): EventQuery {
   return {
     year: parseInteger(searchParams.get("year"), "year", { min: 2000, max: 2100 }),
     championship: parseSlug(searchParams.get("championship"), "championship"),
+    championshipId: parseUuid(searchParams.get("championshipId"), "championshipId"),
     driver: parseSlug(searchParams.get("driver"), "driver"),
     limit: parseLimit(searchParams.get("limit"), DEFAULT_LIMIT, MAX_LIMIT),
     offset: decodeCursor(searchParams.get("cursor")),
@@ -121,6 +140,7 @@ function toDriverResultsQuery(searchParams: URLSearchParams): DriverResultsQuery
   return {
     year: parseInteger(searchParams.get("year"), "year", { min: 2000, max: 2100 }),
     championship: parseSlug(searchParams.get("championship"), "championship"),
+    championshipId: parseUuid(searchParams.get("championshipId"), "championshipId"),
     limit: parseLimit(searchParams.get("limit"), DEFAULT_LIMIT, MAX_LIMIT),
     offset: decodeCursor(searchParams.get("cursor")),
   };
@@ -130,6 +150,7 @@ function toStatsQuery(searchParams: URLSearchParams): StatsQuery {
   return {
     year: parseInteger(searchParams.get("year"), "year", { min: 2000, max: 2100 }),
     championship: parseSlug(searchParams.get("championship"), "championship"),
+    championshipId: parseUuid(searchParams.get("championshipId"), "championshipId"),
     driver: parseSlug(searchParams.get("driver"), "driver"),
   };
 }
@@ -138,6 +159,7 @@ function toOverviewQuery(searchParams: URLSearchParams): OverviewQuery {
   return {
     year: parseInteger(searchParams.get("year"), "year", { min: 2000, max: 2100 }),
     championship: parseSlug(searchParams.get("championship"), "championship"),
+    championshipId: parseUuid(searchParams.get("championshipId"), "championshipId"),
   };
 }
 
@@ -183,12 +205,14 @@ export async function getResultsHighlights(searchParams: URLSearchParams): Promi
   const limit = parseLimit(searchParams.get("limit"), DEFAULT_HIGHLIGHTS_LIMIT, MAX_HIGHLIGHTS_LIMIT);
   const year = parseInteger(searchParams.get("year"), "year", { min: 2000, max: 2100 });
   const championship = parseSlug(searchParams.get("championship"), "championship");
+  const championshipId = parseUuid(searchParams.get("championshipId"), "championshipId");
   const driver = parseSlug(searchParams.get("driver"), "driver");
 
   return getHighlights({
     limit,
     year,
     championship,
+    championshipId,
     driver,
   });
 }
@@ -296,3 +320,71 @@ export async function getHomeRecentEventParticipation(
 export async function getHomeCurrentChampionship(): Promise<CurrentChampionshipSummary | null> {
   return getCurrentChampionshipSummary(DEFAULT_CURRENT_EVENTS_LIMIT);
 }
+
+export function resolveHomeLiveBroadcastStatus(
+  candidate: Pick<HomeLiveBroadcast, "streamOverrideMode" | "streamStartAt">,
+  nowIso: string,
+): LiveBroadcastStatus {
+  if (candidate.streamOverrideMode === "force_on") {
+    return "live";
+  }
+
+  if (!candidate.streamStartAt) {
+    return "live";
+  }
+
+  const nowMillis = Date.parse(nowIso);
+  const startMillis = Date.parse(candidate.streamStartAt);
+  if (!Number.isFinite(nowMillis) || !Number.isFinite(startMillis)) {
+    return "live";
+  }
+
+  return nowMillis < startMillis ? "upcoming" : "live";
+}
+
+export function isHomeLiveBroadcastVisible(
+  candidate: Pick<HomeLiveBroadcast, "streamVideoId" | "streamOverrideMode" | "streamStartAt" | "streamEndAt">,
+  nowIso: string,
+): boolean {
+  if (!candidate.streamVideoId) {
+    return false;
+  }
+
+  if (candidate.streamOverrideMode === "force_off") {
+    return false;
+  }
+
+  if (candidate.streamOverrideMode === "force_on") {
+    return true;
+  }
+
+  if (!candidate.streamStartAt || !candidate.streamEndAt) {
+    return false;
+  }
+
+  const nowMillis = Date.parse(nowIso);
+  const startMillis = Date.parse(candidate.streamStartAt);
+  const endMillis = Date.parse(candidate.streamEndAt);
+  if (!Number.isFinite(nowMillis) || !Number.isFinite(startMillis) || !Number.isFinite(endMillis)) {
+    return false;
+  }
+
+  return nowMillis >= startMillis - 30 * 60 * 1000 && nowMillis <= endMillis;
+}
+
+export async function getHomeLiveBroadcast(nowIso = new Date().toISOString()): Promise<HomeLiveBroadcast | null> {
+  const candidate = await getHomeLiveBroadcastCandidate(nowIso);
+  if (!candidate) {
+    return null;
+  }
+
+  if (!isHomeLiveBroadcastVisible(candidate, nowIso)) {
+    return null;
+  }
+
+  return {
+    ...candidate,
+    status: resolveHomeLiveBroadcastStatus(candidate, nowIso),
+  };
+}
+

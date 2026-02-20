@@ -102,6 +102,8 @@ Environment variables reference:
 - `db/migrations/004_admin_auth_softdelete_audit.sql`: admin users/auth, soft-delete flags, and audit logs.
 - `db/migrations/005_results_views_active_filters.sql`: refreshes read views with `is_active` filters.
 - `db/migrations/006_users_roles_refactor.sql`: renames admin auth tables to `users`/`audit_logs` and adds lookup table `roles`.
+- `db/migrations/007_events_live_stream.sql`: event live stream metadata (`stream_video_id`, live window, override mode).
+- `db/migrations/008_live_broadcast_config.sql`: global live broadcast config (`live_broadcast_config` singleton).
 - `scripts/import-results-xlsx.ts`: import manual/idempotente desde `.xlsx`.
 - `scripts/bootstrap-admin-owner.ts`: one-time owner bootstrap for admin access.
 - `app/api/v1/*`: endpoints de resultados, roster y pilotos.
@@ -122,7 +124,7 @@ Environment variables reference:
 
 ## Frontend routes
 
-- `/`: home quick overview (dynamic KPIs + recent event participation).
+- `/`: home quick overview (dynamic KPIs + recent event participation + live broadcast hero when enabled).
 - `/results`: full results hub with year/championship/driver filters.
 - `/drivers`: driver roster index with filters.
 - `/drivers/:slug`: driver profile with aggregates, trend, and paginated history.
@@ -130,6 +132,7 @@ Environment variables reference:
 - `/admin`: admin dashboard (private).
 - `/admin/championships`: championships CRUD.
 - `/admin/events`: events CRUD + inline results grid.
+- `/admin/live-stream`: global live stream settings for Home/Hero.
 - `/admin/roster`: drivers + aliases CRUD.
 - `/admin/users`: admin users/security (owner only).
 - `/admin/audit`: audit trail + revert controls (owner only).
@@ -147,6 +150,8 @@ Environment variables reference:
 - `GET/POST/PATCH /api/v1/admin/championships`
 - `POST /api/v1/admin/championships/:id/active`
 - `GET/POST/PATCH /api/v1/admin/events`
+- `GET/PATCH /api/v1/admin/live-broadcast`
+  - Global LIVE config fields: `eventId`, `streamVideoId`, `streamStartAt`, `streamEndAt`, `streamOverrideMode`.
 - `POST /api/v1/admin/events/:id/active`
 - `GET/PUT /api/v1/admin/events/:id/results`
 - `GET/POST/PATCH /api/v1/admin/drivers`
@@ -178,7 +183,7 @@ Notes:
 
 ## Admin bootstrap workflow
 
-1. Apply migrations `001` to `006`.
+1. Apply migrations `001` to `008`.
 2. Configure admin env vars.
 3. Create the first owner:
    ```bash

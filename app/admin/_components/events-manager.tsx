@@ -4,7 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Fragment, useEffect, useMemo, useState } from "react";
 
-import type { AdminChampionship, AdminEvent, AdminEventResultsGrid } from "@/lib/server/admin/types";
+import type {
+  AdminChampionship,
+  AdminEvent,
+  AdminEventResultsGrid,
+} from "@/lib/server/admin/types";
 
 type Props = {
   events: AdminEvent[];
@@ -368,7 +372,7 @@ export function EventsManager({ events, championships, championshipFilterId = nu
       <section className="rounded-sm border border-racing-steel/25 bg-racing-carbon/55 p-4">
         <h3 className="font-mono text-sm font-semibold tracking-wider text-racing-yellow uppercase">Nuevo evento</h3>
         <p className="mt-1 text-xs text-racing-white/60">
-          Selecciona campeonato, ronda, circuito y fecha opcional.
+          Selecciona campeonato, ronda, circuito y fecha del evento.
         </p>
         {filteredChampionship ? (
           <p className="mt-1 text-xs text-racing-yellow/90">
@@ -378,54 +382,56 @@ export function EventsManager({ events, championships, championshipFilterId = nu
             </Link>
           </p>
         ) : null}
-        <form action={createEvent} className="mt-3 grid gap-3 md:grid-cols-[minmax(0,1.2fr)_120px_minmax(0,1fr)_170px_auto]">
-          <label className="text-xs text-racing-white/65">
-            <span className="mb-1 block uppercase tracking-wider">Campeonato</span>
-            <select
-              name="championshipId"
-              defaultValue={filteredChampionship?.id ?? ""}
-              className="h-9 w-full rounded-sm border border-racing-steel/40 bg-racing-black px-3 py-2 text-sm"
+        <form action={createEvent} className="mt-3 space-y-3">
+          <div className="grid gap-3 md:grid-cols-[minmax(0,1.2fr)_120px_minmax(0,1fr)_170px_auto]">
+            <label className="text-xs text-racing-white/65">
+              <span className="mb-1 block uppercase tracking-wider">Campeonato</span>
+              <select
+                name="championshipId"
+                defaultValue={filteredChampionship?.id ?? ""}
+                className="h-9 w-full rounded-sm border border-racing-steel/40 bg-racing-black px-3 py-2 text-sm"
+              >
+                <option value="">Seleccionar campeonato</option>
+                {championships.map((championship) => (
+                  <option key={championship.id} value={championship.id}>
+                    {championship.seasonYear} - {championship.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs text-racing-white/65">
+              <span className="mb-1 block uppercase tracking-wider">Ronda</span>
+              <input
+                name="roundNumber"
+                type="number"
+                placeholder="1"
+                className="h-9 w-full rounded-sm border border-racing-steel/40 bg-racing-black px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="text-xs text-racing-white/65">
+              <span className="mb-1 block uppercase tracking-wider">Circuito</span>
+              <input
+                name="circuitName"
+                placeholder="Nombre del circuito"
+                className="h-9 w-full rounded-sm border border-racing-steel/40 bg-racing-black px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="text-xs text-racing-white/65">
+              <span className="mb-1 block uppercase tracking-wider">Fecha</span>
+              <input
+                name="eventDate"
+                type="date"
+                className="h-9 w-full rounded-sm border border-racing-steel/40 bg-racing-black px-3 py-2 text-sm"
+              />
+            </label>
+            <button
+              type="submit"
+              disabled={state.loading}
+              className="h-9 self-end rounded-sm bg-racing-yellow px-4 py-2 text-xs font-bold tracking-wider text-racing-black uppercase disabled:opacity-60"
             >
-              <option value="">Seleccionar campeonato</option>
-              {championships.map((championship) => (
-                <option key={championship.id} value={championship.id}>
-                  {championship.seasonYear} - {championship.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-xs text-racing-white/65">
-            <span className="mb-1 block uppercase tracking-wider">Ronda</span>
-            <input
-              name="roundNumber"
-              type="number"
-              placeholder="1"
-              className="h-9 w-full rounded-sm border border-racing-steel/40 bg-racing-black px-3 py-2 text-sm"
-            />
-          </label>
-          <label className="text-xs text-racing-white/65">
-            <span className="mb-1 block uppercase tracking-wider">Circuito</span>
-            <input
-              name="circuitName"
-              placeholder="Nombre del circuito"
-              className="h-9 w-full rounded-sm border border-racing-steel/40 bg-racing-black px-3 py-2 text-sm"
-            />
-          </label>
-          <label className="text-xs text-racing-white/65">
-            <span className="mb-1 block uppercase tracking-wider">Fecha (opcional)</span>
-            <input
-              name="eventDate"
-              type="date"
-              className="h-9 w-full rounded-sm border border-racing-steel/40 bg-racing-black px-3 py-2 text-sm"
-            />
-          </label>
-          <button
-            type="submit"
-            disabled={state.loading}
-            className="h-9 self-end rounded-sm bg-racing-yellow px-4 py-2 text-xs font-bold tracking-wider text-racing-black uppercase disabled:opacity-60"
-          >
-            {state.loading ? "Guardando..." : "Crear evento"}
-          </button>
+              {state.loading ? "Guardando..." : "Crear evento"}
+            </button>
+          </div>
         </form>
       </section>
 

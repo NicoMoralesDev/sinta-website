@@ -20,6 +20,7 @@ function navItems(role: "owner" | "editor" | null): Array<{ href: string; label:
     { href: "/admin", label: "Resumen" },
     { href: "/admin/championships", label: "Campeonatos" },
     { href: "/admin/events", label: "Eventos" },
+    { href: "/admin/live-stream", label: "Live Stream" },
     { href: "/admin/roster", label: "Pilotos" },
   ];
 
