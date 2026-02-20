@@ -29,6 +29,9 @@ describe("hero live render", () => {
     expect(html).toContain("youtube.com/embed/dQw4w9WgXcQ");
     expect(html).toContain("LIVE");
     expect(html).toContain("Watch on YouTube");
+    expect(html).toContain("Starts (Argentina Time, UTC-3)");
+    expect(html).toContain("Starts (Universal Time, UTC)");
+    expect(html).not.toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/);
   });
 
   it("does not render embedded player when no live broadcast is available", () => {

@@ -29,16 +29,22 @@ function formatArtDateTime(iso: string, locale: string): string | null {
     timeStyle: "short",
   });
 
-  return `${formatter.format(parsed)} ART`;
+  return formatter.format(parsed);
 }
 
-function formatUtcDateTime(iso: string): string | null {
+function formatUtcDateTime(iso: string, locale: string): string | null {
   const parsed = new Date(iso);
   if (Number.isNaN(parsed.getTime())) {
     return null;
   }
 
-  return parsed.toISOString().replace(".000Z", "Z");
+  const formatter = new Intl.DateTimeFormat(locale, {
+    timeZone: "UTC",
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+  return `${formatter.format(parsed)} UTC`;
 }
 
 export function Hero({ copy, lang, liveBroadcast = null }: HeroProps) {
@@ -48,27 +54,29 @@ export function Hero({ copy, lang, liveBroadcast = null }: HeroProps) {
         upcoming: "LIVE SOON",
         title: "Live broadcast",
         watchCta: "Watch on YouTube",
-        startsAt: "Starts (ART)",
-        startsAtUtc: "Starts (UTC)",
-        endsAt: "Ends (ART)",
-        endsAtUtc: "Ends (UTC)",
+        startsAt: "Starts (Argentina Time, UTC-3)",
+        startsAtUtc: "Starts (Universal Time, UTC)",
+        endsAt: "Ends (Argentina Time, UTC-3)",
+        endsAtUtc: "Ends (Universal Time, UTC)",
       }
     : {
         live: "LIVE",
         upcoming: "LIVE PRONTO",
         title: "Transmision en vivo",
         watchCta: "Ver en YouTube",
-        startsAt: "Inicio (ART)",
-        startsAtUtc: "Inicio (UTC)",
-        endsAt: "Fin (ART)",
-        endsAtUtc: "Fin (UTC)",
+        startsAt: "Inicio (Hora Argentina, UTC-3)",
+        startsAtUtc: "Inicio (Hora Universal, UTC)",
+        endsAt: "Fin (Hora Argentina, UTC-3)",
+        endsAtUtc: "Fin (Hora Universal, UTC)",
       };
 
   const locale = lang === "en" ? "en-US" : "es-AR";
   const startAtArt = liveBroadcast?.streamStartAt ? formatArtDateTime(liveBroadcast.streamStartAt, locale) : null;
   const endAtArt = liveBroadcast?.streamEndAt ? formatArtDateTime(liveBroadcast.streamEndAt, locale) : null;
-  const startAtUtc = liveBroadcast?.streamStartAt ? formatUtcDateTime(liveBroadcast.streamStartAt) : null;
-  const endAtUtc = liveBroadcast?.streamEndAt ? formatUtcDateTime(liveBroadcast.streamEndAt) : null;
+  const startAtUtc = liveBroadcast?.streamStartAt
+    ? formatUtcDateTime(liveBroadcast.streamStartAt, locale)
+    : null;
+  const endAtUtc = liveBroadcast?.streamEndAt ? formatUtcDateTime(liveBroadcast.streamEndAt, locale) : null;
   const hasEventContext = Boolean(
     liveBroadcast && liveBroadcast.roundNumber > 0 && liveBroadcast.circuitName !== "Live Broadcast",
   );
