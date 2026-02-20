@@ -9,6 +9,7 @@ import { Team } from "./components/team";
 import { resolveLanguage, siteCopy } from "./content/site-content";
 import {
   getHomeCurrentChampionship,
+  getHomeLiveBroadcast,
   getHomeOverviewKpis,
   getHomeRecentEventParticipation,
   getHomeTeamMembers,
@@ -25,11 +26,12 @@ export default async function Page({ searchParams }: PageProps) {
   const lang = resolveLanguage(params?.lang);
   const copy = siteCopy[lang];
 
-  const [teamMembers, kpis, recentEvents, currentChampionship] = await Promise.all([
+  const [teamMembers, kpis, recentEvents, currentChampionship, liveBroadcast] = await Promise.all([
     getHomeTeamMembers(lang).catch(() => null),
     getHomeOverviewKpis().catch(() => null),
     getHomeRecentEventParticipation(5).catch(() => null),
     getHomeCurrentChampionship().catch(() => null),
+    getHomeLiveBroadcast().catch(() => null),
   ]);
 
   const numberFormatter = new Intl.NumberFormat(lang === "en" ? "en-US" : "es-AR");
@@ -79,14 +81,14 @@ export default async function Page({ searchParams }: PageProps) {
         instagramAriaLabel={copy.contact.instagramAriaLabel}
       />
       <main>
-        <Hero copy={copy.hero} />
+        <Hero copy={copy.hero} lang={lang} liveBroadcast={liveBroadcast} />
         <About copy={aboutCopy} />
         <Team lang={lang} copy={teamCopy} />
         <Results
           lang={lang}
           copy={copy.results}
           events={recentEvents ?? []}
-          currentChampionshipSlug={currentChampionship?.championship.slug}
+          currentChampionship={currentChampionship?.championship}
         />
         <Calendar lang={lang} copy={copy.calendar} />
         <Contact copy={copy.contact} />

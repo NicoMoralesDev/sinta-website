@@ -52,6 +52,7 @@ function toSearchParams(input?: Record<string, SearchValue>): URLSearchParams {
 function buildDriverHref({
   slug,
   year,
+  championshipId,
   championship,
   limit,
   cursor,
@@ -59,6 +60,7 @@ function buildDriverHref({
 }: {
   slug: string;
   year?: string;
+  championshipId?: string;
   championship?: string;
   limit?: string;
   cursor?: string | null;
@@ -67,6 +69,9 @@ function buildDriverHref({
   const params = new URLSearchParams();
   if (year) {
     params.set("year", year);
+  }
+  if (championshipId) {
+    params.set("championshipId", championshipId);
   }
   if (championship) {
     params.set("championship", championship);
@@ -95,6 +100,7 @@ export default async function DriverProfilePage({ params, searchParams }: Driver
   query.set("limit", limit);
 
   const year = query.get("year") ?? undefined;
+  const championshipIdParam = query.get("championshipId") ?? undefined;
   const championship = query.get("championship") ?? undefined;
 
   const i18n =
@@ -160,9 +166,36 @@ export default async function DriverProfilePage({ params, searchParams }: Driver
       })),
   ]);
 
+  const selectedChampionshipId =
+    championshipIdParam ??
+    filters?.championships.find((item) =>
+      item.slug === championship && (year ? String(item.seasonYear) === year : true)
+    )?.id;
+
+  if (selectedChampionshipId) {
+    query.set("championshipId", selectedChampionshipId);
+    query.delete("championship");
+  }
+
   const languageHrefs = {
-    es: buildDriverHref({ slug, year, championship, limit, cursor: query.get("cursor"), lang: "es" }),
-    en: buildDriverHref({ slug, year, championship, limit, cursor: query.get("cursor"), lang: "en" }),
+    es: buildDriverHref({
+      slug,
+      year,
+      championshipId: selectedChampionshipId,
+      championship: selectedChampionshipId ? undefined : championship,
+      limit,
+      cursor: query.get("cursor"),
+      lang: "es",
+    }),
+    en: buildDriverHref({
+      slug,
+      year,
+      championshipId: selectedChampionshipId,
+      championship: selectedChampionshipId ? undefined : championship,
+      limit,
+      cursor: query.get("cursor"),
+      lang: "en",
+    }),
   };
 
   if (!profileResult.profile) {
@@ -275,7 +308,8 @@ export default async function DriverProfilePage({ params, searchParams }: Driver
     ? buildDriverHref({
         slug,
         year,
-        championship,
+        championshipId: selectedChampionshipId,
+        championship: selectedChampionshipId ? undefined : championship,
         limit,
         cursor: historyResult.history.nextCursor,
         lang,
@@ -411,13 +445,13 @@ export default async function DriverProfilePage({ params, searchParams }: Driver
               <label className="text-xs text-racing-white/60">
                 <span className="mb-1 block tracking-wider uppercase">{i18n.championship}</span>
                 <select
-                  name="championship"
-                  defaultValue={championship ?? ""}
+                  name="championshipId"
+                  defaultValue={selectedChampionshipId ?? ""}
                   className="w-full rounded-sm border border-racing-steel/40 bg-racing-black px-3 py-2 text-sm text-racing-white"
                 >
                   <option value="">{i18n.allChampionships}</option>
                   {filters?.championships.map((item) => (
-                    <option key={item.id} value={item.slug}>
+                    <option key={item.id} value={item.id}>
                       {item.seasonYear} - {item.name}
                     </option>
                   ))}

@@ -45,6 +45,7 @@ function toSearchParams(input?: Record<string, SearchValue>): URLSearchParams {
 
 function buildResultsHref({
   year,
+  championshipId,
   championship,
   driver,
   limit,
@@ -52,6 +53,7 @@ function buildResultsHref({
   lang,
 }: {
   year?: string;
+  championshipId?: string;
   championship?: string;
   driver?: string;
   limit?: string;
@@ -61,6 +63,9 @@ function buildResultsHref({
   const params = new URLSearchParams();
   if (year) {
     params.set("year", year);
+  }
+  if (championshipId) {
+    params.set("championshipId", championshipId);
   }
   if (championship) {
     params.set("championship", championship);
@@ -91,6 +96,7 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
   query.set("limit", limit);
 
   const year = query.get("year") ?? undefined;
+  const championshipIdParam = query.get("championshipId") ?? undefined;
   const championship = query.get("championship") ?? undefined;
   const driver = query.get("driver") ?? undefined;
 
@@ -146,11 +152,24 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
     getCurrentChampionship(new URLSearchParams("limit=4")).catch(() => null),
   ]);
 
+  const selectedChampionshipId =
+    championshipIdParam ??
+    filters?.championships.find((item) =>
+      item.slug === championship && (year ? String(item.seasonYear) === year : true)
+    )?.id;
+
+  if (selectedChampionshipId) {
+    query.set("championshipId", selectedChampionshipId);
+    query.delete("championship");
+  }
+
   const statsParams = new URLSearchParams();
   if (year) {
     statsParams.set("year", year);
   }
-  if (championship) {
+  if (selectedChampionshipId) {
+    statsParams.set("championshipId", selectedChampionshipId);
+  } else if (championship) {
     statsParams.set("championship", championship);
   }
 
@@ -167,7 +186,8 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
   const languageHrefs = {
     es: buildResultsHref({
       year,
-      championship,
+      championshipId: selectedChampionshipId,
+      championship: selectedChampionshipId ? undefined : championship,
       driver,
       limit,
       cursor: query.get("cursor"),
@@ -175,7 +195,8 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
     }),
     en: buildResultsHref({
       year,
-      championship,
+      championshipId: selectedChampionshipId,
+      championship: selectedChampionshipId ? undefined : championship,
       driver,
       limit,
       cursor: query.get("cursor"),
@@ -187,7 +208,8 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
   const nextHref = eventsResult.result.nextCursor
     ? buildResultsHref({
         year,
-        championship,
+        championshipId: selectedChampionshipId,
+        championship: selectedChampionshipId ? undefined : championship,
         driver,
         limit,
         cursor: eventsResult.result.nextCursor,
@@ -197,6 +219,8 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
   const currentHref = current
     ? buildResultsHref({
         championship: current.championship.slug,
+        championshipId: current.championship.id,
+        year: String(current.championship.seasonYear),
         limit,
         lang,
       })
@@ -250,13 +274,13 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
             <label className="text-xs text-racing-white/60">
               <span className="mb-1 block tracking-wider uppercase">{i18n.championship}</span>
               <select
-                name="championship"
-                defaultValue={championship ?? ""}
+                name="championshipId"
+                defaultValue={selectedChampionshipId ?? ""}
                 className="w-full rounded-sm border border-racing-steel/40 bg-racing-black px-3 py-2 text-sm text-racing-white"
               >
                 <option value="">{i18n.allChampionships}</option>
                 {filters?.championships.map((item) => (
-                  <option key={item.id} value={item.slug}>
+                  <option key={item.id} value={item.id}>
                     {item.seasonYear} - {item.name}
                   </option>
                 ))}

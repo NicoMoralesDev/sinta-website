@@ -14,6 +14,7 @@ Each item includes a concrete trigger so we only implement it when the benefit i
 | Driver comparison page | Improves discoverability and storytelling for fan-facing UX. | Repeated user demand for side-by-side comparisons (wins, podiums, pace trend). | Stable profile data contracts and chart polish pass. |
 | Shareable highlight cards | Better social sharing from results and driver profiles. | Product goal includes growth through social channels. | OG image generation route and share metadata templates. |
 | Notifications/webhook for new imports | Improves operational visibility after updates. | Multiple environments or teammates require import status visibility. | Import lifecycle events and notification destination (email/Slack/Discord). |
+| YouTube Live API auto-detection | Improves live/on-air accuracy beyond manual scheduling windows. | Broadcast timing drift causes frequent manual overrides, or multiple weekly streams require automation. | Google Cloud project, YouTube Data API quota, secure key storage, and caching/rate-limit strategy. |
 
 ## Review cadence
 

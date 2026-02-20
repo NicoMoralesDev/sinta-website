@@ -48,3 +48,18 @@ When dry-run is active:
 - Write endpoints validate payload and permissions.
 - Response includes `dryRun: true` and warnings.
 - No DB mutation is applied.
+
+## Global live stream fields
+
+`/admin/live-stream` supports a single global live broadcast configuration:
+
+- `eventId`: optional event reference used for Hero context labels.
+- `streamVideoId`: YouTube URL or direct video ID (`11` chars); persisted as canonical video ID.
+- `streamStartAt`: start datetime (admin inputs ART via `datetime-local` and backend stores UTC).
+- `streamEndAt`: end datetime (same conversion rules as start).
+- `streamOverrideMode`:
+  - `auto`: show only inside `[start - 30m, end]`.
+  - `force_on`: always show if video is configured.
+  - `force_off`: never show.
+
+If an event date is detected within the next 24 hours, the admin UI suggests auto-filling `streamStartAt` and `streamEndAt` in ART.

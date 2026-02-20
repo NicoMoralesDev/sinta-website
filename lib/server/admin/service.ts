@@ -24,6 +24,7 @@ import {
   createDriverRecord,
   createEventRecord,
   deleteAliasRecord,
+  getAdminLiveBroadcastConfigRecord,
   getAdminUserByUsernameNormalized,
   getAdminUserById,
   getAliasById,
@@ -51,8 +52,10 @@ import {
   updateChampionshipRecord,
   updateDriverRecord,
   updateEventRecord,
+  updateAdminLiveBroadcastConfigRecord,
 } from "./repository";
 import type {
+  AdminLiveBroadcastConfig,
   AdminAuditLog,
   AdminChampionship,
   AdminDriver,
@@ -61,6 +64,7 @@ import type {
   AdminEventResultsGrid,
   AdminRole,
   AdminSession,
+  StreamOverrideMode,
   AdminUser,
   AdminWriteResult,
   CreateAdminUserInput,
@@ -74,6 +78,7 @@ import type {
   UpdateChampionshipInput,
   UpdateDriverInput,
   UpdateEventInput,
+  UpdateLiveBroadcastConfigInput,
 } from "./types";
 
 type AdminActor = {
@@ -93,6 +98,10 @@ const UUID_REGEX =
 const REVERTABLE_ENTITY_TYPES = new Set(["championship", "event", "driver", "event_results"]);
 const DEFAULT_ROLE_ES = "Piloto";
 const DEFAULT_ROLE_EN = "Driver";
+const YOUTUBE_VIDEO_ID_REGEX = /^[A-Za-z0-9_-]{11}$/;
+const ART_LOCAL_DATETIME_REGEX = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/;
+const ISO_DATETIME_WITH_TZ_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?(?:\.\d{1,3})?(Z|[+-]\d{2}:\d{2})$/;
+const STREAM_OVERRIDE_MODES = new Set<StreamOverrideMode>(["auto", "force_on", "force_off"]);
 
 const COUNTRY_CATALOG: Record<string, { code: string; nameEs: string; nameEn: string }> = {
   ar: { code: "ar", nameEs: "Argentina", nameEn: "Argentina" },
@@ -204,6 +213,211 @@ function validateDateInput(value: string | null | undefined, field: string): str
     throw new AdminValidationError(`${field} is invalid.`);
   }
   return normalized;
+}
+
+export type EventStreamState = {
+  streamVideoId: string | null;
+  streamStartAt: string | null;
+  streamEndAt: string | null;
+  streamOverrideMode: StreamOverrideMode;
+};
+
+type EventStreamPatchInput = {
+  streamVideoId?: string | null;
+  streamStartAt?: string | null;
+  streamEndAt?: string | null;
+  streamOverrideMode?: string | StreamOverrideMode | null;
+};
+
+function extractIdFromYouTubeUrl(input: URL): string | null {
+  const host = input.hostname.toLowerCase();
+  const path = input.pathname;
+
+  if (host === "youtu.be" || host === "www.youtu.be") {
+    const segment = path.split("/").filter(Boolean).at(0);
+    return segment ?? null;
+  }
+
+  if (host !== "youtube.com" && host !== "www.youtube.com" && host !== "m.youtube.com") {
+    return null;
+  }
+
+  if (path === "/watch") {
+    return input.searchParams.get("v");
+  }
+
+  const segments = path.split("/").filter(Boolean);
+  const lead = segments.at(0);
+  if (lead === "live" || lead === "shorts" || lead === "embed") {
+    return segments.at(1) ?? null;
+  }
+
+  return null;
+}
+
+export function parseYouTubeVideoId(value: string | null | undefined, field = "streamVideoId"): string | null {
+  if (value === undefined || value === null || value.trim() === "") {
+    return null;
+  }
+
+  const normalized = value.trim();
+  if (YOUTUBE_VIDEO_ID_REGEX.test(normalized)) {
+    return normalized;
+  }
+
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(normalized);
+  } catch {
+    throw new AdminValidationError(`${field} must be a valid YouTube URL or video ID.`);
+  }
+
+  const extracted = extractIdFromYouTubeUrl(parsedUrl);
+  if (!extracted || !YOUTUBE_VIDEO_ID_REGEX.test(extracted)) {
+    throw new AdminValidationError(`${field} must contain a valid YouTube video ID.`);
+  }
+
+  return extracted;
+}
+
+function normalizeIsoDateTimeWithTimezone(value: string, field: string): string {
+  if (!ISO_DATETIME_WITH_TZ_REGEX.test(value)) {
+    throw new AdminValidationError(`${field} must be ISO-8601 with timezone or datetime-local (ART).`);
+  }
+  const parsed = Date.parse(value);
+  if (!Number.isFinite(parsed)) {
+    throw new AdminValidationError(`${field} is invalid.`);
+  }
+  return new Date(parsed).toISOString();
+}
+
+export function parseStreamDateTimeInput(value: string | null | undefined, field: string): string | null {
+  if (value === undefined || value === null || value.trim() === "") {
+    return null;
+  }
+
+  const normalized = value.trim();
+  const localMatch = ART_LOCAL_DATETIME_REGEX.exec(normalized);
+  if (!localMatch) {
+    return normalizeIsoDateTimeWithTimezone(normalized, field);
+  }
+
+  const year = Number(localMatch[1]);
+  const month = Number(localMatch[2]);
+  const day = Number(localMatch[3]);
+  const hour = Number(localMatch[4]);
+  const minute = Number(localMatch[5]);
+  const second = Number(localMatch[6] ?? "0");
+
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day) ||
+    !Number.isInteger(hour) ||
+    !Number.isInteger(minute) ||
+    !Number.isInteger(second) ||
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    day > 31 ||
+    hour < 0 ||
+    hour > 23 ||
+    minute < 0 ||
+    minute > 59 ||
+    second < 0 ||
+    second > 59
+  ) {
+    throw new AdminValidationError(`${field} is invalid.`);
+  }
+
+  const utcMillis = Date.UTC(year, month - 1, day, hour + 3, minute, second, 0);
+  const localCheck = new Date(utcMillis - 3 * 60 * 60 * 1000);
+  if (
+    localCheck.getUTCFullYear() !== year ||
+    localCheck.getUTCMonth() + 1 !== month ||
+    localCheck.getUTCDate() !== day ||
+    localCheck.getUTCHours() !== hour ||
+    localCheck.getUTCMinutes() !== minute ||
+    localCheck.getUTCSeconds() !== second
+  ) {
+    throw new AdminValidationError(`${field} is invalid.`);
+  }
+
+  return new Date(utcMillis).toISOString();
+}
+
+function normalizeStreamOverrideMode(value: string | StreamOverrideMode | null | undefined, field: string): StreamOverrideMode {
+  if (value === null || value === undefined || value === "") {
+    return "auto";
+  }
+
+  const normalized = String(value).trim().toLowerCase() as StreamOverrideMode;
+  if (!STREAM_OVERRIDE_MODES.has(normalized)) {
+    throw new AdminValidationError(`${field} is invalid.`);
+  }
+
+  return normalized;
+}
+
+function validateStreamState(state: EventStreamState): void {
+  const hasStart = state.streamStartAt !== null;
+  const hasEnd = state.streamEndAt !== null;
+
+  if (hasStart !== hasEnd) {
+    throw new AdminValidationError("streamStartAt and streamEndAt must be provided together.");
+  }
+
+  if (hasStart && hasEnd) {
+    const startMillis = Date.parse(state.streamStartAt ?? "");
+    const endMillis = Date.parse(state.streamEndAt ?? "");
+    if (!Number.isFinite(startMillis) || !Number.isFinite(endMillis) || endMillis <= startMillis) {
+      throw new AdminValidationError("streamEndAt must be greater than streamStartAt.");
+    }
+  }
+
+  if (!state.streamVideoId) {
+    if (hasStart || hasEnd) {
+      throw new AdminValidationError("streamVideoId is required when stream schedule is configured.");
+    }
+    if (state.streamOverrideMode === "force_on") {
+      throw new AdminValidationError("streamOverrideMode force_on requires streamVideoId.");
+    }
+  }
+}
+
+export function normalizeEventStreamPatch(
+  previous: EventStreamState,
+  patch: EventStreamPatchInput,
+): { next: EventStreamState; changes: Partial<EventStreamState> } {
+  const next: EventStreamState = { ...previous };
+  const changes: Partial<EventStreamState> = {};
+
+  if (patch.streamVideoId !== undefined) {
+    const normalized = parseYouTubeVideoId(patch.streamVideoId, "streamVideoId");
+    next.streamVideoId = normalized;
+    changes.streamVideoId = normalized;
+  }
+
+  if (patch.streamStartAt !== undefined) {
+    const normalized = parseStreamDateTimeInput(patch.streamStartAt, "streamStartAt");
+    next.streamStartAt = normalized;
+    changes.streamStartAt = normalized;
+  }
+
+  if (patch.streamEndAt !== undefined) {
+    const normalized = parseStreamDateTimeInput(patch.streamEndAt, "streamEndAt");
+    next.streamEndAt = normalized;
+    changes.streamEndAt = normalized;
+  }
+
+  if (patch.streamOverrideMode !== undefined) {
+    const normalized = normalizeStreamOverrideMode(patch.streamOverrideMode, "streamOverrideMode");
+    next.streamOverrideMode = normalized;
+    changes.streamOverrideMode = normalized;
+  }
+
+  validateStreamState(next);
+  return { next, changes };
 }
 
 function validateCountryCode(value: string | undefined): string {
@@ -444,6 +658,20 @@ function toEventResultCells(
 
 function requestIdFromOptions(options?: RequestOptions): string | null {
   return options?.requestId ?? null;
+}
+
+function isMissingLiveBroadcastConfigSchemaError(error: unknown): boolean {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const maybeCode = (error as { code?: unknown }).code;
+  const maybeMessage = (error as { message?: unknown }).message;
+  if ((maybeCode !== "42P01" && maybeCode !== "42703") || typeof maybeMessage !== "string") {
+    return false;
+  }
+
+  return /\blive_broadcast_config\b/.test(maybeMessage);
 }
 
 export function getAdminWriteDryRunMode(): boolean {
@@ -942,6 +1170,100 @@ export async function listEvents(
   return listAdminEvents(payload);
 }
 
+export async function getLiveBroadcastConfig(actor: AdminActor): Promise<AdminLiveBroadcastConfig> {
+  assertRole(actor, ["owner", "editor"]);
+  return getAdminLiveBroadcastConfigRecord();
+}
+
+export async function updateLiveBroadcastConfig(
+  actor: AdminActor,
+  input: UpdateLiveBroadcastConfigInput,
+  options?: RequestOptions,
+): Promise<AdminWriteResult<{ config: AdminLiveBroadcastConfig }>> {
+  assertRole(actor, ["owner", "editor"]);
+
+  const before = await getAdminLiveBroadcastConfigRecord();
+  const streamPatch = normalizeEventStreamPatch(
+    {
+      streamVideoId: before.streamVideoId,
+      streamStartAt: before.streamStartAt,
+      streamEndAt: before.streamEndAt,
+      streamOverrideMode: before.streamOverrideMode,
+    },
+    {
+      streamVideoId: input.streamVideoId,
+      streamStartAt: input.streamStartAt,
+      streamEndAt: input.streamEndAt,
+      streamOverrideMode: input.streamOverrideMode,
+    },
+  );
+
+  let nextEventId = before.eventId;
+  if (input.eventId !== undefined) {
+    if (input.eventId === null || input.eventId.trim() === "") {
+      nextEventId = null;
+    } else {
+      const eventId = validateUuid(input.eventId, "eventId");
+      const event = await getEventById(eventId);
+      if (!event) {
+        throw new AdminNotFoundError(`Event not found: ${eventId}`);
+      }
+      nextEventId = eventId;
+    }
+  }
+
+  const nextConfig: AdminLiveBroadcastConfig = {
+    eventId: nextEventId,
+    streamVideoId: streamPatch.next.streamVideoId,
+    streamStartAt: streamPatch.next.streamStartAt,
+    streamEndAt: streamPatch.next.streamEndAt,
+    streamOverrideMode: streamPatch.next.streamOverrideMode,
+    updatedAt: before.updatedAt,
+  };
+
+  const dryRun = getAdminWriteDryRunMode();
+  if (dryRun) {
+    return withWriteResult(
+      true,
+      {
+        config: {
+          ...nextConfig,
+          updatedAt: new Date().toISOString(),
+        },
+      },
+      ["Dry-run mode: live broadcast config was not updated."],
+    );
+  }
+
+  let updated: AdminLiveBroadcastConfig;
+  try {
+    updated = await updateAdminLiveBroadcastConfigRecord({
+      eventId: nextConfig.eventId,
+      streamVideoId: nextConfig.streamVideoId,
+      streamStartAt: nextConfig.streamStartAt,
+      streamEndAt: nextConfig.streamEndAt,
+      streamOverrideMode: nextConfig.streamOverrideMode,
+    });
+  } catch (error) {
+    if (isMissingLiveBroadcastConfigSchemaError(error)) {
+      throw new AdminValidationError("Missing migration 008: live_broadcast_config. Apply migrations and retry.");
+    }
+    throw error;
+  }
+
+  await insertAuditLog({
+    ...actorRecord(actor),
+    entityType: "live_broadcast",
+    entityId: null,
+    action: "update",
+    before: before as unknown as Record<string, unknown>,
+    after: updated as unknown as Record<string, unknown>,
+    requestId: requestIdFromOptions(options),
+  });
+
+  return withWriteResult(false, { config: updated });
+}
+
 export async function createEvent(
   actor: AdminActor,
   input: CreateEventInput,
@@ -956,11 +1278,30 @@ export async function createEvent(
     throw new AdminNotFoundError(`Championship not found: ${championshipId}`);
   }
 
+  const streamState = normalizeEventStreamPatch(
+    {
+      streamVideoId: null,
+      streamStartAt: null,
+      streamEndAt: null,
+      streamOverrideMode: "auto",
+    },
+    {
+      streamVideoId: input.streamVideoId,
+      streamStartAt: input.streamStartAt,
+      streamEndAt: input.streamEndAt,
+      streamOverrideMode: input.streamOverrideMode,
+    },
+  ).next;
+
   const payload: CreateEventInput = {
     championshipId,
     roundNumber,
     circuitName: validateRequiredText(input.circuitName, "circuitName"),
     eventDate: validateDateInput(input.eventDate, "eventDate"),
+    streamVideoId: streamState.streamVideoId,
+    streamStartAt: streamState.streamStartAt,
+    streamEndAt: streamState.streamEndAt,
+    streamOverrideMode: streamState.streamOverrideMode,
     sourceSheet: input.sourceSheet?.trim() || "admin",
     sourceRow: input.sourceRow > 0 ? validatePositiveInt(input.sourceRow, "sourceRow") : roundNumber,
   };
@@ -980,6 +1321,10 @@ export async function createEvent(
           roundNumber: payload.roundNumber,
           circuitName: payload.circuitName,
           eventDate: payload.eventDate,
+          streamVideoId: payload.streamVideoId,
+          streamStartAt: payload.streamStartAt,
+          streamEndAt: payload.streamEndAt,
+          streamOverrideMode: payload.streamOverrideMode,
           isActive: true,
           sourceSheet: payload.sourceSheet,
           sourceRow: payload.sourceRow,
@@ -1020,6 +1365,21 @@ export async function updateEvent(
     throw new AdminNotFoundError(`Event not found: ${id}`);
   }
 
+  const streamPatch = normalizeEventStreamPatch(
+    {
+      streamVideoId: before.streamVideoId,
+      streamStartAt: before.streamStartAt,
+      streamEndAt: before.streamEndAt,
+      streamOverrideMode: before.streamOverrideMode,
+    },
+    {
+      streamVideoId: input.streamVideoId,
+      streamStartAt: input.streamStartAt,
+      streamEndAt: input.streamEndAt,
+      streamOverrideMode: input.streamOverrideMode,
+    },
+  );
+
   const payload: UpdateEventInput = {};
   if (input.championshipId !== undefined) {
     const championshipId = validateUuid(input.championshipId, "championshipId");
@@ -1041,6 +1401,18 @@ export async function updateEvent(
   if (input.eventDate !== undefined) {
     payload.eventDate = validateDateInput(input.eventDate, "eventDate");
   }
+  if (streamPatch.changes.streamVideoId !== undefined) {
+    payload.streamVideoId = streamPatch.changes.streamVideoId;
+  }
+  if (streamPatch.changes.streamStartAt !== undefined) {
+    payload.streamStartAt = streamPatch.changes.streamStartAt;
+  }
+  if (streamPatch.changes.streamEndAt !== undefined) {
+    payload.streamEndAt = streamPatch.changes.streamEndAt;
+  }
+  if (streamPatch.changes.streamOverrideMode !== undefined) {
+    payload.streamOverrideMode = streamPatch.changes.streamOverrideMode;
+  }
 
   const dryRun = getAdminWriteDryRunMode();
   if (dryRun) {
@@ -1053,6 +1425,10 @@ export async function updateEvent(
           roundNumber: payload.roundNumber ?? before.roundNumber,
           circuitName: payload.circuitName ?? before.circuitName,
           eventDate: payload.eventDate === undefined ? before.eventDate : payload.eventDate,
+          streamVideoId: streamPatch.next.streamVideoId,
+          streamStartAt: streamPatch.next.streamStartAt,
+          streamEndAt: streamPatch.next.streamEndAt,
+          streamOverrideMode: streamPatch.next.streamOverrideMode,
         },
       },
       ["Dry-run mode: event was not updated."],

@@ -1,4 +1,4 @@
-﻿import { AdminShell } from "@/app/admin/_components/admin-shell";
+import { AdminShell } from "@/app/admin/_components/admin-shell";
 import { EventsManager } from "@/app/admin/_components/events-manager";
 import { getAdminPageContext, requireAdminPageActor } from "@/app/admin/_lib";
 import { listChampionships, listEvents } from "@/lib/server/admin/service";
@@ -36,11 +36,13 @@ export default async function AdminEventsPage({ searchParams }: PageProps) {
   const resolved = await Promise.resolve(searchParams);
   const championshipFilterId = parseUuid(firstValue(resolved?.championshipId));
 
-  const championships = await listChampionships(actor, true);
-  const events = await listEvents(actor, {
-    includeInactive: true,
-    championshipId: championshipFilterId,
-  });
+  const [championships, events] = await Promise.all([
+    listChampionships(actor, true),
+    listEvents(actor, {
+      includeInactive: true,
+      championshipId: championshipFilterId,
+    }),
+  ]);
 
   const championshipFilter =
     championshipFilterId
@@ -52,7 +54,7 @@ export default async function AdminEventsPage({ searchParams }: PageProps) {
       actor={actor}
       dryRun={context.dryRun}
       title="Eventos y Resultados"
-      subtitle="Editar eventos y resultados por evento en la misma tabla."
+      subtitle="Edicion de eventos y resultados por evento."
     >
       <EventsManager
         events={events}
@@ -62,4 +64,3 @@ export default async function AdminEventsPage({ searchParams }: PageProps) {
     </AdminShell>
   );
 }
-

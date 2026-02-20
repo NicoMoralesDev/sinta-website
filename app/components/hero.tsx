@@ -1,12 +1,78 @@
 import Image from "next/image";
 import { ChevronDown } from "lucide-react";
-import type { HeroCopy } from "../content/site-content";
+import type { HomeLiveBroadcast } from "@/lib/server/history/types";
+import type { HeroCopy, Language } from "../content/site-content";
 
 type HeroProps = {
   copy: HeroCopy;
+  lang: Language;
+  liveBroadcast?: HomeLiveBroadcast | null;
 };
 
-export function Hero({ copy }: HeroProps) {
+function buildYouTubeEmbedUrl(videoId: string): string {
+  return `https://www.youtube.com/embed/${videoId}?rel=0`;
+}
+
+function buildYouTubeWatchUrl(videoId: string): string {
+  return `https://www.youtube.com/watch?v=${videoId}`;
+}
+
+function formatArtDateTime(iso: string, locale: string): string | null {
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  const formatter = new Intl.DateTimeFormat(locale, {
+    timeZone: "America/Argentina/Buenos_Aires",
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+  return `${formatter.format(parsed)} ART`;
+}
+
+function formatUtcDateTime(iso: string): string | null {
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return parsed.toISOString().replace(".000Z", "Z");
+}
+
+export function Hero({ copy, lang, liveBroadcast = null }: HeroProps) {
+  const labels = lang === "en"
+    ? {
+        live: "LIVE",
+        upcoming: "LIVE SOON",
+        title: "Live broadcast",
+        watchCta: "Watch on YouTube",
+        startsAt: "Starts (ART)",
+        startsAtUtc: "Starts (UTC)",
+        endsAt: "Ends (ART)",
+        endsAtUtc: "Ends (UTC)",
+      }
+    : {
+        live: "LIVE",
+        upcoming: "LIVE PRONTO",
+        title: "Transmision en vivo",
+        watchCta: "Ver en YouTube",
+        startsAt: "Inicio (ART)",
+        startsAtUtc: "Inicio (UTC)",
+        endsAt: "Fin (ART)",
+        endsAtUtc: "Fin (UTC)",
+      };
+
+  const locale = lang === "en" ? "en-US" : "es-AR";
+  const startAtArt = liveBroadcast?.streamStartAt ? formatArtDateTime(liveBroadcast.streamStartAt, locale) : null;
+  const endAtArt = liveBroadcast?.streamEndAt ? formatArtDateTime(liveBroadcast.streamEndAt, locale) : null;
+  const startAtUtc = liveBroadcast?.streamStartAt ? formatUtcDateTime(liveBroadcast.streamStartAt) : null;
+  const endAtUtc = liveBroadcast?.streamEndAt ? formatUtcDateTime(liveBroadcast.streamEndAt) : null;
+  const hasEventContext = Boolean(
+    liveBroadcast && liveBroadcast.roundNumber > 0 && liveBroadcast.circuitName !== "Live Broadcast",
+  );
+
   return (
     <section
       id="hero"
@@ -29,7 +95,8 @@ export function Hero({ copy }: HeroProps) {
       <div className="absolute top-0 right-0 h-full w-1 bg-gradient-to-b from-racing-yellow/60 via-transparent to-transparent" />
 
       <div className="relative z-10 mx-auto max-w-7xl px-6 pt-28 pb-20 md:pt-36 md:pb-24">
-        <div className="max-w-3xl">
+        <div className={liveBroadcast ? "grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,460px)] lg:items-start" : "max-w-3xl"}>
+          <div className="max-w-3xl">
           <div className="motion-safe:animate-fade-in mb-4 flex items-center gap-3">
             <span className="h-px w-8 bg-racing-yellow" />
             <span className="font-mono text-xs font-medium tracking-[0.3em] text-racing-yellow uppercase">
@@ -63,6 +130,84 @@ export function Hero({ copy }: HeroProps) {
               {copy.secondaryCta}
             </a>
           </div>
+        </div>
+
+          {liveBroadcast ? (
+            <aside className="motion-safe:animate-slide-in-right rounded-sm border border-racing-yellow/35 bg-racing-black/70 p-4 backdrop-blur-sm">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <span
+                  className={`inline-flex rounded-sm px-2 py-1 text-[10px] font-bold tracking-[0.22em] uppercase ${
+                    liveBroadcast.status === "live"
+                      ? "bg-red-500/20 text-red-300"
+                      : "bg-racing-yellow/20 text-racing-yellow"
+                  }`}
+                >
+                  {liveBroadcast.status === "live" ? labels.live : labels.upcoming}
+                </span>
+                <span className="text-[11px] text-racing-white/55 uppercase">
+                  {labels.title}
+                </span>
+              </div>
+
+              <h2 className="font-mono text-lg font-semibold text-racing-white uppercase">
+                {liveBroadcast.championshipName}
+              </h2>
+              {hasEventContext ? (
+                <p className="mt-1 text-xs text-racing-white/65 uppercase">
+                  {liveBroadcast.seasonYear} R{liveBroadcast.roundNumber} - {liveBroadcast.circuitName}
+                </p>
+              ) : null}
+
+              <div className="mt-3 overflow-hidden rounded-sm border border-racing-steel/40 bg-racing-carbon">
+                <div className="aspect-video">
+                  <iframe
+                    src={buildYouTubeEmbedUrl(liveBroadcast.streamVideoId)}
+                    title={`${liveBroadcast.championshipName} live broadcast`}
+                    loading="lazy"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    className="h-full w-full border-0"
+                  />
+                </div>
+              </div>
+
+              <dl className="mt-3 space-y-1 text-[11px] text-racing-white/60">
+                {startAtArt ? (
+                  <div className="flex items-start justify-between gap-3">
+                    <dt>{labels.startsAt}</dt>
+                    <dd className="text-right">{startAtArt}</dd>
+                  </div>
+                ) : null}
+                {startAtUtc ? (
+                  <div className="flex items-start justify-between gap-3">
+                    <dt>{labels.startsAtUtc}</dt>
+                    <dd className="text-right">{startAtUtc}</dd>
+                  </div>
+                ) : null}
+                {endAtArt ? (
+                  <div className="flex items-start justify-between gap-3">
+                    <dt>{labels.endsAt}</dt>
+                    <dd className="text-right">{endAtArt}</dd>
+                  </div>
+                ) : null}
+                {endAtUtc ? (
+                  <div className="flex items-start justify-between gap-3">
+                    <dt>{labels.endsAtUtc}</dt>
+                    <dd className="text-right">{endAtUtc}</dd>
+                  </div>
+                ) : null}
+              </dl>
+
+              <a
+                href={buildYouTubeWatchUrl(liveBroadcast.streamVideoId)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-flex rounded-sm border border-racing-yellow/45 px-3 py-2 text-xs font-bold tracking-wider text-racing-yellow uppercase transition-colors hover:border-racing-yellow hover:bg-racing-yellow/10"
+              >
+                {labels.watchCta}
+              </a>
+            </aside>
+          ) : null}
         </div>
       </div>
 

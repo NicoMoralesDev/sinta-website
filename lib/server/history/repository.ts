@@ -9,6 +9,7 @@ import type {
   EventQuery,
   EventParticipationCard,
   EventResultItem,
+  HomeLiveBroadcast,
   OverviewQuery,
   ResultFilterSet,
   ResultHighlight,
@@ -80,6 +81,7 @@ type DbFilterChampionshipRow = {
 
 type DbHighlightRow = {
   event_id: string;
+  championship_id: string;
   season_year: number;
   championship_slug: string;
   championship_name: string;
@@ -112,6 +114,33 @@ type DbCurrentLeaderboardRow = {
   completed: number;
   avg_position: number | null;
 };
+
+type DbHomeLiveBroadcastRow = {
+  event_id: string;
+  season_year: number;
+  championship_slug: string;
+  championship_name: string;
+  round_number: number;
+  circuit_name: string;
+  stream_video_id: string;
+  stream_start_at: string | null;
+  stream_end_at: string | null;
+  stream_override_mode: "auto" | "force_on" | "force_off";
+};
+
+function isMissingLiveBroadcastConfigSchemaError(error: unknown): boolean {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const maybeCode = (error as { code?: unknown }).code;
+  const maybeMessage = (error as { message?: unknown }).message;
+  if ((maybeCode !== "42P01" && maybeCode !== "42703") || typeof maybeMessage !== "string") {
+    return false;
+  }
+
+  return /\blive_broadcast_config\b/.test(maybeMessage);
+}
 
 function toEventResultItems(eventRows: DbEventRow[], resultRows: DbEventResultRow[]): EventResultItem[] {
   const resultsByEventId = new Map<string, DbEventResultRow[]>();
@@ -231,6 +260,11 @@ function appendEventFilters(query: EventQuery | DriverResultsQuery, values: unkn
     clauses.push(`c.season_year = $${values.length}`);
   }
 
+  if (query.championshipId) {
+    values.push(query.championshipId);
+    clauses.push(`c.id = $${values.length}::uuid`);
+  }
+
   if (query.championship) {
     values.push(query.championship);
     clauses.push(`c.slug = $${values.length}`);
@@ -241,6 +275,11 @@ function appendStatsFilters(query: StatsQuery, values: unknown[], clauses: strin
   if (query.year !== undefined) {
     values.push(query.year);
     clauses.push(`c.season_year = $${values.length}`);
+  }
+
+  if (query.championshipId) {
+    values.push(query.championshipId);
+    clauses.push(`c.id = $${values.length}::uuid`);
   }
 
   if (query.championship) {
@@ -258,6 +297,11 @@ function appendOverviewFilters(query: OverviewQuery, values: unknown[], clauses:
   if (query.year !== undefined) {
     values.push(query.year);
     clauses.push(`c.season_year = $${values.length}`);
+  }
+
+  if (query.championshipId) {
+    values.push(query.championshipId);
+    clauses.push(`c.id = $${values.length}::uuid`);
   }
 
   if (query.championship) {
@@ -462,6 +506,7 @@ export async function getHighlights(query: {
   limit: number;
   year?: number;
   championship?: string;
+  championshipId?: string;
   driver?: string;
 }): Promise<ResultHighlight[]> {
   const values: unknown[] = [];
@@ -475,6 +520,11 @@ export async function getHighlights(query: {
   if (query.championship) {
     values.push(query.championship);
     whereClauses.push(`h.championship_slug = $${values.length}`);
+  }
+
+  if (query.championshipId) {
+    values.push(query.championshipId);
+    whereClauses.push(`h.championship_id = $${values.length}::uuid`);
   }
 
   if (query.driver) {
@@ -496,6 +546,7 @@ export async function getHighlights(query: {
       with ranked as (
         select
           e.id as event_id,
+          c.id as championship_id,
           c.season_year,
           c.slug as championship_slug,
           c.name as championship_name,
@@ -520,6 +571,7 @@ export async function getHighlights(query: {
       )
       select
         event_id,
+        championship_id,
         season_year,
         championship_slug,
         championship_name,
@@ -621,7 +673,7 @@ export async function getResultsOverview(query: OverviewQuery): Promise<TeamOver
   );
 
   const activeDriversScopeResult =
-    query.year !== undefined || query.championship
+    query.year !== undefined || query.championship || query.championshipId
       ? scopedResult.rows.at(0)?.active_drivers ?? 0
       : (
           await getDbPool().query<{ active_drivers: number }>(
@@ -731,6 +783,104 @@ export async function getCurrentChampionshipSummary(
       completed: Number(row.completed ?? 0),
       avgPosition: row.avg_position === null ? null : Number(row.avg_position),
     })),
+  };
+}
+
+export async function getHomeLiveBroadcastCandidate(
+  nowIso: string,
+): Promise<Omit<HomeLiveBroadcast, "status"> | null> {
+  let row: DbHomeLiveBroadcastRow | null = null;
+
+  try {
+    const configResult: QueryResult<DbHomeLiveBroadcastRow> = await getDbPool().query(
+      `
+        select
+          coalesce(e.id::text, 'live-global') as event_id,
+          coalesce(c.season_year, extract(year from $1::timestamptz)::int) as season_year,
+          coalesce(c.slug, 'live') as championship_slug,
+          coalesce(c.name, 'SINTA Live') as championship_name,
+          coalesce(e.round_number, 0) as round_number,
+          coalesce(e.circuit_name, 'Live Broadcast') as circuit_name,
+          l.stream_video_id,
+          l.stream_start_at::text,
+          l.stream_end_at::text,
+          l.stream_override_mode
+        from live_broadcast_config l
+        left join events e on e.id = l.event_id and e.is_active = true
+        left join championships c on c.id = e.championship_id and c.is_active = true
+        where l.id = 1 and l.stream_video_id is not null
+        limit 1
+      `,
+      [nowIso],
+    );
+    row = configResult.rows.at(0) ?? null;
+  } catch (error) {
+    if (!isMissingLiveBroadcastConfigSchemaError(error)) {
+      throw error;
+    }
+
+    const legacyResult: QueryResult<DbHomeLiveBroadcastRow> = await getDbPool().query(
+      `
+        select
+          e.id as event_id,
+          c.season_year,
+          c.slug as championship_slug,
+          c.name as championship_name,
+          e.round_number,
+          e.circuit_name,
+          e.stream_video_id,
+          e.stream_start_at::text,
+          e.stream_end_at::text,
+          e.stream_override_mode
+        from events e
+        join championships c on c.id = e.championship_id
+        where
+          e.is_active = true
+          and c.is_active = true
+          and e.stream_video_id is not null
+          and (
+            e.stream_override_mode = 'force_on'
+            or (
+              e.stream_override_mode = 'auto'
+              and e.stream_start_at is not null
+              and e.stream_end_at is not null
+              and $1::timestamptz >= (e.stream_start_at - interval '30 minutes')
+              and $1::timestamptz <= e.stream_end_at
+            )
+          )
+        order by
+          case when e.stream_override_mode = 'force_on' then 0 else 1 end asc,
+          case
+            when e.stream_override_mode = 'auto'
+              then abs(extract(epoch from (e.stream_start_at - $1::timestamptz)))
+            else 0
+          end asc,
+          e.stream_start_at asc nulls last,
+          c.season_year desc,
+          e.round_number asc,
+          e.id asc
+        limit 1
+      `,
+      [nowIso],
+    );
+    row = legacyResult.rows.at(0) ?? null;
+  }
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    eventId: row.event_id,
+    seasonYear: row.season_year,
+    championshipSlug: row.championship_slug,
+    championshipName: row.championship_name,
+    roundNumber: row.round_number,
+    circuitName: row.circuit_name,
+    streamVideoId: row.stream_video_id,
+    streamStartAt: row.stream_start_at,
+    streamEndAt: row.stream_end_at,
+    streamOverrideMode: row.stream_override_mode,
   };
 }
 

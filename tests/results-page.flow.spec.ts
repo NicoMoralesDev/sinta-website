@@ -60,7 +60,7 @@ describe("results page flow", () => {
       searchParams: {
         lang: "en",
         year: "2026",
-        championship: "tz-4000",
+        championshipId: "champ-1",
         driver: "kevin-fontana",
         limit: "10",
       },
@@ -69,7 +69,7 @@ describe("results page flow", () => {
 
     expect(html).toContain("Browse historical race results");
     expect(html).toContain(
-      "/results?year=2026&amp;championship=tz-4000&amp;driver=kevin-fontana&amp;limit=10&amp;cursor=cursor-2&amp;lang=en",
+      "/results?year=2026&amp;championshipId=champ-1&amp;driver=kevin-fontana&amp;limit=10&amp;cursor=cursor-2&amp;lang=en",
     );
   });
 
@@ -90,13 +90,13 @@ describe("results page flow", () => {
       searchParams: {
         lang: "en",
         year: "2026",
-        championship: "tz-4000",
+        championshipId: "champ-1",
         limit: "10",
       },
     });
     const html = renderToStaticMarkup(element);
 
-    expect(html).toContain("/results?year=2026&amp;championship=tz-4000&amp;limit=10");
-    expect(html).toContain("/results?year=2026&amp;championship=tz-4000&amp;limit=10&amp;lang=en");
+    expect(html).toContain("/results?year=2026&amp;championshipId=champ-1&amp;limit=10");
+    expect(html).toContain("/results?year=2026&amp;championshipId=champ-1&amp;limit=10&amp;lang=en");
   });
 });

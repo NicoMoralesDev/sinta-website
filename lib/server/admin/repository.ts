@@ -2,6 +2,7 @@ import type { PoolClient } from "pg";
 
 import { getDbPool } from "@/lib/server/db";
 import type {
+  AdminLiveBroadcastConfig,
   AdminAuditLog,
   AdminChampionship,
   AdminDriver,
@@ -15,9 +16,11 @@ import type {
   CreateDriverInput,
   CreateEventInput,
   EventResultCellInput,
+  StreamOverrideMode,
   UpdateChampionshipInput,
   UpdateDriverInput,
   UpdateEventInput,
+  UpdateLiveBroadcastConfigInput,
 } from "./types";
 
 type AdminUserRow = {
@@ -56,11 +59,24 @@ type AdminEventRow = {
   round_number: number;
   circuit_name: string;
   event_date: string | null;
+  stream_video_id: string | null;
+  stream_start_at: string | null;
+  stream_end_at: string | null;
+  stream_override_mode: StreamOverrideMode;
   is_active: boolean;
   source_sheet: string;
   source_row: number;
   created_at: string;
   updated_at: string;
+};
+
+type AdminLiveBroadcastConfigRow = {
+  event_id: string | null;
+  stream_video_id: string | null;
+  stream_start_at: string | null;
+  stream_end_at: string | null;
+  stream_override_mode: StreamOverrideMode;
+  updated_at: string | null;
 };
 
 type AdminDriverRow = {
@@ -143,6 +159,52 @@ async function withTransaction<T>(operation: (client: PoolClient) => Promise<T>)
   }
 }
 
+function isMissingEventStreamColumnsError(error: unknown): boolean {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const maybeCode = (error as { code?: unknown }).code;
+  const maybeMessage = (error as { message?: unknown }).message;
+  if (maybeCode !== "42703" || typeof maybeMessage !== "string") {
+    return false;
+  }
+
+  return /\bstream_(video_id|start_at|end_at|override_mode)\b/.test(maybeMessage);
+}
+
+function isMissingLiveBroadcastConfigSchemaError(error: unknown): boolean {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const maybeCode = (error as { code?: unknown }).code;
+  const maybeMessage = (error as { message?: unknown }).message;
+  if ((maybeCode !== "42P01" && maybeCode !== "42703") || typeof maybeMessage !== "string") {
+    return false;
+  }
+
+  return /\blive_broadcast_config\b/.test(maybeMessage);
+}
+
+function eventStreamSelectClause(useLegacyFallback: boolean): string {
+  if (useLegacyFallback) {
+    return `
+        null::text as stream_video_id,
+        null::text as stream_start_at,
+        null::text as stream_end_at,
+        'auto'::text as stream_override_mode,
+    `;
+  }
+
+  return `
+        e.stream_video_id,
+        e.stream_start_at::text,
+        e.stream_end_at::text,
+        e.stream_override_mode,
+  `;
+}
+
 function mapAdminUser(row: AdminUserRow): AdminUser {
   return {
     id: row.id,
@@ -182,10 +244,25 @@ function mapEvent(row: AdminEventRow): AdminEvent {
     roundNumber: row.round_number,
     circuitName: row.circuit_name,
     eventDate: row.event_date,
+    streamVideoId: row.stream_video_id,
+    streamStartAt: row.stream_start_at,
+    streamEndAt: row.stream_end_at,
+    streamOverrideMode: row.stream_override_mode,
     isActive: row.is_active,
     sourceSheet: row.source_sheet,
     sourceRow: row.source_row,
     createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapLiveBroadcastConfig(row: AdminLiveBroadcastConfigRow): AdminLiveBroadcastConfig {
+  return {
+    eventId: row.event_id,
+    streamVideoId: row.stream_video_id,
+    streamStartAt: row.stream_start_at,
+    streamEndAt: row.stream_end_at,
+    streamOverrideMode: row.stream_override_mode,
     updatedAt: row.updated_at,
   };
 }
@@ -628,8 +705,7 @@ export async function listAdminEvents(filters: {
   appendOptionalFilter(values, clauses, filters.year, "c.season_year = $?");
   appendOptionalFilter(values, clauses, filters.championshipId, "e.championship_id = $?::uuid");
 
-  const result = await getDbPool().query<AdminEventRow>(
-    `
+  const buildQuery = (useLegacyFallback: boolean) => `
       select
         e.id,
         e.championship_id,
@@ -639,6 +715,7 @@ export async function listAdminEvents(filters: {
         e.round_number,
         e.circuit_name,
         e.event_date::text,
+        ${eventStreamSelectClause(useLegacyFallback)}
         e.is_active,
         e.source_sheet,
         e.source_row,
@@ -648,15 +725,24 @@ export async function listAdminEvents(filters: {
       join championships c on c.id = e.championship_id
       where ${clauses.join(" and ")}
       order by c.season_year desc, c.slug asc, e.round_number desc
-    `,
-    values,
-  );
-  return result.rows.map(mapEvent);
+    `;
+
+  try {
+    const result = await getDbPool().query<AdminEventRow>(buildQuery(false), values);
+    return result.rows.map(mapEvent);
+  } catch (error) {
+    if (!isMissingEventStreamColumnsError(error)) {
+      throw error;
+    }
+
+    const result = await getDbPool().query<AdminEventRow>(buildQuery(true), values);
+    return result.rows.map(mapEvent);
+  }
 }
 
 export async function getEventById(id: string): Promise<AdminEvent | null> {
-  const result = await getDbPool().query<AdminEventRow>(
-    `
+  const values: unknown[] = [id];
+  const buildQuery = (useLegacyFallback: boolean) => `
       select
         e.id,
         e.championship_id,
@@ -666,6 +752,7 @@ export async function getEventById(id: string): Promise<AdminEvent | null> {
         e.round_number,
         e.circuit_name,
         e.event_date::text,
+        ${eventStreamSelectClause(useLegacyFallback)}
         e.is_active,
         e.source_sheet,
         e.source_row,
@@ -675,38 +762,182 @@ export async function getEventById(id: string): Promise<AdminEvent | null> {
       join championships c on c.id = e.championship_id
       where e.id = $1
       limit 1
+    `;
+
+  try {
+    const result = await getDbPool().query<AdminEventRow>(buildQuery(false), values);
+    const row = result.rows.at(0);
+    return row ? mapEvent(row) : null;
+  } catch (error) {
+    if (!isMissingEventStreamColumnsError(error)) {
+      throw error;
+    }
+
+    const result = await getDbPool().query<AdminEventRow>(buildQuery(true), values);
+    const row = result.rows.at(0);
+    return row ? mapEvent(row) : null;
+  }
+}
+
+function defaultLiveBroadcastConfig(): AdminLiveBroadcastConfig {
+  return {
+    eventId: null,
+    streamVideoId: null,
+    streamStartAt: null,
+    streamEndAt: null,
+    streamOverrideMode: "auto",
+    updatedAt: null,
+  };
+}
+
+export async function getAdminLiveBroadcastConfigRecord(): Promise<AdminLiveBroadcastConfig> {
+  try {
+    const result = await getDbPool().query<AdminLiveBroadcastConfigRow>(
+      `
+        select
+          event_id::text,
+          stream_video_id,
+          stream_start_at::text,
+          stream_end_at::text,
+          stream_override_mode,
+          updated_at::text
+        from live_broadcast_config
+        where id = 1
+        limit 1
+      `,
+    );
+
+    const row = result.rows.at(0);
+    return row ? mapLiveBroadcastConfig(row) : defaultLiveBroadcastConfig();
+  } catch (error) {
+    if (!isMissingLiveBroadcastConfigSchemaError(error)) {
+      throw error;
+    }
+
+    return defaultLiveBroadcastConfig();
+  }
+}
+
+export async function updateAdminLiveBroadcastConfigRecord(
+  input: UpdateLiveBroadcastConfigInput & {
+    eventId: string | null;
+    streamVideoId: string | null;
+    streamStartAt: string | null;
+    streamEndAt: string | null;
+    streamOverrideMode: StreamOverrideMode;
+  },
+): Promise<AdminLiveBroadcastConfig> {
+  const result = await getDbPool().query<AdminLiveBroadcastConfigRow>(
+    `
+      insert into live_broadcast_config (
+        id,
+        event_id,
+        stream_video_id,
+        stream_start_at,
+        stream_end_at,
+        stream_override_mode,
+        updated_at
+      )
+      values (1, $1::uuid, $2, $3::timestamptz, $4::timestamptz, $5, now())
+      on conflict (id)
+      do update set
+        event_id = excluded.event_id,
+        stream_video_id = excluded.stream_video_id,
+        stream_start_at = excluded.stream_start_at,
+        stream_end_at = excluded.stream_end_at,
+        stream_override_mode = excluded.stream_override_mode,
+        updated_at = now()
+      returning
+        event_id::text,
+        stream_video_id,
+        stream_start_at::text,
+        stream_end_at::text,
+        stream_override_mode,
+        updated_at::text
     `,
-    [id],
+    [
+      input.eventId,
+      input.streamVideoId,
+      input.streamStartAt,
+      input.streamEndAt,
+      input.streamOverrideMode,
+    ],
   );
+
   const row = result.rows.at(0);
-  return row ? mapEvent(row) : null;
+  if (!row) {
+    throw new Error("Failed to update live broadcast config.");
+  }
+
+  return mapLiveBroadcastConfig(row);
 }
 
 export async function createEventRecord(input: CreateEventInput): Promise<AdminEvent> {
-  const result = await getDbPool().query<{ id: string }>(
-    `
-      insert into events (
-        championship_id,
-        round_number,
-        circuit_name,
-        event_date,
-        source_sheet,
-        source_row,
-        is_active,
-        updated_at
-      )
-      values ($1, $2, $3, $4::date, $5, $6, true, now())
-      returning id
-    `,
-    [
-      input.championshipId,
-      input.roundNumber,
-      input.circuitName,
-      input.eventDate,
-      input.sourceSheet,
-      input.sourceRow,
-    ],
-  );
+  let result;
+  try {
+    result = await getDbPool().query<{ id: string }>(
+      `
+        insert into events (
+          championship_id,
+          round_number,
+          circuit_name,
+          event_date,
+          stream_video_id,
+          stream_start_at,
+          stream_end_at,
+          stream_override_mode,
+          source_sheet,
+          source_row,
+          is_active,
+          updated_at
+        )
+        values ($1, $2, $3, $4::date, $5, $6::timestamptz, $7::timestamptz, $8, $9, $10, true, now())
+        returning id
+      `,
+      [
+        input.championshipId,
+        input.roundNumber,
+        input.circuitName,
+        input.eventDate,
+        input.streamVideoId,
+        input.streamStartAt,
+        input.streamEndAt,
+        input.streamOverrideMode,
+        input.sourceSheet,
+        input.sourceRow,
+      ],
+    );
+  } catch (error) {
+    if (!isMissingEventStreamColumnsError(error)) {
+      throw error;
+    }
+
+    result = await getDbPool().query<{ id: string }>(
+      `
+        insert into events (
+          championship_id,
+          round_number,
+          circuit_name,
+          event_date,
+          source_sheet,
+          source_row,
+          is_active,
+          updated_at
+        )
+        values ($1, $2, $3, $4::date, $5, $6, true, now())
+        returning id
+      `,
+      [
+        input.championshipId,
+        input.roundNumber,
+        input.circuitName,
+        input.eventDate,
+        input.sourceSheet,
+        input.sourceRow,
+      ],
+    );
+  }
+
   const id = result.rows.at(0)?.id;
   if (!id) {
     throw new Error("Failed to create event.");
@@ -719,36 +950,85 @@ export async function createEventRecord(input: CreateEventInput): Promise<AdminE
 }
 
 export async function updateEventRecord(id: string, input: UpdateEventInput): Promise<AdminEvent | null> {
-  const fields: string[] = [];
-  const values: unknown[] = [];
-  if (input.championshipId !== undefined) {
-    values.push(input.championshipId);
-    fields.push(`championship_id = $${values.length}::uuid`);
-  }
-  if (input.roundNumber !== undefined) {
-    values.push(input.roundNumber);
-    fields.push(`round_number = $${values.length}`);
-  }
-  if (input.circuitName !== undefined) {
-    values.push(input.circuitName);
-    fields.push(`circuit_name = $${values.length}`);
-  }
-  if (input.eventDate !== undefined) {
-    values.push(input.eventDate);
-    fields.push(`event_date = $${values.length}::date`);
-  }
-  if (fields.length === 0) {
+  const buildUpdatePayload = (useLegacyFallback: boolean) => {
+    const fields: string[] = [];
+    const values: unknown[] = [];
+
+    if (input.championshipId !== undefined) {
+      values.push(input.championshipId);
+      fields.push(`championship_id = $${values.length}::uuid`);
+    }
+    if (input.roundNumber !== undefined) {
+      values.push(input.roundNumber);
+      fields.push(`round_number = $${values.length}`);
+    }
+    if (input.circuitName !== undefined) {
+      values.push(input.circuitName);
+      fields.push(`circuit_name = $${values.length}`);
+    }
+    if (input.eventDate !== undefined) {
+      values.push(input.eventDate);
+      fields.push(`event_date = $${values.length}::date`);
+    }
+
+    if (!useLegacyFallback) {
+      if (input.streamVideoId !== undefined) {
+        values.push(input.streamVideoId);
+        fields.push(`stream_video_id = $${values.length}`);
+      }
+      if (input.streamStartAt !== undefined) {
+        values.push(input.streamStartAt);
+        fields.push(`stream_start_at = $${values.length}::timestamptz`);
+      }
+      if (input.streamEndAt !== undefined) {
+        values.push(input.streamEndAt);
+        fields.push(`stream_end_at = $${values.length}::timestamptz`);
+      }
+      if (input.streamOverrideMode !== undefined) {
+        values.push(input.streamOverrideMode);
+        fields.push(`stream_override_mode = $${values.length}`);
+      }
+    }
+
+    return { fields, values };
+  };
+
+  const payload = buildUpdatePayload(false);
+  if (payload.fields.length === 0) {
     return getEventById(id);
   }
-  values.push(id);
-  await getDbPool().query(
-    `
-      update events
-      set ${fields.join(", ")}, updated_at = now()
-      where id = $${values.length}
-    `,
-    values,
-  );
+
+  payload.values.push(id);
+  try {
+    await getDbPool().query(
+      `
+        update events
+        set ${payload.fields.join(", ")}, updated_at = now()
+        where id = $${payload.values.length}
+      `,
+      payload.values,
+    );
+  } catch (error) {
+    if (!isMissingEventStreamColumnsError(error)) {
+      throw error;
+    }
+
+    const legacyPayload = buildUpdatePayload(true);
+    if (legacyPayload.fields.length === 0) {
+      return getEventById(id);
+    }
+
+    legacyPayload.values.push(id);
+    await getDbPool().query(
+      `
+        update events
+        set ${legacyPayload.fields.join(", ")}, updated_at = now()
+        where id = $${legacyPayload.values.length}
+      `,
+      legacyPayload.values,
+    );
+  }
+
   return getEventById(id);
 }
 
@@ -1318,27 +1598,63 @@ export async function applyEventSnapshot(snapshot: Record<string, unknown>): Pro
   if (!snapshot.id) {
     return;
   }
-  await getDbPool().query(
-    `
-      update events
-      set
-        championship_id = $2::uuid,
-        round_number = $3,
-        circuit_name = $4,
-        event_date = $5::date,
-        is_active = $6,
-        updated_at = now()
-      where id = $1::uuid
-    `,
-    [
-      snapshot.id,
-      snapshot.championshipId,
-      snapshot.roundNumber,
-      snapshot.circuitName,
-      snapshot.eventDate ?? null,
-      snapshot.isActive ?? true,
-    ],
-  );
+  try {
+    await getDbPool().query(
+      `
+        update events
+        set
+          championship_id = $2::uuid,
+          round_number = $3,
+          circuit_name = $4,
+          event_date = $5::date,
+          stream_video_id = $6,
+          stream_start_at = $7::timestamptz,
+          stream_end_at = $8::timestamptz,
+          stream_override_mode = $9,
+          is_active = $10,
+          updated_at = now()
+        where id = $1::uuid
+      `,
+      [
+        snapshot.id,
+        snapshot.championshipId,
+        snapshot.roundNumber,
+        snapshot.circuitName,
+        snapshot.eventDate ?? null,
+        snapshot.streamVideoId ?? null,
+        snapshot.streamStartAt ?? null,
+        snapshot.streamEndAt ?? null,
+        snapshot.streamOverrideMode ?? "auto",
+        snapshot.isActive ?? true,
+      ],
+    );
+  } catch (error) {
+    if (!isMissingEventStreamColumnsError(error)) {
+      throw error;
+    }
+
+    await getDbPool().query(
+      `
+        update events
+        set
+          championship_id = $2::uuid,
+          round_number = $3,
+          circuit_name = $4,
+          event_date = $5::date,
+          is_active = $6,
+          updated_at = now()
+        where id = $1::uuid
+      `,
+      [
+        snapshot.id,
+        snapshot.championshipId,
+        snapshot.roundNumber,
+        snapshot.circuitName,
+        snapshot.eventDate ?? null,
+        snapshot.isActive ?? true,
+      ],
+    );
+  }
 }
 
 export async function applyDriverSnapshot(snapshot: Record<string, unknown>): Promise<void> {

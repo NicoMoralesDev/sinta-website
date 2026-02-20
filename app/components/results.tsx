@@ -9,17 +9,26 @@ type ResultsProps = {
   lang: Language;
   copy: ResultsCopy;
   events: EventParticipationCard[];
-  currentChampionshipSlug?: string;
+  currentChampionship?: {
+    id: string;
+    slug: string;
+    seasonYear: number;
+  };
 };
 
 function buildFullResultsHref(lang: Language): string {
   return lang === "en" ? "/results?lang=en" : "/results";
 }
 
-function buildCurrentChampionshipHref(lang: Language, championshipSlug?: string): string {
+function buildCurrentChampionshipHref(
+  lang: Language,
+  currentChampionship?: { id: string; slug: string; seasonYear: number },
+): string {
   const params = new URLSearchParams();
-  if (championshipSlug) {
-    params.set("championship", championshipSlug);
+  if (currentChampionship) {
+    params.set("year", String(currentChampionship.seasonYear));
+    params.set("championshipId", currentChampionship.id);
+    params.set("championship", currentChampionship.slug);
   }
 
   if (lang === "en") {
@@ -30,7 +39,7 @@ function buildCurrentChampionshipHref(lang: Language, championshipSlug?: string)
   return query ? `/results?${query}` : "/results";
 }
 
-export function Results({ lang, copy, events, currentChampionshipSlug }: ResultsProps) {
+export function Results({ lang, copy, events, currentChampionship }: ResultsProps) {
   return (
     <section id="results" className="relative bg-racing-carbon py-24 md:py-32">
       <div className="track-line absolute top-0 left-0 w-full" />
@@ -61,7 +70,7 @@ export function Results({ lang, copy, events, currentChampionshipSlug }: Results
             {copy.ctaAllResults}
           </Link>
           <Link
-            href={buildCurrentChampionshipHref(lang, currentChampionshipSlug)}
+            href={buildCurrentChampionshipHref(lang, currentChampionship)}
             className="inline-flex items-center rounded-sm border border-racing-yellow/40 px-4 py-2 text-xs font-bold tracking-wider text-racing-yellow uppercase transition-colors hover:border-racing-yellow hover:bg-racing-yellow/10"
           >
             {copy.ctaCurrentChampionship}
