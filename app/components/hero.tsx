@@ -142,7 +142,7 @@ export function Hero({ copy, lang, liveBroadcast = null }: HeroProps) {
 
           {liveBroadcast ? (
             <aside className="motion-safe:animate-slide-in-right rounded-sm border border-racing-yellow/35 bg-racing-black/70 p-4 backdrop-blur-sm">
-              <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="mb-3 flex items-center gap-3">
                 <span
                   className={`inline-flex rounded-sm px-2 py-1 text-[10px] font-bold tracking-[0.22em] uppercase ${
                     liveBroadcast.status === "live"
@@ -151,9 +151,6 @@ export function Hero({ copy, lang, liveBroadcast = null }: HeroProps) {
                   }`}
                 >
                   {liveBroadcast.status === "live" ? labels.live : labels.upcoming}
-                </span>
-                <span className="text-[11px] text-racing-white/55 uppercase">
-                  {labels.title}
                 </span>
               </div>
 
