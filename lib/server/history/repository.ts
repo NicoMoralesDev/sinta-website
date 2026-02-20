@@ -704,7 +704,16 @@ export async function getCurrentChampionshipSummary(
       from events e
       join championships c on c.id = e.championship_id
       where e.is_active = true and c.is_active = true
-      order by c.season_year desc, e.round_number desc, e.id desc
+      order by
+        case
+          when e.event_date is not null and e.event_date <= current_date then 0
+          when e.event_date is not null then 1
+          else 2
+        end asc,
+        e.event_date desc nulls last,
+        c.season_year desc,
+        e.round_number desc,
+        e.id desc
       limit 1
     `,
   );
