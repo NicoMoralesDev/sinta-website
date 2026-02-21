@@ -315,6 +315,14 @@ async function fetchEventRows(query: EventQuery): Promise<{ rows: DbEventRow[]; 
   const whereClauses: string[] = ["e.is_active = true", "c.is_active = true"];
 
   appendEventFilters(query, values, whereClauses);
+  whereClauses.push(
+    `exists (
+      select 1
+      from event_results er1
+      join drivers d1 on d1.id = er1.driver_id
+      where er1.event_id = e.id and er1.is_active = true and d1.is_active = true
+    )`,
+  );
 
   if (query.driver) {
     values.push(query.driver);
