@@ -120,6 +120,24 @@ describe("history repository", () => {
     expect(page.items).toHaveLength(1);
   });
 
+  it("requires active result rows when listing events", async () => {
+    queryMock.mockResolvedValueOnce({ rows: [] });
+
+    await getEventResultsPage({
+      year: undefined,
+      championship: undefined,
+      driver: undefined,
+      limit: 10,
+      offset: 0,
+    });
+
+    const firstQuery = String(queryMock.mock.calls[0]?.[0] ?? "");
+    expect(firstQuery).toContain("from event_results er1");
+    expect(firstQuery).toContain("er1.event_id = e.id");
+    expect(firstQuery).toContain("er1.is_active = true");
+    expect(firstQuery).toContain("d1.is_active = true");
+  });
+
   it("uses active drivers table for global overview", async () => {
     queryMock
       .mockResolvedValueOnce({
