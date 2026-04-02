@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Admin Results And Championship Editing** - Let admins manage the canonical event-result columns and championship organizer metadata safely inside existing workflows. (completed 2026-04-02)
 - [x] **Phase 3: Public Results, Organizer Display, And Driver Stats Correctness** - Expose the new result semantics and organizer metadata cleanly on public surfaces while keeping race-focused stats trustworthy. (completed 2026-04-02)
 - [x] **Phase 4: Event Results Share Image** - Generate a messaging-friendly image from the canonical public event results table. (completed 2026-04-02)
-- [ ] **Phase 5: Documentation Alignment** - Update project docs to match the brownfield runtime, new behaviors, and verification limits.
+- [x] **Phase 5: Documentation Alignment** - Update project docs to match the brownfield runtime, new behaviors, and verification limits. (completed 2026-04-02)
 
 ## Phase Details
 
@@ -87,8 +87,8 @@ Plans:
   2. Maintainer can find concise documentation for the `QS`/`S`/`QF`/`F`/`P` results model, points-based ordering, organizer metadata, the share-image flow, and any known verification limits for this milestone.
 **Plans**: 2 plans
 Plans:
-- [ ] 05-01-PLAN.md - Refresh `README.md` as the maintainer index and add a focused `docs/results-model.md` contract reference.
-- [ ] 05-02-PLAN.md - Update the admin dashboard and data import docs for the canonical workflows and real verification limits.
+- [x] 05-01-PLAN.md - Refresh `README.md` as the maintainer index and add a focused `docs/results-model.md` contract reference.
+- [x] 05-02-PLAN.md - Update the admin dashboard and data import docs for the canonical workflows and real verification limits.
 
 ## Progress
 
@@ -101,4 +101,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 2. Admin Results And Championship Editing | 2/2 | Complete | 2026-04-02 |
 | 3. Public Results, Organizer Display, And Driver Stats Correctness | 2/2 | Complete   | 2026-04-02 |
 | 4. Event Results Share Image | 3/3 | Complete | 2026-04-02 |
-| 5. Documentation Alignment | 0/TBD | Not started | - |
+| 5. Documentation Alignment | 2/2 | Complete | 2026-04-02 |

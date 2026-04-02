@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 4
-current_plan: 3
+current_phase: 5
+current_plan: 2
 status: completed
-stopped_at: Completed 04-03-PLAN.md
-last_updated: "2026-04-02T22:24:24.366Z"
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-04-02T23:09:18.863Z"
 last_activity: 2026-04-02
 progress:
   total_phases: 5
   completed_phases: 4
-  total_plans: 11
-  completed_plans: 11
+  total_plans: 13
+  completed_plans: 12
   percent: 100
 ---
 
@@ -27,11 +27,11 @@ See: .planning/PROJECT.md (updated 2026-04-02)
 
 ## Current Position
 
-Current Phase: 4
-Current Plan: 3
-Total Plans in Phase: 3
-Phase: 4 of 5 (Event Results Share Image)
-Plan: 3 of 3 in current phase
+Current Phase: 5
+Current Plan: 2
+Total Plans in Phase: 2
+Phase: 5 of 5 (Documentation Alignment)
+Plan: 2 of 2 in current phase
 Status: Phase Complete
 Last activity: 2026-04-02
 
@@ -67,6 +67,7 @@ Progress: [██████████] 100%
 | Phase 03-public-results-organizer-display-and-driver-stats-correctness P02 | 4min | 2 tasks | 3 files |
 | Phase 04-event-results-share-image P01 | 7min | 2 tasks | 7 files |
 | Phase 04-event-results-share-image P03 | 4min | 3 tasks | 7 files |
+| Phase 05-documentation-alignment P01 | 3min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -107,6 +108,8 @@ Recent decisions affecting current work:
 - [Phase 04-event-results-share-image]: Widen the existing image route with one optional validated driver slug instead of adding a second DTO or suppressing sharing.
 - [Phase 04-event-results-share-image]: Treat filtered by-id lookups with zero participant rows as not-found so mismatched manual URLs fail safely with 404.
 - [Phase 04-event-results-share-image]: Preserve the eventId-based route contract and thread only the active driver slug plus existing language flag through results share links.
+- [Phase 05-documentation-alignment]: Keep README.md as a concise English maintainer index and move milestone-specific results behavior into docs/results-model.md.
+- [Phase 05-documentation-alignment]: Document parser fixture, env-dependent database checks, and manual image review as explicit verification limits instead of implying a clean fresh-checkout full suite.
 
 ### Pending Todos
 
@@ -118,6 +121,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-02T22:24:24.362Z
-Stopped at: Completed 04-03-PLAN.md
+Last session: 2026-04-02T23:09:18.860Z
+Stopped at: Completed 05-01-PLAN.md
 Resume file: None

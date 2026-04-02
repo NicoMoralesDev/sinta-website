@@ -37,8 +37,8 @@
 
 ### Documentation
 
-- [ ] **DOC-01**: Maintainer can read project documentation that reflects the current runtime setup and admin/results workflows
-- [ ] **DOC-02**: Maintainer can find documentation for the `QS`/`S`/`QF`/`F`/`P` results model, points-based ordering, organizer metadata, share-image flow, and any verification limits relevant to this milestone
+- [x] **DOC-01**: Maintainer can read project documentation that reflects the current runtime setup and admin/results workflows
+- [x] **DOC-02**: Maintainer can find documentation for the `QS`/`S`/`QF`/`F`/`P` results model, points-based ordering, organizer metadata, share-image flow, and any verification limits relevant to this milestone
 
 ## v2 Requirements
 
@@ -84,8 +84,8 @@
 | SHARE-02 | Phase 4 | Complete |
 | STAT-01 | Phase 3 | Complete |
 | STAT-02 | Phase 3 | Complete |
-| DOC-01 | Phase 5 | Pending |
-| DOC-02 | Phase 5 | Pending |
+| DOC-01 | Phase 5 | Complete |
+| DOC-02 | Phase 5 | Complete |
 
 **Coverage:**
 - v1 requirements: 16 total
