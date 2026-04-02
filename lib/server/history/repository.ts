@@ -445,6 +445,39 @@ async function fetchEventRows(query: EventQuery): Promise<{ rows: DbEventRow[]; 
   return { rows, hasNext };
 }
 
+async function fetchEventRowById(eventId: string): Promise<DbEventRow | null> {
+  const result: QueryResult<DbEventRow> = await getDbPool().query(
+    `
+      select
+        e.id as event_id,
+        c.season_year,
+        c.slug as championship_slug,
+        c.name as championship_name,
+        e.round_number,
+        e.circuit_name,
+        e.event_date::text as event_date,
+        c.primary_session_label,
+        c.secondary_session_label
+      from events e
+      join championships c on c.id = e.championship_id
+      where
+        e.id = $1::uuid
+        and e.is_active = true
+        and c.is_active = true
+        and exists (
+          select 1
+          from event_results er1
+          join drivers d1 on d1.id = er1.driver_id
+          where er1.event_id = e.id and er1.is_active = true and d1.is_active = true
+        )
+      limit 1
+    `,
+    [eventId],
+  );
+
+  return result.rows.at(0) ?? null;
+}
+
 async function fetchEventRowsForDriver(
   slug: string,
   query: DriverResultsQuery,
@@ -569,6 +602,20 @@ export async function getEventParticipationPage(query: EventQuery): Promise<{
     items: toParticipationCards(page.items),
     hasNext: page.hasNext,
   };
+}
+
+export async function getEventParticipationCardById(
+  eventId: string,
+): Promise<EventParticipationCard | null> {
+  const eventRow = await fetchEventRowById(eventId);
+  if (!eventRow) {
+    return null;
+  }
+
+  const resultRows = await fetchResultsForEvents([eventId]);
+  const eventResultItems = toEventResultItems([eventRow], resultRows);
+
+  return toParticipationCards(eventResultItems).at(0) ?? null;
 }
 
 export async function getDriverResultsPage(

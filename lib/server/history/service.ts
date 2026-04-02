@@ -4,6 +4,7 @@ import {
   getDriverResultsPage,
   getDriverStats,
   getDrivers,
+  getEventParticipationCardById,
   getEventParticipationPage,
   getEventResultsPage,
   getHomeLiveBroadcastCandidate,
@@ -201,6 +202,22 @@ export async function getResultsEventParticipation(
   };
 }
 
+export async function getResultsEventParticipationById(
+  eventId: string,
+): Promise<EventParticipationCard> {
+  const normalizedEventId = parseUuid(eventId, "eventId");
+  if (!normalizedEventId) {
+    throw new HistoryValidationError("eventId must be a UUID.");
+  }
+
+  const event = await getEventParticipationCardById(normalizedEventId);
+  if (!event) {
+    throw new HistoryNotFoundError(`Event not found: ${normalizedEventId}`);
+  }
+
+  return event;
+}
+
 export async function getResultsHighlights(searchParams: URLSearchParams): Promise<ResultHighlight[]> {
   const limit = parseLimit(searchParams.get("limit"), DEFAULT_HIGHLIGHTS_LIMIT, MAX_HIGHLIGHTS_LIMIT);
   const year = parseInteger(searchParams.get("year"), "year", { min: 2000, max: 2100 });
@@ -387,4 +404,3 @@ export async function getHomeLiveBroadcast(nowIso = new Date().toISOString()): P
     status: resolveHomeLiveBroadcastStatus(candidate, nowIso),
   };
 }
-
