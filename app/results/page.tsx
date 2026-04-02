@@ -43,6 +43,11 @@ function toSearchParams(input?: Record<string, SearchValue>): URLSearchParams {
   return params;
 }
 
+function normalizeOrganizerName(value: string | null | undefined): string | null {
+  const normalized = value?.trim();
+  return normalized ? normalized : null;
+}
+
 function buildResultsHref({
   year,
   championshipId,
@@ -117,6 +122,7 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
           invalid: "Invalid filters. Check the URL parameters and try again.",
           rankingTitle: "Driver snapshot",
           currentTitle: "Current championship",
+          organizerLabel: "Organizer",
           backHome: "Back to home",
           next: "Load more",
           noLeaderboard: "No ranking data for this filter.",
@@ -139,6 +145,7 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
           invalid: "Filtros inválidos. Revisa los parámetros de la URL e intenta otra vez.",
           rankingTitle: "Resumen de pilotos",
           currentTitle: "Torneo vigente",
+          organizerLabel: "Organizador",
           backHome: "Volver al inicio",
           next: "Cargar más",
           noLeaderboard: "No hay ranking para este filtro.",
@@ -152,11 +159,16 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
     getCurrentChampionship(new URLSearchParams("limit=4")).catch(() => null),
   ]);
 
-  const selectedChampionshipId =
-    championshipIdParam ??
+  const selectedChampionship =
+    filters?.championships.find((item) => item.id === championshipIdParam) ??
     filters?.championships.find((item) =>
       item.slug === championship && (year ? String(item.seasonYear) === year : true)
-    )?.id;
+    );
+  const selectedChampionshipId =
+    championshipIdParam ?? selectedChampionship?.id;
+
+  const selectedOrganizerName = normalizeOrganizerName(selectedChampionship?.organizerName);
+  const currentOrganizerName = normalizeOrganizerName(current?.championship.organizerName);
 
   if (selectedChampionshipId) {
     query.set("championshipId", selectedChampionshipId);
@@ -318,6 +330,17 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
             </Link>
           </form>
 
+          {selectedChampionship && selectedOrganizerName ? (
+            <p className="mb-6 text-sm text-racing-white/70">
+              <span className="font-semibold text-racing-white">
+                {selectedChampionship.seasonYear} - {selectedChampionship.name}
+              </span>
+              <span className="ml-3 text-racing-white/55">
+                {i18n.organizerLabel}: {selectedOrganizerName}
+              </span>
+            </p>
+          ) : null}
+
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div>
               {eventsResult.error ? (
@@ -406,6 +429,11 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
                     <p className="mt-2 text-sm text-racing-white">
                       {current.championship.seasonYear} - {current.championship.name}
                     </p>
+                    {!selectedChampionship && currentOrganizerName ? (
+                      <p className="mt-2 text-sm text-racing-white/60">
+                        {i18n.organizerLabel}: {currentOrganizerName}
+                      </p>
+                    ) : null}
                     {current.leaderboard.length === 0 ? (
                       <p className="mt-3 text-sm text-racing-white/60">{i18n.noLeaderboard}</p>
                     ) : (
@@ -464,4 +492,3 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
     </>
   );
 }
-
