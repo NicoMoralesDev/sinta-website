@@ -5,15 +5,15 @@ milestone_name: milestone
 current_phase: 1
 current_plan: 2
 status: executing
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-04-02T17:01:33.662Z"
-last_activity: 2026-04-02
+stopped_at: Completed 01-03-PLAN.md
+last_updated: "2026-04-02T17:25:49.153Z"
+last_activity: 2026-04-02 — Completed 01-03 canonical public read ordering and consumer compatibility work.
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 4
-  completed_plans: 2
-  percent: 50
+  completed_plans: 3
+  percent: 75
 ---
 
 # Project State
@@ -33,29 +33,30 @@ Total Plans in Phase: 4
 Phase: 1 of 5 (Results Contract, Ordering, And Championship Metadata)
 Plan: 2 of 4 in current phase
 Status: In progress
-Last activity: 2026-04-02 — Completed 01-01 schema migration and shared canonical contract work.
+Last activity: 2026-04-02 — Completed 01-03 canonical public read ordering and consumer compatibility work.
 
-Progress: [█████░░░░░] 50%
+Progress: [████████░░] 75%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 13 min
-- Total execution time: 0.4 hours
+- Total plans completed: 3
+- Average duration: 11 min
+- Total execution time: 0.5 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-results-contract-ordering-and-championship-metadata | 2 | 26min | 13min |
+| 01-results-contract-ordering-and-championship-metadata | 3 | 32min | 11min |
 
 **Recent Trend:**
-- Last 5 plans: 01-00 (6min), 01-01 (20min)
+- Last 5 plans: 01-00 (6min), 01-01 (20min), 01-03 (6min)
 - Trend: Stable
 
 *Updated after each plan completion or major planning revision*
 | Phase 01 P01 | 20min | 2 tasks | 8 files |
+| Phase 01 P03 | 6min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -75,6 +76,9 @@ Recent decisions affecting current work:
 - [Phase 01]: Use a replacement session_kind_v2 enum migration path so legacy primary/secondary rows remap cleanly to s/f while canonical labels remain exact.
 - [Phase 01]: Keep AdminEventResultRow legacy-typed for now and add canonical input aliases separately so Phase 1 contract work does not force premature admin editor rewrites.
 - [Phase 01]: Thread organizerName through existing typed mappers immediately so the new contract remains type-safe before repository and route behavior changes land in later plans.
+- [Phase 01]: Sort public participants by points first, then fall back to final-race position and driver name for legacy rows without points.
+- [Phase 01]: Keep organizerName DTO-compatible on public payloads in this plan, but leave display polish to the later public-surface phase.
+- [Phase 01]: Preserve compatibility with lingering legacy primary and secondary values by treating them as aliases for s/f ordering on the public consumer path.
 
 ### Pending Todos
 
@@ -87,6 +91,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-02T17:01:33.660Z
-Stopped at: Completed 01-01-PLAN.md
+Last session: 2026-04-02T17:25:49.150Z
+Stopped at: Completed 01-03-PLAN.md
 Resume file: None
