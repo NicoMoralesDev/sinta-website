@@ -98,7 +98,7 @@ lib/server/history/
 ├── service.ts                                  # New getResultsEventParticipationById()
 └── share-image.tsx                             # New image-only JSX renderer
 tests/
-├── results-share-image-route.spec.ts           # New route test
+├── history-share-image-route.spec.ts           # New route test
 └── results-page.flow.spec.ts                   # Extend existing flow coverage
 ```
 
@@ -297,27 +297,27 @@ return new ImageResponse(
 |----------|-------|
 | Framework | Vitest `3.2.4` |
 | Config file | [vitest.config.ts](/home/nico/projects/sinta-website/vitest.config.ts) |
-| Quick run command | `npm run test -- tests/results-page.flow.spec.ts tests/results-share-image-route.spec.ts` |
-| Full suite command | `npm run test` |
+| Quick run command | `npx vitest run tests/results-page.flow.spec.ts tests/history-share-image-route.spec.ts` |
+| Full suite command | `npx vitest run tests/history-share-image-route.spec.ts tests/results-page.flow.spec.ts tests/history-api.spec.ts tests/history-api-v2.spec.ts && npm run typecheck` |
 
 ### Phase Requirements → Test Map
 
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
-| SHARE-01 | `/results` exposes a per-event share trigger that targets the image route for that event | flow | `npm run test -- tests/results-page.flow.spec.ts` | ✅ |
-| SHARE-01 | `GET /api/v1/results/events/[id]/image` returns success for a valid public event and `404` for a missing event | route | `npm run test -- tests/results-share-image-route.spec.ts` | ❌ Wave 0 |
-| SHARE-02 | Image route uses the same participant order and visible columns as the selected public event table | route/unit | `npm run test -- tests/results-share-image-route.spec.ts` | ❌ Wave 0 |
+| SHARE-01 | `/results` exposes a per-event share trigger that targets the image route for that event | flow | `npx vitest run tests/results-page.flow.spec.ts` | ✅ |
+| SHARE-01 | `GET /api/v1/results/events/[id]/image` returns success for a valid public event and `404` for a missing event | route | `npx vitest run tests/history-share-image-route.spec.ts` | ❌ Wave 0 |
+| SHARE-02 | Image route uses the same participant order and visible columns as the selected public event table, and dense tables expand to fit every driver | route/unit | `npx vitest run tests/history-share-image-route.spec.ts` | ❌ Wave 0 |
 | SHARE-02 | Long event tables remain legible and include all drivers | manual visual | Manual QA in browser against at least one dense event and one sparse historical event | ❌ Manual only |
 
 ### Sampling Rate
 
-- **Per task commit:** `npm run test -- tests/results-page.flow.spec.ts tests/results-share-image-route.spec.ts`
+- **Per task commit:** `npx vitest run tests/results-page.flow.spec.ts tests/history-share-image-route.spec.ts`
 - **Per wave merge:** `npm run lint` and `npm run typecheck`
 - **Phase gate:** Targeted phase suite green, plus manual visual QA for dense and sparse events. `npm run test` remains a known repo-level risk on clean checkout because `tests/history-parser.spec.ts` depends on a missing workbook fixture.
 
 ### Wave 0 Gaps
 
-- [ ] `tests/results-share-image-route.spec.ts` — covers SHARE-01 and SHARE-02 route selection, cache headers, missing-event handling, and parity inputs
+- [ ] `tests/history-share-image-route.spec.ts` — covers SHARE-01 and SHARE-02 route selection, cache headers, missing-event handling, parity inputs, and dense-event row-fit behavior
 - [ ] Manual QA checklist for at least:
 - [ ] one event with `QS/S/QF/F/P`
 - [ ] one sparse historical event with only `F`

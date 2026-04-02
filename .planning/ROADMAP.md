@@ -72,7 +72,10 @@ Plans:
   1. Visitor can trigger generation of a shareable image for a specific event results table from the public results experience.
   2. The generated image includes every driver shown in the selected event table.
   3. The generated image matches the visible result columns and points-based ranking shown for that event.
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 04-01-PLAN.md - Extract shared event-participation helpers and build the one-event public share-image route.
+- [ ] 04-02-PLAN.md - Expose the `/results` share trigger and lock the deterministic page-to-route contract with flow coverage.
 
 ### Phase 5: Documentation Alignment
 **Goal**: Maintainers can rely on the project documentation for the current runtime behavior and this milestone's changes.
@@ -93,5 +96,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 1. Results Contract, Ordering, And Championship Metadata | 4/4 | Complete   | 2026-04-02 |
 | 2. Admin Results And Championship Editing | 2/2 | Complete | 2026-04-02 |
 | 3. Public Results, Organizer Display, And Driver Stats Correctness | 2/2 | Complete   | 2026-04-02 |
-| 4. Event Results Share Image | 0/TBD | Not started | - |
+| 4. Event Results Share Image | 0/2 | Not started | - |
 | 5. Documentation Alignment | 0/TBD | Not started | - |
