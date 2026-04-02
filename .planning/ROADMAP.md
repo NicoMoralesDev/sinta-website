@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Results Contract, Ordering, And Championship Metadata** - Make `QS`, `S`, `QF`, `F`, `P`, points-based ordering, and championship organizer metadata safe first-class parts of the shared data model. (completed 2026-04-02)
 - [x] **Phase 2: Admin Results And Championship Editing** - Let admins manage the canonical event-result columns and championship organizer metadata safely inside existing workflows. (completed 2026-04-02)
-- [ ] **Phase 3: Public Results, Organizer Display, And Driver Stats Correctness** - Expose the new result semantics and organizer metadata cleanly on public surfaces while keeping race-focused stats trustworthy.
+- [x] **Phase 3: Public Results, Organizer Display, And Driver Stats Correctness** - Expose the new result semantics and organizer metadata cleanly on public surfaces while keeping race-focused stats trustworthy. (completed 2026-04-02)
 - [ ] **Phase 4: Event Results Share Image** - Generate a messaging-friendly image from the canonical public event results table.
 - [ ] **Phase 5: Documentation Alignment** - Update project docs to match the brownfield runtime, new behaviors, and verification limits.
 
@@ -61,8 +61,8 @@ Plans:
   5. Visitor sees the recent-positions chart and related race statistics remain race-correct after the data-model change.
 **Plans**: 2 plans
 Plans:
-- [ ] 03-01-PLAN.md - Add organizer rendering to the public results hub and lock canonical sparse-column behavior with focused flow regressions.
-- [ ] 03-02-PLAN.md - Make driver trend and heatmap derivation final-race-only and add explicit sparkline-orientation coverage.
+- [x] 03-01-PLAN.md - Add organizer rendering to the public results hub and lock canonical sparse-column behavior with focused flow regressions.
+- [x] 03-02-PLAN.md - Make driver trend and heatmap derivation final-race-only and add explicit sparkline-orientation coverage.
 
 ### Phase 4: Event Results Share Image
 **Goal**: Visitors can generate a shareable image that faithfully represents a specific public event results table.
@@ -92,6 +92,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Results Contract, Ordering, And Championship Metadata | 4/4 | Complete   | 2026-04-02 |
 | 2. Admin Results And Championship Editing | 2/2 | Complete | 2026-04-02 |
-| 3. Public Results, Organizer Display, And Driver Stats Correctness | 0/TBD | Not started | - |
+| 3. Public Results, Organizer Display, And Driver Stats Correctness | 2/2 | Complete   | 2026-04-02 |
 | 4. Event Results Share Image | 0/TBD | Not started | - |
 | 5. Documentation Alignment | 0/TBD | Not started | - |

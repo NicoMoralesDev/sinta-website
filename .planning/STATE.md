@@ -2,17 +2,17 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 2
+current_phase: 3
 current_plan: 2
-status: ready_for_verification
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-04-02T18:46:15.773Z"
-last_activity: 2026-04-02 — Completed 02-02 responsive canonical admin results editor and organizer metadata UI.
+status: completed
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-04-02T19:37:17.712Z"
+last_activity: 2026-04-02
 progress:
   total_phases: 5
-  completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
+  completed_phases: 3
+  total_plans: 8
+  completed_plans: 8
   percent: 100
 ---
 
@@ -23,26 +23,26 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-02)
 
 **Core value:** SINTA can publish accurate, easy-to-consume championship results and driver stats quickly, and keep them maintainable through the existing admin workflow.
-**Current focus:** Phase 2 - Admin Results And Championship Editing
+**Current focus:** Phase 3 - Public Results, Organizer Display, And Driver Stats Correctness
 
 ## Current Position
 
-Current Phase: 2
+Current Phase: 3
 Current Plan: 2
 Total Plans in Phase: 2
-Phase: 2 of 5 (Admin Results And Championship Editing)
+Phase: 3 of 5 (Public Results, Organizer Display, And Driver Stats Correctness)
 Plan: 2 of 2 in current phase
 Status: Phase Complete
-Last activity: 2026-04-02 — Completed 02-02 responsive canonical admin results editor and organizer metadata UI.
+Last activity: 2026-04-02
 
 Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 9 min
-- Total execution time: 0.9 hours
+- Total plans completed: 8
+- Average duration: 8 min
+- Total execution time: 1.1 hours
 
 **By Phase:**
 
@@ -50,9 +50,10 @@ Progress: [██████████] 100%
 |-------|-------|-------|----------|
 | 01-results-contract-ordering-and-championship-metadata | 4 | 41min | 10min |
 | 02-admin-results-and-championship-editing | 2 | 15min | 8min |
+| 03-public-results-organizer-display-and-driver-stats-correctness | 2 | 8min | 4min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (20min), 01-02 (9min), 01-03 (6min), 02-01 (7min), 02-02 (8min)
+- Last 5 plans: 01-03 (6min), 02-01 (7min), 02-02 (8min), 03-01 (4min), 03-02 (4min)
 - Trend: Stable
 
 *Updated after each plan completion or major planning revision*
@@ -61,6 +62,8 @@ Progress: [██████████] 100%
 | Phase 01 P02 | 9min | 2 tasks | 8 files |
 | Phase 02-admin-results-and-championship-editing P01 | 7min | 2 tasks | 5 files |
 | Phase 02-admin-results-and-championship-editing P02 | 8min | 2 tasks | 6 files |
+| Phase 03-public-results-organizer-display-and-driver-stats-correctness P01 | 4min | 2 tasks | 2 files |
+| Phase 03-public-results-organizer-display-and-driver-stats-correctness P02 | 4min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -92,6 +95,10 @@ Recent decisions affecting current work:
 - [Phase 02-admin-results-and-championship-editing]: Render the admin results table from the backend fieldOrder and fieldLabels contract, with compact canonical fallbacks only for tight layouts.
 - [Phase 02-admin-results-and-championship-editing]: Derive dirty admin result patches by normalized per-cell comparison so whitespace or case-only input changes do not produce unnecessary writes.
 - [Phase 02-admin-results-and-championship-editing]: Normalize blank organizer values to null in client payload helpers so create and update flows stay optional without extra UI rules.
+- [Phase 03-public-results-organizer-display-and-driver-stats-correctness]: Render organizer text from selected filter metadata first and only fall back to the current championship card when no championship is selected.
+- [Phase 03-public-results-organizer-display-and-driver-stats-correctness]: Keep canonical ordering, sparse-column behavior, and participant order protected with flow-level regressions instead of changing shared rendering helpers.
+- [Phase 03]: Verify sparkline direction by asserting rendered SVG polyline coordinates instead of changing the existing component.
+- [Phase 03]: Keep driver chart shaping page-local and select only final-race ( or legacy ) results per event.
 
 ### Pending Todos
 
@@ -104,6 +111,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-02T18:46:15.770Z
-Stopped at: Completed 02-02-PLAN.md
+Last session: 2026-04-02T19:37:17.709Z
+Stopped at: Completed 03-02-PLAN.md
 Resume file: None
