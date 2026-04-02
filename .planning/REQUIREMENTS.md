@@ -16,7 +16,7 @@
 
 - [x] **ADMIN-01**: Admin can view and edit `QS`, `S`, `QF`, `F`, and `P` in the event results workflow
 - [x] **ADMIN-02**: Admin can update a result cell or event row without unrelated persisted result values being dropped by the save flow
-- [ ] **ADMIN-03**: Admin can create and update championship/tournament organizer metadata in championship management
+- [x] **ADMIN-03**: Admin can create and update championship/tournament organizer metadata in championship management
 
 ### Public Results
 
@@ -75,7 +75,7 @@
 | DATA-04 | Phase 1 | Complete |
 | ADMIN-01 | Phase 2 | Complete |
 | ADMIN-02 | Phase 2 | Complete |
-| ADMIN-03 | Phase 2 | Pending |
+| ADMIN-03 | Phase 2 | Complete |
 | RESULT-01 | Phase 3 | Pending |
 | RESULT-02 | Phase 3 | Pending |
 | RESULT-03 | Phase 3 | Pending |
