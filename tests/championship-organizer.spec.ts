@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { AdminActor, AdminChampionship } from "@/lib/server/admin/types";
+import type { AdminChampionship } from "@/lib/server/admin/types";
 
 const {
   createChampionshipRecordMock,
@@ -56,12 +56,12 @@ vi.mock("@/app/api/v1/admin/_utils", () => ({
 import { GET, PATCH, POST } from "@/app/api/v1/admin/championships/route";
 import { createChampionship, listChampionships, updateChampionship } from "@/lib/server/admin/service";
 
-const ACTOR: AdminActor = {
+const ACTOR = {
   userId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
   username: "owner",
   role: "owner",
   mustChangePassword: false,
-};
+} as const;
 const CHAMPIONSHIP_ID = "44444444-4444-4444-8444-444444444444";
 
 function makeChampionship(overrides: Partial<AdminChampionship> = {}): AdminChampionship {

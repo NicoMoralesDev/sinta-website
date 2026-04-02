@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type {
-  AdminActor,
   AdminDriver,
   AdminEvent,
   AdminEventResultRow,
@@ -39,12 +38,12 @@ vi.mock("@/lib/server/admin/repository", async () => {
 
 import { updateEventResults } from "@/lib/server/admin/service";
 
-const ACTOR: AdminActor = {
+const ACTOR = {
   userId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
   username: "owner",
   role: "owner",
   mustChangePassword: false,
-};
+} as const;
 
 const DRIVER: AdminDriver = {
   id: "11111111-1111-4111-8111-111111111111",

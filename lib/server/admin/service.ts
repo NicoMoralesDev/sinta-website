@@ -1,6 +1,4 @@
 import {
-  CANONICAL_RESULT_FIELDS,
-  type CanonicalResultField,
   createAdminSessionToken,
   generateTemporaryPassword,
   getAdminRuntimeConfig,
@@ -9,6 +7,7 @@ import {
   parseAdminSessionToken,
   verifyAdminPassword,
 } from "./auth";
+import { CANONICAL_RESULT_FIELDS, type CanonicalResultField } from "@/lib/server/history/types";
 import {
   AdminAuthError,
   AdminForbiddenError,
@@ -645,6 +644,9 @@ function toResultSnapshotRows(value: unknown): EventResultCellInput[] {
     }
 
     const sessionKind = row.sessionKind;
+    if (typeof sessionKind !== "string") {
+      continue;
+    }
     if (
       sessionKind !== "primary" &&
       sessionKind !== "secondary" &&

@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AdminValidationError } from "@/lib/server/admin/errors";
 import type {
-  AdminActor,
   AdminDriver,
   AdminEvent,
   AdminEventResultRow,
@@ -63,12 +62,12 @@ vi.mock("@/app/api/v1/admin/_utils", () => ({
 import { PUT as putEventResultsRoute } from "@/app/api/v1/admin/events/[id]/results/route";
 import * as adminService from "@/lib/server/admin/service";
 
-const ACTOR: AdminActor = {
+const ACTOR = {
   userId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
   username: "owner",
   role: "owner",
   mustChangePassword: false,
-};
+} as const;
 
 const DRIVER: AdminDriver = {
   id: "11111111-1111-4111-8111-111111111111",
