@@ -188,6 +188,41 @@ describe("results page flow", () => {
     expect(html).toContain("/results?year=2026&amp;championshipId=champ-1&amp;limit=10&amp;lang=en");
   });
 
+  it("renders share image links for results events using the canonical event id", async () => {
+    getFiltersMock.mockResolvedValueOnce({
+      years: [2026],
+      championships: [],
+      drivers: [],
+    });
+    getCurrentChampionshipMock.mockResolvedValueOnce(null);
+    getResultsStatsMock.mockResolvedValueOnce([]);
+    getResultsEventParticipationMock.mockResolvedValueOnce({
+      items: [
+        {
+          eventId: "event-1",
+          seasonYear: 2026,
+          championshipSlug: "tz-4000",
+          championshipName: "TZ 4000",
+          roundNumber: 3,
+          circuitName: "Interlagos",
+          eventDate: null,
+          participants: [],
+        },
+      ],
+      nextCursor: null,
+    });
+
+    const element = await ResultsPage({
+      searchParams: {
+        lang: "en",
+      },
+    });
+    const html = renderToStaticMarkup(element);
+
+    expect(html).toContain("Share image");
+    expect(html).toContain("/api/v1/results/events/event-1/image?lang=en");
+  });
+
   it("renders canonical session order qs, s, qf, f, and p without inserting empty sparse historical columns", async () => {
     getFiltersMock.mockResolvedValueOnce({
       years: [2026],
