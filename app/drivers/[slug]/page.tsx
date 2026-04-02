@@ -15,6 +15,7 @@ import {
   getDriverProfileBySlug,
   getFilters,
 } from "@/lib/server/history/service";
+import type { EventResultEntry } from "@/lib/server/history/types";
 
 export const revalidate = 120;
 
@@ -47,6 +48,10 @@ function toSearchParams(input?: Record<string, SearchValue>): URLSearchParams {
   }
 
   return params;
+}
+
+function getRaceResult(results: EventResultEntry[]): EventResultEntry | null {
+  return results.find((result) => result.sessionKind === "f" || result.sessionKind === "secondary") ?? null;
 }
 
 function buildDriverHref({
@@ -271,34 +276,18 @@ export default async function DriverProfilePage({ params, searchParams }: Driver
   }));
 
   const numericPositions = historyResult.history.items
-    .flatMap((event) => event.results.map((result) => result.position).filter((value): value is number => value !== null))
+    .map((event) => getRaceResult(event.results)?.position ?? null)
+    .filter((value): value is number => value !== null)
     .slice(0, 20)
     .reverse();
 
   const heatmapItems = historyResult.history.items.slice(0, 24).map((event) => {
-    const bestSession = event.results.reduce(
-      (best, session) => {
-        if (!best) {
-          return session;
-        }
-
-        if (session.position !== null && best.position !== null) {
-          return session.position < best.position ? session : best;
-        }
-
-        if (session.position !== null && best.position === null) {
-          return session;
-        }
-
-        return best;
-      },
-      null as (typeof event.results)[number] | null,
-    );
+    const raceResult = getRaceResult(event.results);
 
     return {
       roundLabel: `${event.seasonYear} R${event.roundNumber}`,
-      position: bestSession?.position ?? null,
-      status: bestSession?.status ?? null,
+      position: raceResult?.position ?? null,
+      status: raceResult?.status ?? null,
     };
   });
 

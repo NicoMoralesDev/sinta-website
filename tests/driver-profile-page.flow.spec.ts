@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 
 const {
@@ -20,6 +20,12 @@ vi.mock("@/lib/server/history/service", () => ({
 import DriverProfilePage from "@/app/drivers/[slug]/page";
 
 describe("driver profile page flow", () => {
+  beforeEach(() => {
+    getFiltersMock.mockReset();
+    getDriverProfileBySlugMock.mockReset();
+    getDriverHistoryMock.mockReset();
+  });
+
   it("renders profile and keeps filters in next-page link", async () => {
     getFiltersMock.mockResolvedValueOnce({
       years: [2026],
@@ -114,5 +120,192 @@ describe("driver profile page flow", () => {
 
     expect(html).toContain("Driver not found.");
     expect(html).toContain("/results?lang=en");
+  });
+
+  it("renders race-only trend and heatmap values for mixed-session events", async () => {
+    getFiltersMock.mockResolvedValueOnce({
+      years: [2026],
+      championships: [{ id: "champ-1", seasonYear: 2026, slug: "tz-4000", name: "TZ 4000" }],
+      drivers: [],
+    });
+    getDriverProfileBySlugMock.mockResolvedValueOnce({
+      slug: "kevin-fontana",
+      canonicalName: "Kevin Fontana",
+      sortName: "Fontana, Kevin",
+      countryCode: "ar",
+      countryNameEs: "Argentina",
+      countryNameEn: "Argentina",
+      roleEs: "Piloto",
+      roleEn: "Driver",
+      isActive: true,
+      stats: {
+        driverSlug: "kevin-fontana",
+        canonicalName: "Kevin Fontana",
+        wins: 2,
+        podiums: 4,
+        top5: 6,
+        top10: 8,
+        completed: 10,
+        dnf: 1,
+        dnq: 0,
+        dsq: 0,
+        absent: 0,
+      },
+    });
+    getDriverHistoryMock.mockResolvedValueOnce({
+      items: [
+        {
+          eventId: "event-1",
+          seasonYear: 2026,
+          championshipSlug: "tz-4000",
+          championshipName: "TZ 4000",
+          roundNumber: 1,
+          circuitName: "Interlagos",
+          eventDate: null,
+          results: [
+            {
+              driverSlug: "kevin-fontana",
+              driverName: "Kevin Fontana",
+              sessionKind: "qs",
+              sessionLabel: "Qualifying Sprint",
+              position: 1,
+              status: null,
+              rawValue: "1",
+            },
+            {
+              driverSlug: "kevin-fontana",
+              driverName: "Kevin Fontana",
+              sessionKind: "s",
+              sessionLabel: "Sprint",
+              position: 2,
+              status: null,
+              rawValue: "2",
+            },
+            {
+              driverSlug: "kevin-fontana",
+              driverName: "Kevin Fontana",
+              sessionKind: "qf",
+              sessionLabel: "Qualifying Final",
+              position: 3,
+              status: null,
+              rawValue: "3",
+            },
+            {
+              driverSlug: "kevin-fontana",
+              driverName: "Kevin Fontana",
+              sessionKind: "f",
+              sessionLabel: "Final",
+              position: 4,
+              status: null,
+              rawValue: "4",
+            },
+            {
+              driverSlug: "kevin-fontana",
+              driverName: "Kevin Fontana",
+              sessionKind: "p",
+              sessionLabel: "Points",
+              position: 25,
+              status: null,
+              rawValue: "25",
+            },
+          ],
+        },
+        {
+          eventId: "event-2",
+          seasonYear: 2026,
+          championshipSlug: "tz-4000",
+          championshipName: "TZ 4000",
+          roundNumber: 2,
+          circuitName: "Termas",
+          eventDate: null,
+          results: [
+            {
+              driverSlug: "kevin-fontana",
+              driverName: "Kevin Fontana",
+              sessionKind: "qs",
+              sessionLabel: "Qualifying Sprint",
+              position: 2,
+              status: null,
+              rawValue: "2",
+            },
+            {
+              driverSlug: "kevin-fontana",
+              driverName: "Kevin Fontana",
+              sessionKind: "qf",
+              sessionLabel: "Qualifying Final",
+              position: 1,
+              status: null,
+              rawValue: "1",
+            },
+            {
+              driverSlug: "kevin-fontana",
+              driverName: "Kevin Fontana",
+              sessionKind: "secondary",
+              sessionLabel: "Final",
+              position: 6,
+              status: "DNF",
+              rawValue: "DNF",
+            },
+            {
+              driverSlug: "kevin-fontana",
+              driverName: "Kevin Fontana",
+              sessionKind: "p",
+              sessionLabel: "Points",
+              position: 18,
+              status: null,
+              rawValue: "18",
+            },
+          ],
+        },
+        {
+          eventId: "event-3",
+          seasonYear: 2026,
+          championshipSlug: "tz-4000",
+          championshipName: "TZ 4000",
+          roundNumber: 3,
+          circuitName: "Concordia",
+          eventDate: null,
+          results: [
+            {
+              driverSlug: "kevin-fontana",
+              driverName: "Kevin Fontana",
+              sessionKind: "qs",
+              sessionLabel: "Qualifying Sprint",
+              position: 5,
+              status: null,
+              rawValue: "5",
+            },
+            {
+              driverSlug: "kevin-fontana",
+              driverName: "Kevin Fontana",
+              sessionKind: "p",
+              sessionLabel: "Points",
+              position: 12,
+              status: null,
+              rawValue: "12",
+            },
+          ],
+        },
+      ],
+      nextCursor: null,
+    });
+
+    const element = await DriverProfilePage({
+      params: { slug: "kevin-fontana" },
+      searchParams: {
+        lang: "en",
+        championshipId: "champ-1",
+        limit: "10",
+      },
+    });
+    const html = renderToStaticMarkup(element);
+
+    expect(html).toContain("Best: P4 | Worst: P6");
+    expect(html).toContain("2026 R1: P4");
+    expect(html).toContain("2026 R2: P6");
+    expect(html).toContain("2026 R3: -");
+    expect(html).not.toContain("Best: P1 | Worst: P25");
+    expect(html).not.toContain("2026 R1: P1");
+    expect(html).not.toContain("2026 R2: P1");
   });
 });
