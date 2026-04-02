@@ -365,6 +365,126 @@ describe("admin event results contract", () => {
     expect(replaceEventResultsMock).not.toHaveBeenCalled();
   });
 
+  it("rejects points rows that use status tokens instead of integer values", async () => {
+    await expect(
+      adminService.updateEventResults(
+        ACTOR,
+        EVENT.id,
+        {
+          rows: [
+            {
+              driverId: DRIVER.id,
+              sessionKind: "p",
+              position: null,
+              status: "DNF",
+              rawValue: "DNF",
+              isActive: true,
+            },
+          ],
+        },
+      ),
+    ).rejects.toThrow(AdminValidationError);
+
+    expect(replaceEventResultsMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects points rows that are negative or non-integer", async () => {
+    await expect(
+      adminService.updateEventResults(
+        ACTOR,
+        EVENT.id,
+        {
+          rows: [
+            {
+              driverId: DRIVER.id,
+              sessionKind: "p",
+              position: -1,
+              status: null,
+              rawValue: "-1",
+              isActive: true,
+            },
+          ],
+        },
+      ),
+    ).rejects.toThrow(AdminValidationError);
+
+    await expect(
+      adminService.updateEventResults(
+        ACTOR,
+        EVENT.id,
+        {
+          rows: [
+            {
+              driverId: DRIVER.id,
+              sessionKind: "p",
+              position: 2.5,
+              status: null,
+              rawValue: "2.5",
+              isActive: true,
+            },
+          ],
+        },
+      ),
+    ).rejects.toThrow(AdminValidationError);
+
+    expect(replaceEventResultsMock).not.toHaveBeenCalled();
+  });
+
+  it("accepts explicit clear tombstones through the admin results route adapter", async () => {
+    const updateEventResultsSpy = vi.spyOn(adminService, "updateEventResults").mockResolvedValueOnce({
+      ok: true,
+      dryRun: false,
+      data: {
+        rows: [],
+      },
+      warnings: [],
+    });
+
+    parseAdminJsonBodyMock.mockResolvedValueOnce({
+      rows: [
+        {
+          driverId: DRIVER.id,
+          sessionKind: "qf",
+          position: null,
+          status: null,
+          rawValue: "",
+          isActive: false,
+        },
+      ],
+    });
+
+    const response = await putEventResultsRoute(new Request("http://localhost/api/v1/admin/events/results", {
+      method: "PUT",
+    }), {
+      params: Promise.resolve({ id: EVENT.id }),
+    });
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(updateEventResultsSpy).toHaveBeenCalledWith(ACTOR, EVENT.id, {
+      rows: [
+        {
+          driverId: DRIVER.id,
+          sessionKind: "qf",
+          position: null,
+          status: null,
+          rawValue: "",
+          isActive: false,
+        },
+      ],
+    }, {
+      requestId: "req-1",
+    });
+    expect(body).toEqual({
+      ok: true,
+      dryRun: false,
+      data: {
+        rows: [],
+      },
+      warnings: [],
+    });
+  });
+
   it("accepts canonical qs, s, qf, f, and p raw values through updateEventResults and the admin results route adapter", async () => {
     const updateEventResultsSpy = vi.spyOn(adminService, "updateEventResults").mockResolvedValueOnce({
       ok: true,

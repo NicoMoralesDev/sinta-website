@@ -187,4 +187,32 @@ describe("admin event results preserve", () => {
       expect.objectContaining({ sessionKind: "p", rawValue: "25", position: 0 }),
     ]);
   });
+
+  it("removes a persisted canonical row when the incoming patch is an explicit clear tombstone", async () => {
+    listEventResultsByEventIdMock.mockResolvedValue([
+      makeStoredRow({ driverId: DRIVER.id, sessionKind: "s", position: 5, status: null, rawValue: "5", isActive: true }, 1),
+      makeStoredRow({ driverId: DRIVER.id, sessionKind: "p", position: 18, status: null, rawValue: "18", isActive: true }, 2),
+    ]);
+
+    const result = await updateEventResults(ACTOR, EVENT.id, {
+      rows: [
+        {
+          driverId: DRIVER.id,
+          sessionKind: "s",
+          position: null,
+          status: null,
+          rawValue: "",
+          isActive: false,
+        },
+      ],
+    });
+
+    expect(replaceEventResultsMock).toHaveBeenCalledWith(EVENT.id, [
+      expect.objectContaining({ sessionKind: "p", rawValue: "18", position: 18 }),
+    ]);
+    expect(replaceEventResultsMock.mock.calls.at(0)?.[1]).toHaveLength(1);
+    expect(result.data.rows).toEqual([
+      expect.objectContaining({ sessionKind: "p", rawValue: "18", position: 18 }),
+    ]);
+  });
 });
