@@ -29,7 +29,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Historical events that do not have every canonical session value continue to load and save without validation failures or synthetic session data.
   3. Public consumers can retrieve event result data with canonical result fields and points-based ordering.
   4. Championship/tournament organizer metadata can be stored and retrieved through the shared data model.
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 01-01-PLAN.md - Establish the schema migration and shared canonical result plus organizer contracts.
+- [ ] 01-02-PLAN.md - Make admin result writes and championship persistence safe for canonical fields and organizer metadata.
+- [ ] 01-03-PLAN.md - Expose canonical public reads, points-first ordering, and minimal consumer compatibility.
 
 ### Phase 2: Admin Results And Championship Editing
 **Goal**: Admins can maintain canonical event-result fields and championship organizer metadata safely inside the existing workflows.
@@ -79,7 +83,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Results Contract, Ordering, And Championship Metadata | 0/TBD | Not started | - |
+| 1. Results Contract, Ordering, And Championship Metadata | 0/3 | Not started | - |
 | 2. Admin Results And Championship Editing | 0/TBD | Not started | - |
 | 3. Public Results, Organizer Display, And Driver Stats Correctness | 0/TBD | Not started | - |
 | 4. Event Results Share Image | 0/TBD | Not started | - |
