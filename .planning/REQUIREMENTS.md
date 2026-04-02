@@ -20,20 +20,20 @@
 
 ### Public Results
 
-- [ ] **RESULT-01**: Visitor can view event result tables using the canonical column order `QS`, `S`, `QF`, `F`, `P`
-- [ ] **RESULT-02**: Visitor sees event participants ordered by points instead of final-race position
-- [ ] **RESULT-03**: Visitor does not see noisy empty session columns for historical events that lack `QS` or `QF` data
-- [ ] **RESULT-04**: Visitor can see the championship/tournament organizer rendered in an appropriate public championship label or heading
+- [x] **RESULT-01**: Visitor can view event result tables using the canonical column order `QS`, `S`, `QF`, `F`, `P`
+- [x] **RESULT-02**: Visitor sees event participants ordered by points instead of final-race position
+- [x] **RESULT-03**: Visitor does not see noisy empty session columns for historical events that lack `QS` or `QF` data
+- [x] **RESULT-04**: Visitor can see the championship/tournament organizer rendered in an appropriate public championship label or heading
 
 ### Sharing
 
-- [ ] **SHARE-01**: Visitor can generate a shareable image for a specific event results table from the public results experience
-- [ ] **SHARE-02**: Generated share image includes all drivers in the selected event table and preserves the canonical column order and points-based ranking shown to the visitor
+- [x] **SHARE-01**: Visitor can generate a shareable image for a specific event results table from the public results experience
+- [x] **SHARE-02**: Generated share image includes all drivers in the selected event table and preserves the canonical column order and points-based ranking shown to the visitor
 
 ### Driver Stats
 
-- [ ] **STAT-01**: Visitor sees the recent-positions chart with race positions plotted in the correct direction so better finishes read as better performance
-- [ ] **STAT-02**: Visitor sees driver trend and aggregate race statistics remain race-correct after `QS`, `QF`, and `P` support is added
+- [x] **STAT-01**: Visitor sees the recent-positions chart with race positions plotted in the correct direction so better finishes read as better performance
+- [x] **STAT-02**: Visitor sees driver trend and aggregate race statistics remain race-correct after `QS`, `QF`, and `P` support is added
 
 ### Documentation
 
@@ -76,14 +76,14 @@
 | ADMIN-01 | Phase 2 | Complete |
 | ADMIN-02 | Phase 2 | Complete |
 | ADMIN-03 | Phase 2 | Complete |
-| RESULT-01 | Phase 3 | Pending |
-| RESULT-02 | Phase 3 | Pending |
-| RESULT-03 | Phase 3 | Pending |
-| RESULT-04 | Phase 3 | Pending |
-| SHARE-01 | Phase 4 | Pending |
-| SHARE-02 | Phase 4 | Pending |
-| STAT-01 | Phase 3 | Pending |
-| STAT-02 | Phase 3 | Pending |
+| RESULT-01 | Phase 3 | Complete |
+| RESULT-02 | Phase 3 | Complete |
+| RESULT-03 | Phase 3 | Complete |
+| RESULT-04 | Phase 3 | Complete |
+| SHARE-01 | Phase 4 | Complete |
+| SHARE-02 | Phase 4 | Complete |
+| STAT-01 | Phase 3 | Complete |
+| STAT-02 | Phase 3 | Complete |
 | DOC-01 | Phase 5 | Pending |
 | DOC-02 | Phase 5 | Pending |
 
