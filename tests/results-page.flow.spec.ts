@@ -99,4 +99,8 @@ describe("results page flow", () => {
     expect(html).toContain("/results?year=2026&amp;championshipId=champ-1&amp;limit=10");
     expect(html).toContain("/results?year=2026&amp;championshipId=champ-1&amp;limit=10&amp;lang=en");
   });
+
+  it.todo("renders canonical session order qs, s, qf, f, and p without inserting empty sparse historical columns");
+
+  it.todo("surfaces championship organizerName in the results heading once shared metadata reaches the page");
 });

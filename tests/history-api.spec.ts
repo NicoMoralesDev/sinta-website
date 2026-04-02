@@ -62,4 +62,8 @@ describe("results events API route", () => {
       nextCursor: null,
     });
   });
+
+  it.todo("returns canonical qs, s, qf, f, and p results in session order for event payloads");
+
+  it.todo("omits sparse canonical columns from historical event payloads when those sessions were never stored");
 });

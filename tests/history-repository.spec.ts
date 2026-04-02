@@ -230,5 +230,12 @@ describe("history repository", () => {
     expect(firstQuery).toContain("e.event_date is not null and e.event_date <= current_date");
     expect(firstQuery).toContain("e.event_date desc nulls last");
   });
-});
 
+  it.todo(
+    "orders event participants by points first and falls back to final race session order when legacy rows omit points",
+  );
+
+  it.todo(
+    "limits race-only aggregate queries to canonical f rows instead of counting qs, s, qf, or p values",
+  );
+});

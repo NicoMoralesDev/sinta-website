@@ -85,4 +85,6 @@ describe("results v2 API routes", () => {
       error: "year must be a number",
     });
   });
+
+  it.todo("returns organizerName in the current championship payload once championship metadata is widened");
 });
