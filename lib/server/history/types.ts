@@ -1,6 +1,26 @@
-﻿export type SessionKind = "primary" | "secondary";
+﻿export const CANONICAL_RESULT_FIELDS = ["qs", "s", "qf", "f", "p"] as const;
+
+export type CanonicalResultField = (typeof CANONICAL_RESULT_FIELDS)[number];
+export type SessionKind = "primary" | "secondary";
 
 export type ResultStatus = "DNF" | "DNQ" | "DSQ" | "ABSENT";
+
+export type CanonicalResultValue = {
+  position: number | null;
+  status: ResultStatus | null;
+  rawValue: string;
+};
+
+export type CanonicalResultCell = CanonicalResultValue & {
+  field: CanonicalResultField;
+  sessionLabel: string;
+};
+
+export type CanonicalResultEntry = {
+  driverSlug: string;
+  driverName: string;
+  fields: Partial<Record<CanonicalResultField, CanonicalResultCell>>;
+};
 
 export type TeamMemberRecord = {
   slug: string;
@@ -27,6 +47,7 @@ export type ChampionshipFilter = {
   seasonYear: number;
   slug: string;
   name: string;
+  organizerName: string | null;
 };
 
 export type ResultFilterSet = {
@@ -135,6 +156,7 @@ export type CurrentChampionshipSummary = {
     seasonYear: number;
     slug: string;
     name: string;
+    organizerName: string | null;
   };
   events: EventParticipationCard[];
   leaderboard: Array<{
@@ -238,4 +260,3 @@ export type DriverSeed = {
   roleEn: string;
   aliases: string[];
 };
-

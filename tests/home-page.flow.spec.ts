@@ -42,6 +42,7 @@ function createCurrentChampionship(
       seasonYear: 2026,
       slug: "tz-4000",
       name: fallbackChampionshipName,
+      organizerName: null,
     },
     events: events.map((event) => ({
       eventId: `event-${event.roundNumber}`,

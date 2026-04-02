@@ -77,6 +77,7 @@ type DbFilterChampionshipRow = {
   season_year: number;
   slug: string;
   name: string;
+  organizer_name: string | null;
 };
 
 type DbHighlightRow = {
@@ -103,6 +104,7 @@ type DbCurrentChampionshipRow = {
   season_year: number;
   championship_slug: string;
   championship_name: string;
+  organizer_name: string | null;
 };
 
 type DbCurrentLeaderboardRow = {
@@ -708,7 +710,8 @@ export async function getCurrentChampionshipSummary(
         c.id as championship_id,
         c.season_year,
         c.slug as championship_slug,
-        c.name as championship_name
+        c.name as championship_name,
+        c.organizer_name
       from events e
       join championships c on c.id = e.championship_id
       where e.is_active = true and c.is_active = true
@@ -789,6 +792,7 @@ export async function getCurrentChampionshipSummary(
       seasonYear: latest.season_year,
       slug: latest.championship_slug,
       name: latest.championship_name,
+      organizerName: latest.organizer_name,
     },
     events,
     leaderboard: leaderboardResult.rows.map((row) => ({
@@ -907,7 +911,7 @@ export async function getResultFilters(): Promise<ResultFilterSet> {
       "select distinct season_year from championships where is_active = true order by season_year desc",
     ),
     getDbPool().query<DbFilterChampionshipRow>(
-      "select id, season_year, slug, name from championships where is_active = true order by season_year desc, name asc",
+      "select id, season_year, slug, name, organizer_name from championships where is_active = true order by season_year desc, name asc",
     ),
     getDbPool().query<Pick<DbDriverRow, "slug" | "canonical_name">>(
       "select slug, canonical_name from drivers where is_active = true order by sort_name asc",
@@ -921,6 +925,7 @@ export async function getResultFilters(): Promise<ResultFilterSet> {
       seasonYear: row.season_year,
       slug: row.slug,
       name: row.name,
+      organizerName: row.organizer_name,
     })),
     drivers: driversResult.rows.map((row) => ({
       slug: row.slug,
@@ -1032,4 +1037,3 @@ export async function getDriverBySlug(slug: string): Promise<DriverProfile | nul
     stats,
   };
 }
-

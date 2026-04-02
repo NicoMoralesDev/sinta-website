@@ -43,6 +43,7 @@ type AdminChampionshipRow = {
   season_year: number;
   name: string;
   slug: string;
+  organizer_name: string | null;
   primary_session_label: string;
   secondary_session_label: string;
   is_active: boolean;
@@ -226,6 +227,7 @@ function mapChampionship(row: AdminChampionshipRow): AdminChampionship {
     seasonYear: row.season_year,
     name: row.name,
     slug: row.slug,
+    organizerName: row.organizer_name,
     primarySessionLabel: row.primary_session_label,
     secondarySessionLabel: row.secondary_session_label,
     isActive: row.is_active,
@@ -554,6 +556,7 @@ export async function listAdminChampionships(includeInactive: boolean): Promise<
         season_year,
         name,
         slug,
+        organizer_name,
         primary_session_label,
         secondary_session_label,
         is_active,
@@ -576,6 +579,7 @@ export async function getChampionshipById(id: string): Promise<AdminChampionship
         season_year,
         name,
         slug,
+        organizer_name,
         primary_session_label,
         secondary_session_label,
         is_active,
@@ -609,6 +613,7 @@ export async function createChampionshipRecord(input: CreateChampionshipInput): 
         season_year,
         name,
         slug,
+        organizer_name,
         primary_session_label,
         secondary_session_label,
         is_active,
@@ -660,6 +665,7 @@ export async function updateChampionshipRecord(
         season_year,
         name,
         slug,
+        organizer_name,
         primary_session_label,
         secondary_session_label,
         is_active,
@@ -683,6 +689,7 @@ export async function setChampionshipActive(id: string, isActive: boolean): Prom
         season_year,
         name,
         slug,
+        organizer_name,
         primary_session_label,
         secondary_session_label,
         is_active,
@@ -1696,4 +1703,3 @@ export async function applyEventResultsSnapshot(
 ): Promise<void> {
   await replaceEventResults(eventId, snapshotRows);
 }
-

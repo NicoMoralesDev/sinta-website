@@ -1,7 +1,11 @@
-import type { ResultStatus, SessionKind } from "@/lib/server/history/types";
+import type { CanonicalResultField, ResultStatus, SessionKind } from "@/lib/server/history/types";
 
 export type AdminRole = "owner" | "editor";
 export type StreamOverrideMode = "auto" | "force_on" | "force_off";
+export type AdminCanonicalResultField = CanonicalResultField;
+export type AdminLegacyResultKind = "primary" | "secondary";
+export type AdminResultInputKind = AdminCanonicalResultField | AdminLegacyResultKind;
+export type AdminResultRecordKind = AdminCanonicalResultField | SessionKind;
 
 export type AdminSession = {
   userId: string;
@@ -29,6 +33,7 @@ export type AdminChampionship = {
   seasonYear: number;
   name: string;
   slug: string;
+  organizerName: string | null;
   primarySessionLabel: string;
   secondarySessionLabel: string;
   isActive: boolean;
@@ -230,7 +235,7 @@ export type UpdateDriverInput = {
 
 export type EventResultCellInput = {
   driverId: string;
-  sessionKind: SessionKind;
+  sessionKind: AdminResultInputKind;
   position: number | null;
   status: ResultStatus | null;
   rawValue: string;

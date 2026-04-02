@@ -1007,6 +1007,7 @@ export async function createChampionship(
           seasonYear: payload.seasonYear,
           name: payload.name,
           slug: payload.slug,
+          organizerName: null,
           primarySessionLabel: payload.primarySessionLabel,
           secondarySessionLabel: payload.secondarySessionLabel,
           isActive: true,
@@ -2015,4 +2016,3 @@ export async function revertEntity(
     auditLogId: revertAudit.id,
   };
 }
-
