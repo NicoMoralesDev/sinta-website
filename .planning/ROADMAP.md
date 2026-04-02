@@ -44,7 +44,10 @@ Plans:
   1. Admin can open an event and edit `QS`, `S`, `QF`, `F`, and `P` in the same results workflow.
   2. Admin can update one result cell without unrelated persisted result cells being dropped by the save flow.
   3. Admin can create and update organizer metadata in the championship/tournament management flow.
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [x] 02-01-PLAN.md - Publish the canonical admin results backend contract and safe dirty-cell patch semantics.
+- [ ] 02-02-PLAN.md - Build the responsive canonical results editor and organizer metadata UI in the existing admin flows.
 
 ### Phase 3: Public Results, Organizer Display, And Driver Stats Correctness
 **Goal**: Visitors can trust the public results and driver stats surfaces when the canonical result model and organizer metadata are present.
@@ -85,7 +88,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Results Contract, Ordering, And Championship Metadata | 4/4 | Complete   | 2026-04-02 |
-| 2. Admin Results And Championship Editing | 0/TBD | Not started | - |
+| 2. Admin Results And Championship Editing | 1/2 | In Progress | - |
 | 3. Public Results, Organizer Display, And Driver Stats Correctness | 0/TBD | Not started | - |
 | 4. Event Results Share Image | 0/TBD | Not started | - |
 | 5. Documentation Alignment | 0/TBD | Not started | - |
