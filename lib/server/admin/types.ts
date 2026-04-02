@@ -108,24 +108,22 @@ export type AdminEventResultRow = {
   updatedAt: string;
 };
 
+export type AdminEventResultCellValue = {
+  position: number | null;
+  status: ResultStatus | null;
+  rawValue: string;
+  isActive: boolean;
+};
+
 export type AdminEventResultsGrid = {
   event: AdminEvent;
+  fieldOrder: AdminCanonicalResultField[];
+  fieldLabels: Record<AdminCanonicalResultField, string>;
   drivers: Array<{
     driverId: string;
     driverSlug: string;
     driverName: string;
-    primary: {
-      position: number | null;
-      status: ResultStatus | null;
-      rawValue: string;
-      isActive: boolean;
-    } | null;
-    secondary: {
-      position: number | null;
-      status: ResultStatus | null;
-      rawValue: string;
-      isActive: boolean;
-    } | null;
+    results: Partial<Record<AdminCanonicalResultField, AdminEventResultCellValue>>;
   }>;
 };
 

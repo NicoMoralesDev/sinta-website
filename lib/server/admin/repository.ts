@@ -4,11 +4,13 @@ import { getDbPool } from "@/lib/server/db";
 import type {
   AdminLiveBroadcastConfig,
   AdminAuditLog,
+  AdminCanonicalResultField,
   AdminChampionship,
   AdminResultRecordKind,
   AdminDriver,
   AdminDriverAlias,
   AdminEvent,
+  AdminEventResultCellValue,
   AdminEventResultRow,
   AdminEventResultsGrid,
   AdminRole,
@@ -23,6 +25,8 @@ import type {
   UpdateEventInput,
   UpdateLiveBroadcastConfigInput,
 } from "./types";
+
+const ADMIN_RESULTS_FIELD_ORDER: AdminCanonicalResultField[] = ["qs", "s", "qf", "f", "p"];
 
 type AdminUserRow = {
   id: string;
@@ -327,6 +331,21 @@ function mapAuditRow(row: AdminAuditRow): AdminAuditLog {
     requestId: row.request_id,
     createdAt: row.created_at,
   };
+}
+
+function toCanonicalAdminResultField(
+  sessionKind: AdminResultRecordKind,
+): AdminCanonicalResultField | null {
+  if (sessionKind === "primary") {
+    return "s";
+  }
+  if (sessionKind === "secondary") {
+    return "f";
+  }
+  if (sessionKind === "qs" || sessionKind === "s" || sessionKind === "qf" || sessionKind === "f" || sessionKind === "p") {
+    return sessionKind;
+  }
+  return null;
 }
 
 export async function getAdminUserByUsernameNormalized(
@@ -1328,45 +1347,51 @@ export async function getEventResultsGrid(eventId: string): Promise<AdminEventRe
     return null;
   }
 
-  const [drivers, rows] = await Promise.all([
+  const [championship, drivers, rows] = await Promise.all([
+    getChampionshipById(event.championshipId),
     listAdminDrivers({ includeInactive: true }),
     listEventResultsByEventId(eventId),
   ]);
 
   const byDriver = new Map<
     string,
-    {
-      primary: AdminEventResultsGrid["drivers"][number]["primary"];
-      secondary: AdminEventResultsGrid["drivers"][number]["secondary"];
-    }
+    Partial<Record<AdminCanonicalResultField, AdminEventResultCellValue>>
   >();
 
   for (const row of rows) {
-    const group = byDriver.get(row.driverId) ?? { primary: null, secondary: null };
+    const field = toCanonicalAdminResultField(row.sessionKind);
+    if (!field) {
+      continue;
+    }
+
+    const group = byDriver.get(row.driverId) ?? {};
     const value = {
       position: row.position,
       status: row.status,
       rawValue: row.rawValue,
       isActive: row.isActive,
     };
-    if (row.sessionKind === "primary" || row.sessionKind === "s") {
-      group.primary = value;
-    } else if (row.sessionKind === "secondary" || row.sessionKind === "f") {
-      group.secondary = value;
-    }
+    group[field] = value;
     byDriver.set(row.driverId, group);
   }
 
   return {
     event,
+    fieldOrder: [...ADMIN_RESULTS_FIELD_ORDER],
+    fieldLabels: {
+      qs: "Qualy Sprint",
+      s: championship?.primarySessionLabel ?? "Sprint",
+      qf: "Qualy Final",
+      f: championship?.secondarySessionLabel ?? "Final",
+      p: "Puntos",
+    },
     drivers: drivers.map((driver) => {
-      const group = byDriver.get(driver.id) ?? { primary: null, secondary: null };
+      const group = byDriver.get(driver.id) ?? {};
       return {
         driverId: driver.id,
         driverSlug: driver.slug,
         driverName: driver.canonicalName,
-        primary: group.primary,
-        secondary: group.secondary,
+        results: group,
       };
     }),
   };
