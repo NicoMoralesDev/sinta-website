@@ -199,6 +199,57 @@ describe("results page flow", () => {
     expect(sparseSection).not.toContain(">P<");
   });
 
+  it("preserves service participant order in rendered markup", async () => {
+    getFiltersMock.mockResolvedValueOnce({
+      years: [2026],
+      championships: [],
+      drivers: [],
+    });
+    getCurrentChampionshipMock.mockResolvedValueOnce(null);
+    getResultsStatsMock.mockResolvedValueOnce([]);
+    getResultsEventParticipationMock.mockResolvedValueOnce({
+      items: [
+        {
+          eventId: "event-7",
+          seasonYear: 2026,
+          championshipSlug: "tz-4000",
+          championshipName: "TZ 4000",
+          roundNumber: 5,
+          circuitName: "San Juan",
+          eventDate: null,
+          participants: [
+            {
+              driverSlug: "zeta-driver",
+              driverName: "Zeta Driver",
+              sessions: [
+                { sessionKind: "f", sessionLabel: "F", rawValue: "10", position: 10, status: null },
+                { sessionKind: "p", sessionLabel: "P", rawValue: "25", position: 25, status: null },
+              ],
+            },
+            {
+              driverSlug: "alpha-driver",
+              driverName: "Alpha Driver",
+              sessions: [
+                { sessionKind: "f", sessionLabel: "F", rawValue: "1", position: 1, status: null },
+                { sessionKind: "p", sessionLabel: "P", rawValue: "18", position: 18, status: null },
+              ],
+            },
+          ],
+        },
+      ],
+      nextCursor: null,
+    });
+
+    const element = await ResultsPage({
+      searchParams: {
+        lang: "en",
+      },
+    });
+    const html = renderToStaticMarkup(element);
+
+    expect(html.indexOf("Zeta Driver")).toBeLessThan(html.indexOf("Alpha Driver"));
+  });
+
   it("renders organizer metadata for a selected championship in English and Spanish", async () => {
     getFiltersMock.mockResolvedValueOnce({
       years: [2026],
