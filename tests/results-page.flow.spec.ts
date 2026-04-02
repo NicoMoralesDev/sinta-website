@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import type { EventParticipationCard } from "@/lib/server/history/types";
 
 const {
   getFiltersMock,
@@ -33,7 +34,7 @@ import {
 
 describe("results page flow", () => {
   it("uses shared event participation helpers for canonical columns and labels", () => {
-    const event = {
+    const event: EventParticipationCard = {
       eventId: "event-helpers",
       seasonYear: 2026,
       championshipSlug: "tz-4000",
