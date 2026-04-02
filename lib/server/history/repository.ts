@@ -606,13 +606,18 @@ export async function getEventParticipationPage(query: EventQuery): Promise<{
 
 export async function getEventParticipationCardById(
   eventId: string,
+  driverSlug?: string,
 ): Promise<EventParticipationCard | null> {
   const eventRow = await fetchEventRowById(eventId);
   if (!eventRow) {
     return null;
   }
 
-  const resultRows = await fetchResultsForEvents([eventId]);
+  const resultRows = await fetchResultsForEvents([eventId], driverSlug);
+  if (resultRows.length === 0) {
+    return null;
+  }
+
   const eventResultItems = toEventResultItems([eventRow], resultRows);
 
   return toParticipationCards(eventResultItems).at(0) ?? null;

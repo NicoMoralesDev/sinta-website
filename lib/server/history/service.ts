@@ -204,13 +204,15 @@ export async function getResultsEventParticipation(
 
 export async function getResultsEventParticipationById(
   eventId: string,
+  driverSlug?: string,
 ): Promise<EventParticipationCard> {
   const normalizedEventId = parseUuid(eventId, "eventId");
   if (!normalizedEventId) {
     throw new HistoryValidationError("eventId must be a UUID.");
   }
 
-  const event = await getEventParticipationCardById(normalizedEventId);
+  const normalizedDriverSlug = parseSlug(driverSlug ?? null, "driver");
+  const event = await getEventParticipationCardById(normalizedEventId, normalizedDriverSlug);
   if (!event) {
     throw new HistoryNotFoundError(`Event not found: ${normalizedEventId}`);
   }

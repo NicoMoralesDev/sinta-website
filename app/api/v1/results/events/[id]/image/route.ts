@@ -322,8 +322,9 @@ export async function GET(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
     const url = new URL(request.url);
+    const driver = url.searchParams.get("driver");
     const lang = resolveLanguage(url.searchParams.get("lang") ?? undefined);
-    const event = await getResultsEventParticipationById(id);
+    const event = await getResultsEventParticipationById(id, driver ?? undefined);
     const imageHeight = Math.max(1350, 420 + event.participants.length * 72);
 
     return new ImageResponse(renderEventImage(event, lang), {
