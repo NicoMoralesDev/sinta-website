@@ -27,7 +27,7 @@ Supported query parameters:
 - `driver=<slug>` filters the image to the selected driver within that event.
 - `lang=en` switches labels and date formatting to English.
 
-The generated image uses the same visible columns and participant set as the public event card. That means canonical ordering, sparse historical column omission, organizer-aware event context, and the active driver filter stay aligned with the `/results` page instead of using a separate export-only model.
+The generated image stays aligned with the public event card for the visible canonical columns, participant set, and participant order. That means canonical ordering, sparse historical column omission, and the active driver filter stay aligned with the `/results` page instead of using a separate export-only model. The shipped route also responds with `Cache-Control: public, s-maxage=120, stale-while-revalidate=600`.
 
 ## Verification limits
 
@@ -35,4 +35,4 @@ The generated image uses the same visible columns and participant set as the pub
 
 `npm run test:db` is environment-dependent. It only applies when `.env` is configured with a reachable database and any integration-test preconditions used by the current setup are available.
 
-The focused Vitest suite can confirm the canonical contract, organizer metadata, and share-image route behavior, but visual/image correctness still needs manual review after changes to `/results` or `/api/v1/results/events/:eventId/image`.
+The focused Vitest suite can confirm the canonical contract, championship organizer behavior on `/results`, and share-image route behavior, but visual/image correctness still needs manual review after changes to `/results` or `/api/v1/results/events/:eventId/image`.
