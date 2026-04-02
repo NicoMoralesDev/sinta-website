@@ -1,7 +1,7 @@
 ﻿export const CANONICAL_RESULT_FIELDS = ["qs", "s", "qf", "f", "p"] as const;
 
 export type CanonicalResultField = (typeof CANONICAL_RESULT_FIELDS)[number];
-export type SessionKind = "primary" | "secondary";
+export type SessionKind = CanonicalResultField | "primary" | "secondary";
 
 export type ResultStatus = "DNF" | "DNQ" | "DSQ" | "ABSENT";
 

@@ -130,6 +130,93 @@ type DbHomeLiveBroadcastRow = {
   stream_override_mode: "auto" | "force_on" | "force_off";
 };
 
+const SESSION_KIND_ORDER: Record<SessionKind, number> = {
+  qs: 0,
+  s: 1,
+  primary: 1,
+  qf: 2,
+  f: 3,
+  secondary: 3,
+  p: 4,
+};
+
+function getSessionKindOrder(sessionKind: SessionKind): number {
+  return SESSION_KIND_ORDER[sessionKind] ?? Number.MAX_SAFE_INTEGER;
+}
+
+function getParticipantPointsValue(
+  sessions: EventParticipationCard["participants"][number]["sessions"],
+): number | null {
+  return sessions.find((session) => session.sessionKind === "p")?.position ?? null;
+}
+
+function getParticipantFinalRacePosition(
+  sessions: EventParticipationCard["participants"][number]["sessions"],
+): number | null {
+  return sessions.find(
+    (session) => session.sessionKind === "f" || session.sessionKind === "secondary",
+  )?.position ?? null;
+}
+
+function compareParticipants(
+  left: {
+    driverName: string;
+    sessions: EventParticipationCard["participants"][number]["sessions"];
+  },
+  right: {
+    driverName: string;
+    sessions: EventParticipationCard["participants"][number]["sessions"];
+  },
+): number {
+  const leftPoints = getParticipantPointsValue(left.sessions);
+  const rightPoints = getParticipantPointsValue(right.sessions);
+
+  if (leftPoints !== null || rightPoints !== null) {
+    const byPoints = (rightPoints ?? Number.NEGATIVE_INFINITY) - (leftPoints ?? Number.NEGATIVE_INFINITY);
+    if (byPoints !== 0) {
+      return byPoints;
+    }
+  }
+
+  const leftFinal = getParticipantFinalRacePosition(left.sessions) ?? Number.MAX_SAFE_INTEGER;
+  const rightFinal = getParticipantFinalRacePosition(right.sessions) ?? Number.MAX_SAFE_INTEGER;
+  if (leftFinal !== rightFinal) {
+    return leftFinal - rightFinal;
+  }
+
+  return left.driverName.localeCompare(right.driverName);
+}
+
+function getSessionLabelExpression(): string {
+  return `
+        case er.session_kind::text
+          when 'qs' then 'QS'
+          when 's' then 'S'
+          when 'qf' then 'QF'
+          when 'f' then 'F'
+          when 'p' then 'P'
+          when 'primary' then c.primary_session_label
+          when 'secondary' then c.secondary_session_label
+          else upper(er.session_kind::text)
+        end
+  `;
+}
+
+function getSessionOrderExpression(columnName: string): string {
+  return `
+        case ${columnName}::text
+          when 'qs' then 0
+          when 's' then 1
+          when 'primary' then 1
+          when 'qf' then 2
+          when 'f' then 3
+          when 'secondary' then 3
+          when 'p' then 4
+          else 99
+        end
+  `;
+}
+
 function isMissingLiveBroadcastConfigSchemaError(error: unknown): boolean {
   if (!error || typeof error !== "object") {
     return false;
@@ -200,7 +287,6 @@ function toParticipationCards(events: EventResultItem[]): EventParticipationCard
         driverSlug: string;
         driverName: string;
         sessions: EventParticipationCard["participants"][number]["sessions"];
-        bestPosition: number | null;
       }
     >();
 
@@ -209,7 +295,6 @@ function toParticipationCards(events: EventResultItem[]): EventParticipationCard
         driverSlug: entry.driverSlug,
         driverName: entry.driverName,
         sessions: [],
-        bestPosition: null,
       };
 
       current.sessions.push({
@@ -219,28 +304,17 @@ function toParticipationCards(events: EventResultItem[]): EventParticipationCard
         status: entry.status,
         rawValue: entry.rawValue,
       });
-
-      if (entry.position !== null) {
-        current.bestPosition =
-          current.bestPosition === null ? entry.position : Math.min(current.bestPosition, entry.position);
-      }
-
       grouped.set(entry.driverSlug, current);
     }
 
     const participants = Array.from(grouped.values())
-      .sort((left, right) => {
-        const leftSort = left.bestPosition ?? Number.MAX_SAFE_INTEGER;
-        const rightSort = right.bestPosition ?? Number.MAX_SAFE_INTEGER;
-        if (leftSort !== rightSort) {
-          return leftSort - rightSort;
-        }
-        return left.driverName.localeCompare(right.driverName);
-      })
+      .sort(compareParticipants)
       .map((participant) => ({
         driverSlug: participant.driverSlug,
         driverName: participant.driverName,
-        sessions: participant.sessions.sort((left, right) => left.sessionKind.localeCompare(right.sessionKind)),
+        sessions: participant.sessions.sort(
+          (left, right) => getSessionKindOrder(left.sessionKind) - getSessionKindOrder(right.sessionKind),
+        ),
       }));
 
     return {
@@ -450,10 +524,7 @@ async function fetchResultsForEvents(
         d.slug as driver_slug,
         d.canonical_name as driver_name,
         er.session_kind,
-        case
-          when er.session_kind = 'primary' then c.primary_session_label
-          else c.secondary_session_label
-        end as session_label,
+        ${getSessionLabelExpression()} as session_label,
         er.position,
         er.status::text as status,
         er.raw_value
@@ -462,7 +533,12 @@ async function fetchResultsForEvents(
       join events e on e.id = er.event_id
       join championships c on c.id = e.championship_id
       where ${whereClauses.join(" and ")}
-      order by c.season_year desc, c.slug asc, e.round_number desc, d.sort_name asc, er.session_kind asc
+      order by
+        c.season_year desc,
+        c.slug asc,
+        e.round_number desc,
+        d.sort_name asc,
+        ${getSessionOrderExpression("er.session_kind")} asc
     `,
     values,
   );
@@ -577,6 +653,7 @@ export async function getHighlights(query: {
           and c.is_active = true
           and er.is_active = true
           and d.is_active = true
+          and er.session_kind = 'f'
           and er.position is not null
       )
       select
@@ -616,6 +693,7 @@ export async function getDriverStats(query: StatsQuery): Promise<DriverStats[]> 
     "e.is_active = true",
     "c.is_active = true",
     "d.is_active = true",
+    "er.session_kind = 'f'",
   ];
 
   appendStatsFilters(query, values, whereClauses);
@@ -655,6 +733,7 @@ export async function getResultsOverview(query: OverviewQuery): Promise<TeamOver
     "e.is_active = true",
     "c.is_active = true",
     "d.is_active = true",
+    "er.session_kind = 'f'",
   ];
 
   appendOverviewFilters(query, values, whereClauses);
@@ -779,6 +858,7 @@ export async function getCurrentChampionshipSummary(
         and er.is_active = true
         and d.is_active = true
         and e.is_active = true
+        and er.session_kind = 'f'
       group by d.id, d.slug, d.canonical_name
       order by wins desc, podiums desc, top_10 desc, completed desc, avg_position asc nulls last, d.canonical_name asc
       limit 8
