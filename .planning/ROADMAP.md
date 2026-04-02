@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Results Contract, Ordering, And Championship Metadata** - Make `QS`, `S`, `QF`, `F`, `P`, points-based ordering, and championship organizer metadata safe first-class parts of the shared data model. (completed 2026-04-02)
 - [x] **Phase 2: Admin Results And Championship Editing** - Let admins manage the canonical event-result columns and championship organizer metadata safely inside existing workflows. (completed 2026-04-02)
 - [x] **Phase 3: Public Results, Organizer Display, And Driver Stats Correctness** - Expose the new result semantics and organizer metadata cleanly on public surfaces while keeping race-focused stats trustworthy. (completed 2026-04-02)
-- [ ] **Phase 4: Event Results Share Image** - Generate a messaging-friendly image from the canonical public event results table.
+- [x] **Phase 4: Event Results Share Image** - Generate a messaging-friendly image from the canonical public event results table. (completed 2026-04-02)
 - [ ] **Phase 5: Documentation Alignment** - Update project docs to match the brownfield runtime, new behaviors, and verification limits.
 
 ## Phase Details
@@ -72,10 +72,11 @@ Plans:
   1. Visitor can trigger generation of a shareable image for a specific event results table from the public results experience.
   2. The generated image includes every driver shown in the selected event table.
   3. The generated image matches the visible result columns and points-based ranking shown for that event.
-**Plans**: 2 plans
+**Plans**: 3 plans
 Plans:
-- [ ] 04-01-PLAN.md - Extract shared event-participation helpers and build the one-event public share-image route.
-- [ ] 04-02-PLAN.md - Expose the `/results` share trigger and lock the deterministic page-to-route contract with flow coverage.
+- [x] 04-01-PLAN.md - Extract shared event-participation helpers and build the one-event public share-image route.
+- [x] 04-02-PLAN.md - Expose the `/results` share trigger and lock the deterministic page-to-route contract with flow coverage.
+- [x] 04-03-PLAN.md - Close the driver-filter share-image parity gap and align Phase 4 requirement traceability.
 
 ### Phase 5: Documentation Alignment
 **Goal**: Maintainers can rely on the project documentation for the current runtime behavior and this milestone's changes.
@@ -96,5 +97,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 1. Results Contract, Ordering, And Championship Metadata | 4/4 | Complete   | 2026-04-02 |
 | 2. Admin Results And Championship Editing | 2/2 | Complete | 2026-04-02 |
 | 3. Public Results, Organizer Display, And Driver Stats Correctness | 2/2 | Complete   | 2026-04-02 |
-| 4. Event Results Share Image | 0/2 | Not started | - |
+| 4. Event Results Share Image | 3/3 | Complete | 2026-04-02 |
 | 5. Documentation Alignment | 0/TBD | Not started | - |
