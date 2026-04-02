@@ -92,6 +92,11 @@ function buildResultsHref({
   return query ? `/results?${query}` : "/results";
 }
 
+function buildResultsShareImageHref(eventId: string, lang: "es" | "en"): string {
+  const path = `/api/v1/results/events/${eventId}/image`;
+  return lang === "en" ? `${path}?lang=en` : path;
+}
+
 export default async function ResultsPage({ searchParams }: ResultsPageProps) {
   const rawInput = await Promise.resolve(searchParams);
   const query = toSearchParams(rawInput);
@@ -123,6 +128,7 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
           rankingTitle: "Driver snapshot",
           currentTitle: "Current championship",
           organizerLabel: "Organizer",
+          shareImage: "Share image",
           backHome: "Back to home",
           next: "Load more",
           noLeaderboard: "No ranking data for this filter.",
@@ -146,6 +152,7 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
           rankingTitle: "Resumen de pilotos",
           currentTitle: "Torneo vigente",
           organizerLabel: "Organizador",
+          shareImage: "Imagen para compartir",
           backHome: "Volver al inicio",
           next: "Cargar más",
           noLeaderboard: "No hay ranking para este filtro.",
@@ -360,6 +367,14 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
                     lang={lang}
                     events={eventsResult.result.items}
                     emptyMessage={chromeCopy.results.emptyMessage}
+                    renderEventActions={(event) => (
+                      <Link
+                        href={buildResultsShareImageHref(event.eventId, lang)}
+                        className="text-[11px] font-semibold tracking-wider text-racing-yellow uppercase transition-colors hover:text-racing-white"
+                      >
+                        {i18n.shareImage}
+                      </Link>
+                    )}
                   />
 
                   {nextHref ? (
