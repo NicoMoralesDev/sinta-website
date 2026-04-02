@@ -66,26 +66,26 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DATA-01 | TBC | Pending |
-| DATA-02 | TBC | Pending |
-| DATA-03 | TBC | Pending |
-| ADMIN-01 | TBC | Pending |
-| ADMIN-02 | TBC | Pending |
-| RESULT-01 | TBC | Pending |
-| RESULT-02 | TBC | Pending |
-| RESULT-03 | TBC | Pending |
-| SHARE-01 | TBC | Pending |
-| SHARE-02 | TBC | Pending |
-| STAT-01 | TBC | Pending |
-| STAT-02 | TBC | Pending |
-| DOC-01 | TBC | Pending |
-| DOC-02 | TBC | Pending |
+| DATA-01 | Phase 1 | Pending |
+| DATA-02 | Phase 1 | Pending |
+| DATA-03 | Phase 1 | Pending |
+| ADMIN-01 | Phase 2 | Pending |
+| ADMIN-02 | Phase 2 | Pending |
+| RESULT-01 | Phase 3 | Pending |
+| RESULT-02 | Phase 3 | Pending |
+| RESULT-03 | Phase 3 | Pending |
+| SHARE-01 | Phase 4 | Pending |
+| SHARE-02 | Phase 4 | Pending |
+| STAT-01 | Phase 3 | Pending |
+| STAT-02 | Phase 3 | Pending |
+| DOC-01 | Phase 5 | Pending |
+| DOC-02 | Phase 5 | Pending |
 
 **Coverage:**
 - v1 requirements: 14 total
-- Mapped to phases: 0
-- Unmapped: 14 ⚠️
+- Mapped to phases: 14
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-02*
-*Last updated: 2026-04-02 after initial definition*
+*Last updated: 2026-04-02 after roadmap creation*
