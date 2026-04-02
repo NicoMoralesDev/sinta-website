@@ -10,6 +10,8 @@ vi.mock("@/lib/server/db", () => ({
 
 import {
   getCurrentChampionshipSummary,
+  getDriverStats,
+  getEventParticipationPage,
   getEventResultsPage,
   getResultsOverview,
 } from "@/lib/server/history/repository";
@@ -174,6 +176,7 @@ describe("history repository", () => {
             season_year: 2026,
             championship_slug: "tz-4000",
             championship_name: "TZ 4000",
+            organizer_name: "SINTA",
           },
         ],
       })
@@ -225,17 +228,245 @@ describe("history repository", () => {
 
     expect(summary).not.toBeNull();
     expect(summary?.championship.slug).toBe("tz-4000");
+    expect(summary?.championship.organizerName).toBe("SINTA");
     expect(summary?.events).toHaveLength(1);
     expect(summary?.leaderboard[0]?.driverSlug).toBe("kevin-fontana");
+    expect(firstQuery).toContain("c.organizer_name");
     expect(firstQuery).toContain("e.event_date is not null and e.event_date <= current_date");
     expect(firstQuery).toContain("e.event_date desc nulls last");
   });
 
-  it.todo(
-    "orders event participants by points first and falls back to final race session order when legacy rows omit points",
-  );
+  it("orders event participants by points first when canonical points rows exist", async () => {
+    queryMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            event_id: "event-1",
+            season_year: 2026,
+            championship_slug: "tz-4000",
+            championship_name: "TZ 4000",
+            round_number: 1,
+            circuit_name: "La Plata",
+            event_date: null,
+            primary_session_label: "Sprint",
+            secondary_session_label: "Final",
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            event_id: "event-1",
+            driver_slug: "b-driver",
+            driver_name: "B Driver",
+            session_kind: "f",
+            session_label: "F",
+            position: 1,
+            status: null,
+            raw_value: "1",
+          },
+          {
+            event_id: "event-1",
+            driver_slug: "b-driver",
+            driver_name: "B Driver",
+            session_kind: "p",
+            session_label: "P",
+            position: 18,
+            status: null,
+            raw_value: "18",
+          },
+          {
+            event_id: "event-1",
+            driver_slug: "a-driver",
+            driver_name: "A Driver",
+            session_kind: "f",
+            session_label: "F",
+            position: 2,
+            status: null,
+            raw_value: "2",
+          },
+          {
+            event_id: "event-1",
+            driver_slug: "a-driver",
+            driver_name: "A Driver",
+            session_kind: "p",
+            session_label: "P",
+            position: 25,
+            status: null,
+            raw_value: "25",
+          },
+        ],
+      });
 
-  it.todo(
-    "limits race-only aggregate queries to canonical f rows instead of counting qs, s, qf, or p values",
-  );
+    const page = await getEventParticipationPage({
+      year: undefined,
+      championship: undefined,
+      driver: undefined,
+      limit: 10,
+      offset: 0,
+    });
+
+    expect(page.items[0]?.participants.map((participant) => participant.driverName)).toEqual([
+      "A Driver",
+      "B Driver",
+    ]);
+  });
+
+  it("falls back to final race order when legacy rows omit points", async () => {
+    queryMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            event_id: "event-1",
+            season_year: 2026,
+            championship_slug: "tz-4000",
+            championship_name: "TZ 4000",
+            round_number: 1,
+            circuit_name: "La Plata",
+            event_date: null,
+            primary_session_label: "Sprint",
+            secondary_session_label: "Final",
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            event_id: "event-1",
+            driver_slug: "legacy-a",
+            driver_name: "Legacy A",
+            session_kind: "qf",
+            session_label: "QF",
+            position: 1,
+            status: null,
+            raw_value: "1",
+          },
+          {
+            event_id: "event-1",
+            driver_slug: "legacy-a",
+            driver_name: "Legacy A",
+            session_kind: "f",
+            session_label: "F",
+            position: 2,
+            status: null,
+            raw_value: "2",
+          },
+          {
+            event_id: "event-1",
+            driver_slug: "legacy-b",
+            driver_name: "Legacy B",
+            session_kind: "qf",
+            session_label: "QF",
+            position: 5,
+            status: null,
+            raw_value: "5",
+          },
+          {
+            event_id: "event-1",
+            driver_slug: "legacy-b",
+            driver_name: "Legacy B",
+            session_kind: "f",
+            session_label: "F",
+            position: 1,
+            status: null,
+            raw_value: "1",
+          },
+        ],
+      });
+
+    const page = await getEventParticipationPage({
+      year: undefined,
+      championship: undefined,
+      driver: undefined,
+      limit: 10,
+      offset: 0,
+    });
+
+    expect(page.items[0]?.participants.map((participant) => participant.driverName)).toEqual([
+      "Legacy B",
+      "Legacy A",
+    ]);
+  });
+
+  it("limits race-only aggregate queries to canonical f rows", async () => {
+    queryMock
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            driver_slug: "kevin-fontana",
+            canonical_name: "Kevin Fontana",
+            wins: 2,
+            podiums: 4,
+            top_5: 5,
+            top_10: 6,
+            completed: 6,
+            dnf: 1,
+            dnq: 0,
+            dsq: 0,
+            absent: 0,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            races_completed: 120,
+            podiums: 44,
+            wins: 12,
+            active_drivers: 8,
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [{ active_drivers: 10 }],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            championship_id: "champ-1",
+            season_year: 2026,
+            championship_slug: "tz-4000",
+            championship_name: "TZ 4000",
+            organizer_name: "SINTA",
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            event_id: "event-1",
+            season_year: 2026,
+            championship_slug: "tz-4000",
+            championship_name: "TZ 4000",
+            round_number: 5,
+            circuit_name: "Interlagos",
+            event_date: null,
+            primary_session_label: "Sprint",
+            secondary_session_label: "Final",
+          },
+        ],
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            driver_slug: "kevin-fontana",
+            driver_name: "Kevin Fontana",
+            wins: 2,
+            podiums: 4,
+            top_10: 5,
+            completed: 5,
+            avg_position: 2.4,
+          },
+        ],
+      });
+
+    await getDriverStats({});
+    await getResultsOverview({});
+    await getCurrentChampionshipSummary(1);
+
+    expect(String(queryMock.mock.calls[0]?.[0] ?? "")).toContain("er.session_kind = 'f'");
+    expect(String(queryMock.mock.calls[1]?.[0] ?? "")).toContain("er.session_kind = 'f'");
+    expect(String(queryMock.mock.calls[6]?.[0] ?? "")).toContain("er.session_kind = 'f'");
+  });
 });
