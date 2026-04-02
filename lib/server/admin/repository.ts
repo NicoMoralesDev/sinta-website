@@ -1402,6 +1402,30 @@ export async function replaceEventResults(
   rows: EventResultCellInput[],
 ): Promise<AdminEventResultRow[]> {
   return withTransaction(async (client) => {
+    if (rows.length === 0) {
+      await client.query(
+        `
+          delete from event_results
+          where event_id = $1
+        `,
+        [eventId],
+      );
+    } else {
+      await client.query(
+        `
+          delete from event_results er
+          where er.event_id = $1
+            and not exists (
+              select 1
+              from unnest($2::uuid[], $3::session_kind[]) as keep_rows(driver_id, session_kind)
+              where keep_rows.driver_id = er.driver_id
+                and keep_rows.session_kind = er.session_kind
+            )
+        `,
+        [eventId, rows.map((row) => row.driverId), rows.map((row) => row.sessionKind)],
+      );
+    }
+
     for (const row of rows) {
       await client.query(
         `

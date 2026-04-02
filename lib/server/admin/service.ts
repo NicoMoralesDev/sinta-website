@@ -552,10 +552,32 @@ function normalizeResultSessionKind(sessionKind: AdminResultInputKind): AdminCan
   throw new AdminValidationError("sessionKind is invalid.");
 }
 
+function isClearResultCell(row: Pick<EventResultCellInput, "position" | "status" | "rawValue" | "isActive">): boolean {
+  return row.isActive === false && row.position === null && row.status === null && normalizeWhitespace(row.rawValue) === "";
+}
+
 function validateResultCell(row: EventResultCellInput): EventResultCellInput {
   validateUuid(row.driverId, "driverId");
 
   const sessionKind = normalizeResultSessionKind(row.sessionKind);
+  const rawValue = normalizeWhitespace(row.rawValue);
+
+  if (!row.isActive) {
+    if (!isClearResultCell({ ...row, rawValue })) {
+      throw new AdminValidationError(
+        "Cleared result rows must set isActive false and leave position, status, and rawValue empty.",
+      );
+    }
+
+    return {
+      driverId: row.driverId,
+      sessionKind,
+      position: null,
+      status: null,
+      rawValue: "",
+      isActive: false,
+    };
+  }
 
   const hasPosition = row.position !== null;
   const hasStatus = row.status !== null;
@@ -576,8 +598,13 @@ function validateResultCell(row: EventResultCellInput): EventResultCellInput {
     }
   }
 
-  if (hasStatus && !["DNF", "DNQ", "DSQ", "ABSENT"].includes(String(row.status))) {
-    throw new AdminValidationError("status is invalid.");
+  if (hasStatus) {
+    if (sessionKind === "p") {
+      throw new AdminValidationError("Points rows must use integer values only.");
+    }
+    if (!["DNF", "DNQ", "DSQ", "ABSENT"].includes(String(row.status))) {
+      throw new AdminValidationError("status is invalid.");
+    }
   }
 
   return {
@@ -585,8 +612,8 @@ function validateResultCell(row: EventResultCellInput): EventResultCellInput {
     sessionKind,
     position: row.position,
     status: row.status,
-    rawValue: normalizeWhitespace(row.rawValue),
-    isActive: row.isActive,
+    rawValue,
+    isActive: true,
   };
 }
 
@@ -708,7 +735,12 @@ function mergeEventResultCells(
   }
 
   for (const row of submittedRows) {
-    merged.set(`${row.driverId}:${row.sessionKind}`, row);
+    const key = `${row.driverId}:${row.sessionKind}`;
+    if (isClearResultCell(row)) {
+      merged.delete(key);
+      continue;
+    }
+    merged.set(key, row);
   }
 
   return Array.from(merged.values());
@@ -1605,7 +1637,7 @@ export async function updateEventResults(
     }
     rowKeys.add(key);
 
-    if (!normalized.rawValue) {
+    if (normalized.isActive && !normalized.rawValue) {
       const fallback = normalized.position !== null ? String(normalized.position) : String(normalized.status);
       normalized.rawValue = fallback;
     }
