@@ -47,6 +47,7 @@ describe("results v2 API routes", () => {
         seasonYear: 2026,
         slug: "tz-4000",
         name: "TZ 4000",
+        organizerName: null,
       },
       events: [],
       leaderboard: [],
@@ -64,6 +65,7 @@ describe("results v2 API routes", () => {
           seasonYear: 2026,
           slug: "tz-4000",
           name: "TZ 4000",
+          organizerName: null,
         },
         events: [],
         leaderboard: [],
@@ -86,5 +88,23 @@ describe("results v2 API routes", () => {
     });
   });
 
-  it.todo("returns organizerName in the current championship payload once championship metadata is widened");
+  it("returns organizerName in the current championship payload once championship metadata is widened", async () => {
+    getCurrentChampionshipMock.mockResolvedValueOnce({
+      championship: {
+        id: "champ-1",
+        seasonYear: 2026,
+        slug: "tz-4000",
+        name: "TZ 4000",
+        organizerName: "SINTA",
+      },
+      events: [],
+      leaderboard: [],
+    });
+
+    const response = await getCurrentRoute(new Request("http://localhost/api/v1/results/current"));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.current?.championship?.organizerName).toBe("SINTA");
+  });
 });

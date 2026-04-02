@@ -63,7 +63,61 @@ describe("results events API route", () => {
     });
   });
 
-  it.todo("returns canonical qs, s, qf, f, and p results in session order for event payloads");
+  it("returns canonical qs, s, qf, f, and p results in session order for event payloads", async () => {
+    getResultsEventsMock.mockResolvedValueOnce({
+      items: [
+        {
+          eventId: "event-3",
+          results: [
+            { sessionKind: "qs", sessionLabel: "QS", rawValue: "1" },
+            { sessionKind: "s", sessionLabel: "S", rawValue: "3" },
+            { sessionKind: "qf", sessionLabel: "QF", rawValue: "2" },
+            { sessionKind: "f", sessionLabel: "F", rawValue: "4" },
+            { sessionKind: "p", sessionLabel: "P", rawValue: "25" },
+          ],
+        },
+      ],
+      nextCursor: null,
+    });
 
-  it.todo("omits sparse canonical columns from historical event payloads when those sessions were never stored");
+    const response = await GET(new Request("http://localhost/api/v1/results/events?limit=1"));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.items[0]?.results.map((entry: { sessionKind: string }) => entry.sessionKind)).toEqual([
+      "qs",
+      "s",
+      "qf",
+      "f",
+      "p",
+    ]);
+  });
+
+  it("preserves sparse historical event payloads without synthesizing missing canonical sessions", async () => {
+    getResultsEventParticipationMock.mockResolvedValueOnce({
+      items: [
+        {
+          eventId: "event-4",
+          participants: [
+            {
+              driverSlug: "kevin-fontana",
+              driverName: "Kevin Fontana",
+              sessions: [{ sessionKind: "f", sessionLabel: "F", rawValue: "1", position: 1, status: null }],
+            },
+          ],
+        },
+      ],
+      nextCursor: null,
+    });
+
+    const response = await GET(
+      new Request("http://localhost/api/v1/results/events?view=participation&limit=1"),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.items[0]?.participants[0]?.sessions).toEqual([
+      { sessionKind: "f", sessionLabel: "F", rawValue: "1", position: 1, status: null },
+    ]);
+  });
 });
