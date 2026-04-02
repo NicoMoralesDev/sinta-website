@@ -85,7 +85,10 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Maintainer can follow project documentation that matches the current runtime setup and real admin/results workflows.
   2. Maintainer can find concise documentation for the `QS`/`S`/`QF`/`F`/`P` results model, points-based ordering, organizer metadata, the share-image flow, and any known verification limits for this milestone.
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 05-01-PLAN.md - Refresh `README.md` as the maintainer index and add a focused `docs/results-model.md` contract reference.
+- [ ] 05-02-PLAN.md - Update the admin dashboard and data import docs for the canonical workflows and real verification limits.
 
 ## Progress
 
