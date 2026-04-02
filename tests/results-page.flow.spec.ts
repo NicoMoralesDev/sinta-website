@@ -237,6 +237,55 @@ describe("results page flow", () => {
     expect(html).toContain("/results?year=2026&amp;limit=10&amp;cursor=cursor-2&amp;lang=en");
   });
 
+  it("preserves the active driver filter in english share image links", async () => {
+    getFiltersMock.mockResolvedValueOnce({
+      years: [2026],
+      championships: [
+        {
+          id: "champ-1",
+          seasonYear: 2026,
+          slug: "tz-4000",
+          name: "TZ 4000",
+          organizerName: null,
+        },
+      ],
+      drivers: [{ slug: "kevin-fontana", canonicalName: "Kevin Fontana" }],
+    });
+    getCurrentChampionshipMock.mockResolvedValueOnce(null);
+    getResultsStatsMock.mockResolvedValueOnce([]);
+    getResultsEventParticipationMock.mockResolvedValueOnce({
+      items: [
+        {
+          eventId: "event-1",
+          seasonYear: 2026,
+          championshipSlug: "tz-4000",
+          championshipName: "TZ 4000",
+          roundNumber: 3,
+          circuitName: "Interlagos",
+          eventDate: null,
+          participants: [],
+        },
+      ],
+      nextCursor: "cursor-2",
+    });
+
+    const element = await ResultsPage({
+      searchParams: {
+        lang: "en",
+        year: "2026",
+        championshipId: "champ-1",
+        driver: "kevin-fontana",
+        limit: "10",
+      },
+    });
+    const html = renderToStaticMarkup(element);
+
+    expect(html).toContain("/api/v1/results/events/event-1/image?driver=kevin-fontana&amp;lang=en");
+    expect(html).toContain(
+      "/results?year=2026&amp;championshipId=champ-1&amp;driver=kevin-fontana&amp;limit=10&amp;cursor=cursor-2&amp;lang=en",
+    );
+  });
+
   it("renders spanish share image links without deriving the route from active filters", async () => {
     getFiltersMock.mockResolvedValueOnce({
       years: [2026],
