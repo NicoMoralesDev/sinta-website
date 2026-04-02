@@ -5,14 +5,14 @@ milestone_name: milestone
 current_phase: 5
 current_plan: 2
 status: completed
-stopped_at: Completed 05-01-PLAN.md
+stopped_at: Completed 05-02-PLAN.md
 last_updated: "2026-04-02T23:09:18.863Z"
 last_activity: 2026-04-02
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 13
-  completed_plans: 12
+  completed_plans: 13
   percent: 100
 ---
 
@@ -68,6 +68,7 @@ Progress: [██████████] 100%
 | Phase 04-event-results-share-image P01 | 7min | 2 tasks | 7 files |
 | Phase 04-event-results-share-image P03 | 4min | 3 tasks | 7 files |
 | Phase 05-documentation-alignment P01 | 3min | 2 tasks | 6 files |
+| Phase 05-documentation-alignment P02 | 6min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -110,6 +111,8 @@ Recent decisions affecting current work:
 - [Phase 04-event-results-share-image]: Preserve the eventId-based route contract and thread only the active driver slug plus existing language flag through results share links.
 - [Phase 05-documentation-alignment]: Keep README.md as a concise English maintainer index and move milestone-specific results behavior into docs/results-model.md.
 - [Phase 05-documentation-alignment]: Document parser fixture, env-dependent database checks, and manual image review as explicit verification limits instead of implying a clean fresh-checkout full suite.
+- [Phase 05-documentation-alignment]: Document the admin results workflow from fieldOrder and fieldLabels plus patch-style save semantics instead of stale two-session UI copy.
+- [Phase 05-documentation-alignment]: Keep admin and import verification notes explicit about workbook, dry-run, cache, and DB prerequisites so maintainers do not assume a clean fresh-checkout full suite.
 
 ### Pending Todos
 
@@ -117,10 +120,10 @@ None yet.
 
 ### Blockers/Concerns
 
-- Phase 5: Document known verification gaps honestly because the default test suite is not clean on a fresh checkout.
+None.
 
 ## Session Continuity
 
 Last session: 2026-04-02T23:09:18.860Z
-Stopped at: Completed 05-01-PLAN.md
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None
