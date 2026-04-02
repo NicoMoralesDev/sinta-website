@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 const {
@@ -21,8 +22,85 @@ vi.mock("@/lib/server/history/service", () => ({
 }));
 
 import ResultsPage from "@/app/results/page";
+import { EventParticipationList } from "@/app/components/event-participation-list";
+import {
+  formatEventParticipationDate,
+  formatEventParticipationRoundLabel,
+  formatEventParticipationSeasonLabel,
+  formatEventParticipationSessionValue,
+  getEventParticipationSessionColumns,
+} from "@/app/components/event-participation-helpers";
 
 describe("results page flow", () => {
+  it("uses shared event participation helpers for canonical columns and labels", () => {
+    const event = {
+      eventId: "event-helpers",
+      seasonYear: 2026,
+      championshipSlug: "tz-4000",
+      championshipName: "TZ 4000",
+      roundNumber: 6,
+      circuitName: "Interlagos",
+      eventDate: "2026-03-11T00:00:00.000Z",
+      participants: [
+        {
+          driverSlug: "driver-1",
+          driverName: "Driver One",
+          sessions: [
+            { sessionKind: "f", sessionLabel: "F", rawValue: "1", position: 1, status: null },
+            { sessionKind: "p", sessionLabel: "P", rawValue: "25", position: 25, status: null },
+            { sessionKind: "qf", sessionLabel: "QF", rawValue: "2", position: 2, status: null },
+            { sessionKind: "s", sessionLabel: "S", rawValue: "3", position: 3, status: null },
+            { sessionKind: "qs", sessionLabel: "QS", rawValue: "4", position: 4, status: null },
+          ],
+        },
+      ],
+    };
+
+    expect(getEventParticipationSessionColumns(event).map((column) => column.sessionLabel)).toEqual([
+      "QS",
+      "S",
+      "QF",
+      "F",
+      "P",
+    ]);
+    expect(
+      formatEventParticipationSessionValue(
+        { sessionKind: "f", sessionLabel: "F", rawValue: "DNF", position: null, status: "DNF" },
+        "en",
+      ),
+    ).toBe("DNF");
+    expect(formatEventParticipationSeasonLabel(event, "en")).toBe("Season 2026 - TZ 4000");
+    expect(formatEventParticipationRoundLabel(event)).toBe("R6 - Interlagos");
+    expect(formatEventParticipationDate(event, "en")).toBeTruthy();
+  });
+
+  it("renders optional event header actions beside the shared event date", () => {
+    const html = renderToStaticMarkup(
+      createElement(EventParticipationList, {
+        lang: "en",
+        emptyMessage: "No events",
+        linkDrivers: false,
+        events: [
+          {
+            eventId: "event-actions",
+            seasonYear: 2026,
+            championshipSlug: "tz-4000",
+            championshipName: "TZ 4000",
+            roundNumber: 2,
+            circuitName: "Trelew",
+            eventDate: "2026-02-01T00:00:00.000Z",
+            participants: [],
+          },
+        ],
+        renderEventActions: (event) =>
+          createElement("a", { href: `/share/${event.eventId}` }, "Share image"),
+      }),
+    );
+
+    expect(html).toContain("Share image");
+    expect(html).toContain("/share/event-actions");
+  });
+
   it("keeps URL filters and cursor in pagination link", async () => {
     getFiltersMock.mockResolvedValueOnce({
       years: [2026],
