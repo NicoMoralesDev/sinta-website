@@ -64,7 +64,7 @@ created: 2026-04-02
 - [ ] `tests/results-contract-migration.spec.ts` — schema-level migration verification for enum remap, points-safe constraint, and `organizer_name`
 - [ ] `tests/history-repository.spec.ts` — expand coverage to assert points-first ordering and race-only aggregate filtering
 - [ ] `tests/history-api.spec.ts`, `tests/history-api-v2.spec.ts`, and `tests/results-page.flow.spec.ts` — expand coverage to assert canonical field exposure, consumer ordering, and championship organizer payload compatibility
-- [ ] Documented exception for `tests/history-parser.spec.ts` — canonical CLI import widening stays out of Phase 1 until a committed workbook fixture exists
+- [ ] documented exception for `tests/history-parser.spec.ts` — canonical CLI import widening stays out of Phase 1 until a committed workbook fixture exists
 
 *If none: "Existing infrastructure covers all phase requirements."*
 

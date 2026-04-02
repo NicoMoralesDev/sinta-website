@@ -33,7 +33,7 @@
 | ID | Description | Research Support |
 |----|-------------|-----------------|
 | DATA-01 | Admin can store event participant results using the canonical columns `QS`, `S`, `QF`, `F`, and `P` | Requires a widened DB contract, canonical field constants/types, admin validation updates, and repository/service persistence support. |
-| DATA-02 | Admin can import or save event results with `QS`, `QF`, or `P` values without losing existing event data | Requires preserving the replace-all save semantics safely, defining legacy-null behavior, and explicitly documenting canonical XLSX import widening as deferred until a committed workbook fixture exists. |
+| DATA-02 | Admin can import or save event results with `QS`, `QF`, or `P` values without losing existing event data | Requires preserving the replace-all save semantics safely, defining legacy-null behavior, satisfying the requirement through save-path coverage in Phase 1, and explicitly documenting canonical XLSX import widening as deferred until a committed workbook fixture exists. |
 | DATA-03 | Public consumers can retrieve event result data with canonical result fields and points-based ordering | Requires a canonical public DTO, a shared points-first participant ordering helper, and repository filtering so race stats do not accidentally count non-race fields. |
 | DATA-04 | Maintainer can store organizer metadata for each championship/tournament | Requires a championship-level schema addition, admin DTO/API support, and shared read models that expose organizer data without duplicating it onto events. |
 </phase_requirements>
@@ -47,7 +47,7 @@ The safest Phase 1 plan is additive and centralized: widen the existing persiste
 The biggest scope question is import. The repo already has a supported CLI import path in `scripts/import-results-xlsx.ts`, but the parser currently hardcodes paired `"primary"/"secondary"` columns from the workbook. Phase 1 should not invent a new upload flow. The planner should either:
 
 1. Include bounded CLI import widening now if a representative workbook with `QS`/`QF`/`P` columns exists.
-2. Treat Phase 1 as save/read contract work only, satisfy DATA-02 through the existing save path, and explicitly document canonical XLSX import as a follow-up once sample source data exists.
+2. Treat Phase 1 as save/read contract work only, satisfy DATA-02 through the existing save-path, and explicitly document canonical XLSX import as a follow-up once sample source data exists.
 
 **Primary recommendation:** Keep the existing row-based `event_results` persistence pattern, widen it behind a canonical field contract, filter race-only aggregates explicitly, and add organizer metadata to `championships` in the same phase.
 
@@ -347,7 +347,7 @@ count(*) filter (
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
 | DATA-01 | Canonical `QS/S/QF/F/P` values can be stored and read through shared admin/history contracts | unit + repository | `./node_modules/.bin/vitest run tests/admin-event-results-contract.spec.ts` | ❌ Wave 0 |
-| DATA-02 | Save path preserves existing event data and legacy missing fields; canonical CLI import widening stays deferred until a committed workbook fixture exists | service + integration | `./node_modules/.bin/vitest run tests/admin-event-results-preserve.spec.ts` | ❌ Wave 0 |
+| DATA-02 | Save-path coverage preserves existing event data and legacy missing fields; canonical CLI import widening stays deferred until a committed workbook fixture exists | service + integration | `./node_modules/.bin/vitest run tests/admin-event-results-preserve.spec.ts` | ❌ Wave 0 |
 | DATA-03 | Public consumers receive canonical fields and points-first participant ordering | repository + route | `./node_modules/.bin/vitest run tests/history-repository.spec.ts tests/history-api.spec.ts tests/results-page.flow.spec.ts` | ❌ Wave 0 |
 | DATA-04 | Championship organizer metadata persists and is returned through shared types/routes | repository + route | `./node_modules/.bin/vitest run tests/championship-organizer.spec.ts` | ❌ Wave 0 |
 
@@ -364,7 +364,7 @@ count(*) filter (
 - [ ] `tests/championship-organizer.spec.ts` — organizer persistence and retrieval through admin/public contracts.
 - [ ] `tests/history-repository.spec.ts` — expand existing coverage to assert points-first ordering and race-only aggregate filtering.
 - [ ] `tests/history-api.spec.ts` / `tests/results-page.flow.spec.ts` — expand existing coverage to assert canonical field exposure.
-- [ ] Documented exception for `tests/history-parser.spec.ts` — canonical CLI import widening stays out of Phase 1 until a committed workbook fixture exists, so parser validation is tracked as deferred scope rather than a Wave 0 blocker.
+- [ ] documented exception for `tests/history-parser.spec.ts` — canonical CLI import widening stays out of Phase 1 until a committed workbook fixture exists, so parser validation is tracked as deferred scope rather than a Wave 0 blocker.
 
 ## Sources
 

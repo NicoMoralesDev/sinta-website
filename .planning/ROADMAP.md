@@ -31,7 +31,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Championship/tournament organizer metadata can be stored and retrieved through the shared data model.
 **Plans**: 4 plans
 Plans:
-- [ ] 01-00-PLAN.md - Seed Wave 0 test scaffolds and document the Phase 1 DATA-02 import exception.
+- [ ] 01-00-PLAN.md - Seed Wave 0 test scaffolds and document the save-path-backed Phase 1 DATA-02 import exception.
 - [ ] 01-01-PLAN.md - Establish the schema migration and shared canonical result plus organizer contracts.
 - [ ] 01-02-PLAN.md - Make admin result writes and championship persistence safe for canonical fields and organizer metadata.
 - [ ] 01-03-PLAN.md - Expose canonical public reads, points-first ordering, and minimal consumer compatibility.
