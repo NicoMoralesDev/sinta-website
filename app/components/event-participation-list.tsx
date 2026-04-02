@@ -38,12 +38,24 @@ function formatSessionValue(
 }
 
 function getSessionOrder(sessionKind: EventParticipationEntry["sessions"][number]["sessionKind"]): number {
-  if (sessionKind === "primary") {
+  if (sessionKind === "qs") {
     return 0;
   }
 
-  if (sessionKind === "secondary") {
+  if (sessionKind === "s" || sessionKind === "primary") {
     return 1;
+  }
+
+  if (sessionKind === "qf") {
+    return 2;
+  }
+
+  if (sessionKind === "f" || sessionKind === "secondary") {
+    return 3;
+  }
+
+  if (sessionKind === "p") {
+    return 4;
   }
 
   return 10;
@@ -156,7 +168,7 @@ export function EventParticipationList({
     <div className="flex flex-col gap-4">
       {events.map((event, eventIndex) => {
         const sessionColumns = getSessionColumns(event);
-        const columns = sessionColumns.length > 0 ? sessionColumns : [{ sessionKind: "primary", sessionLabel: lang === "en" ? "Result" : "Resultado" } as SessionColumn];
+        const columns = sessionColumns.length > 0 ? sessionColumns : [{ sessionKind: "f", sessionLabel: lang === "en" ? "Result" : "Resultado" } as SessionColumn];
         const gridTemplateColumns = `minmax(0,1fr) repeat(${columns.length}, minmax(90px, auto))`;
         const eventDate = formatEventDate(event, lang);
         const pilotLabel = lang === "en" ? "Driver" : "Piloto";
