@@ -102,6 +102,45 @@ describe("results event share image route", () => {
     vi.clearAllMocks();
   });
 
+  it("forwards the optional driver slug and renders only the selected driver set", async () => {
+    getResultsEventParticipationByIdMock.mockResolvedValueOnce({
+      ...buildEvent(1),
+      participants: [
+        {
+          driverSlug: "kevin-fontana",
+          driverName: "Kevin Fontana",
+          sessions: [
+            { sessionKind: "f", sessionLabel: "F", rawValue: "1", position: 1, status: null },
+            { sessionKind: "p", sessionLabel: "P", rawValue: "25", position: 25, status: null },
+          ],
+        },
+      ],
+    });
+
+    const response = await GET(
+      new Request(
+        "http://localhost/api/v1/results/events/550e8400-e29b-41d4-a716-446655440000/image?driver=kevin-fontana&lang=en",
+      ),
+      {
+        params: Promise.resolve({
+          id: "550e8400-e29b-41d4-a716-446655440000",
+        }),
+      },
+    );
+
+    expect(response.status).toBe(200);
+    expect(getResultsEventParticipationByIdMock).toHaveBeenCalledWith(
+      "550e8400-e29b-41d4-a716-446655440000",
+      "kevin-fontana",
+    );
+
+    const [element] = imageResponseMock.mock.calls[0] as [React.ReactElement];
+    const markup = renderToStaticMarkup(element);
+
+    expect(markup).toContain("Kevin Fontana");
+    expect(markup).not.toContain("Driver 2");
+  });
+
   it("returns an image response with public cache headers and preserves participant order", async () => {
     getResultsEventParticipationByIdMock.mockResolvedValueOnce({
       ...buildEvent(2),
@@ -183,6 +222,30 @@ describe("results event share image route", () => {
 
     const response = await GET(
       new Request("http://localhost/api/v1/results/events/550e8400-e29b-41d4-a716-446655440000/image"),
+      {
+        params: Promise.resolve({
+          id: "550e8400-e29b-41d4-a716-446655440000",
+        }),
+      },
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(404);
+    expect(body).toEqual({
+      ok: false,
+      error: "Event not found: 550e8400-e29b-41d4-a716-446655440000",
+    });
+  });
+
+  it("returns 404 when the requested driver does not belong to the event", async () => {
+    getResultsEventParticipationByIdMock.mockRejectedValueOnce(
+      new HistoryNotFoundError("Event not found: 550e8400-e29b-41d4-a716-446655440000"),
+    );
+
+    const response = await GET(
+      new Request(
+        "http://localhost/api/v1/results/events/550e8400-e29b-41d4-a716-446655440000/image?driver=kevin-fontana",
+      ),
       {
         params: Promise.resolve({
           id: "550e8400-e29b-41d4-a716-446655440000",
