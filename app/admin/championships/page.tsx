@@ -16,7 +16,7 @@ export default async function AdminChampionshipsPage() {
       actor={actor}
       dryRun={context.dryRun}
       title="Campeonatos"
-      subtitle="Crear, editar labels y activar/desactivar campeonatos."
+      subtitle="Crear, editar labels, organizador y activar/desactivar campeonatos."
     >
       <ChampionshipsManager championships={championships} />
     </AdminShell>

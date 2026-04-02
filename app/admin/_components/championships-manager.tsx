@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -19,14 +19,42 @@ type FormState = {
 type ChampionshipDraft = {
   seasonYear: string;
   name: string;
+  organizerName: string;
   primarySessionLabel: string;
   secondarySessionLabel: string;
 };
+
+function normalizeOptionalText(value: string): string | null {
+  const normalized = value.trim();
+  return normalized ? normalized : null;
+}
+
+export function buildCreateChampionshipPayload(formData: FormData) {
+  return {
+    seasonYear: Number(formData.get("seasonYear") ?? 0),
+    name: String(formData.get("name") ?? ""),
+    organizerName: normalizeOptionalText(String(formData.get("organizerName") ?? "")),
+    primarySessionLabel: String(formData.get("primarySessionLabel") ?? "Sprint"),
+    secondarySessionLabel: String(formData.get("secondarySessionLabel") ?? "Final"),
+  };
+}
+
+export function buildUpdateChampionshipPayload(id: string, draft: ChampionshipDraft) {
+  return {
+    id,
+    seasonYear: Number(draft.seasonYear),
+    name: draft.name,
+    organizerName: normalizeOptionalText(draft.organizerName),
+    primarySessionLabel: draft.primarySessionLabel,
+    secondarySessionLabel: draft.secondarySessionLabel,
+  };
+}
 
 function toDraft(championship: AdminChampionship): ChampionshipDraft {
   return {
     seasonYear: String(championship.seasonYear),
     name: championship.name,
+    organizerName: championship.organizerName ?? "",
     primarySessionLabel: championship.primarySessionLabel,
     secondarySessionLabel: championship.secondarySessionLabel,
   };
@@ -55,32 +83,24 @@ export function ChampionshipsManager({ championships }: Props) {
   }
 
   async function createChampionship(formData: FormData) {
-    const seasonYear = Number(formData.get("seasonYear") ?? 0);
-    const name = String(formData.get("name") ?? "");
-    const primarySessionLabel = String(formData.get("primarySessionLabel") ?? "Sprint");
-    const secondarySessionLabel = String(formData.get("secondarySessionLabel") ?? "Final");
+    const payload = buildCreateChampionshipPayload(formData);
 
     setState({ loading: true, error: null, success: null });
     try {
       const response = await fetch("/api/v1/admin/championships", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          seasonYear,
-          name,
-          primarySessionLabel,
-          secondarySessionLabel,
-        }),
+        body: JSON.stringify(payload),
       });
-      const payload = (await response.json()) as { ok?: boolean; error?: string; dryRun?: boolean };
-      if (!response.ok || !payload.ok) {
-        setState({ loading: false, error: payload.error ?? "Error al crear.", success: null });
+      const responsePayload = (await response.json()) as { ok?: boolean; error?: string; dryRun?: boolean };
+      if (!response.ok || !responsePayload.ok) {
+        setState({ loading: false, error: responsePayload.error ?? "Error al crear.", success: null });
         return;
       }
       setState({
         loading: false,
         error: null,
-        success: payload.dryRun ? "Vista previa dry-run generada." : "Campeonato creado.",
+        success: responsePayload.dryRun ? "Vista previa dry-run generada." : "Campeonato creado.",
       });
       router.refresh();
     } catch {
@@ -93,6 +113,7 @@ export function ChampionshipsManager({ championships }: Props) {
       ...(baseDrafts[id] ?? {
         seasonYear: "",
         name: "",
+        organizerName: "",
         primarySessionLabel: "Sprint",
         secondarySessionLabel: "Final",
       }),
@@ -107,23 +128,17 @@ export function ChampionshipsManager({ championships }: Props) {
       const response = await fetch("/api/v1/admin/championships", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id,
-          seasonYear: Number(draft.seasonYear),
-          name: draft.name,
-          primarySessionLabel: draft.primarySessionLabel,
-          secondarySessionLabel: draft.secondarySessionLabel,
-        }),
+        body: JSON.stringify(buildUpdateChampionshipPayload(id, draft)),
       });
-      const payload = (await response.json()) as { ok?: boolean; error?: string; dryRun?: boolean };
-      if (!response.ok || !payload.ok) {
-        setState({ loading: false, error: payload.error ?? "Error al actualizar.", success: null });
+      const responsePayload = (await response.json()) as { ok?: boolean; error?: string; dryRun?: boolean };
+      if (!response.ok || !responsePayload.ok) {
+        setState({ loading: false, error: responsePayload.error ?? "Error al actualizar.", success: null });
         return;
       }
       setState({
         loading: false,
         error: null,
-        success: payload.dryRun ? "Vista previa dry-run generada." : "Campeonato actualizado.",
+        success: responsePayload.dryRun ? "Vista previa dry-run generada." : "Campeonato actualizado.",
       });
       setDrafts({});
       router.refresh();
@@ -140,15 +155,15 @@ export function ChampionshipsManager({ championships }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive }),
       });
-      const payload = (await response.json()) as { ok?: boolean; error?: string; dryRun?: boolean };
-      if (!response.ok || !payload.ok) {
-        setState({ loading: false, error: payload.error ?? "Error en la acción.", success: null });
+      const responsePayload = (await response.json()) as { ok?: boolean; error?: string; dryRun?: boolean };
+      if (!response.ok || !responsePayload.ok) {
+        setState({ loading: false, error: responsePayload.error ?? "Error en la acción.", success: null });
         return;
       }
       setState({
         loading: false,
         error: null,
-        success: payload.dryRun ? "Vista previa dry-run generada." : "Estado actualizado.",
+        success: responsePayload.dryRun ? "Vista previa dry-run generada." : "Estado actualizado.",
       });
       setDrafts({});
       router.refresh();
@@ -162,10 +177,13 @@ export function ChampionshipsManager({ championships }: Props) {
       <section className="rounded-sm border border-racing-steel/25 bg-racing-carbon/55 p-4">
         <h3 className="font-mono text-sm font-semibold tracking-wider text-racing-yellow uppercase">Nuevo campeonato</h3>
         <p className="mt-1 text-xs text-racing-white/60">
-          Completa temporada, nombre y sesiones. El slug se genera automáticamente.
+          Completa temporada, nombre, organizador y sesiones. El slug se genera automáticamente.
         </p>
         <p className="mt-1 text-xs text-racing-white/45">Modelo actual: cada evento soporta dos sesiones (Sprint y Final).</p>
-        <form className="mt-3 grid gap-3 md:grid-cols-[120px_minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]" action={createChampionship}>
+        <form
+          className="mt-3 grid gap-3 md:grid-cols-[120px_minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_auto]"
+          action={createChampionship}
+        >
           <label className="text-xs text-racing-white/65">
             <span className="mb-1 block uppercase tracking-wider">Temporada</span>
             <input
@@ -180,6 +198,14 @@ export function ChampionshipsManager({ championships }: Props) {
             <input
               name="name"
               placeholder="Nombre del campeonato"
+              className="h-9 w-full rounded-sm border border-racing-steel/40 bg-racing-black px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="text-xs text-racing-white/65">
+            <span className="mb-1 block uppercase tracking-wider">Organizador</span>
+            <input
+              name="organizerName"
+              placeholder="Organizador"
               className="h-9 w-full rounded-sm border border-racing-steel/40 bg-racing-black px-3 py-2 text-sm"
             />
           </label>
@@ -221,9 +247,10 @@ export function ChampionshipsManager({ championships }: Props) {
           <table className="min-w-full table-fixed border-collapse text-xs">
             <colgroup>
               <col className="w-[92px]" />
-              <col />
-              <col className="w-[160px]" />
-              <col className="w-[160px]" />
+              <col className="w-[220px]" />
+              <col className="w-[180px]" />
+              <col className="w-[150px]" />
+              <col className="w-[150px]" />
               <col className="w-[96px]" />
               <col className="w-[250px]" />
             </colgroup>
@@ -231,6 +258,7 @@ export function ChampionshipsManager({ championships }: Props) {
               <tr className="border-b border-racing-steel/20 text-racing-white/70 uppercase">
                 <th className="px-2 py-2 text-left">Temporada</th>
                 <th className="px-2 py-2 text-left">Nombre</th>
+                <th className="px-2 py-2 text-left">Organizador</th>
                 <th className="px-2 py-2 text-left">Sprint</th>
                 <th className="px-2 py-2 text-left">Final</th>
                 <th className="px-2 py-2 text-center">Estado</th>
@@ -262,6 +290,15 @@ export function ChampionshipsManager({ championships }: Props) {
                       <input
                         value={draft.name}
                         onChange={(event) => updateDraft(championship.id, "name", event.target.value)}
+                        className="h-9 w-full rounded-sm border border-racing-steel/40 bg-racing-black px-2 py-1.5 text-xs"
+                      />
+                    </td>
+                    <td className="px-2 py-2">
+                      <input
+                        aria-label={`Organizador ${championship.name}`}
+                        value={draft.organizerName}
+                        onChange={(event) => updateDraft(championship.id, "organizerName", event.target.value)}
+                        placeholder="Organizador"
                         className="h-9 w-full rounded-sm border border-racing-steel/40 bg-racing-black px-2 py-1.5 text-xs"
                       />
                     </td>
@@ -318,4 +355,3 @@ export function ChampionshipsManager({ championships }: Props) {
     </div>
   );
 }
-
