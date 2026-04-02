@@ -208,19 +208,79 @@ describe("results page flow", () => {
           eventDate: null,
           participants: [],
         },
+        {
+          eventId: "event-2",
+          seasonYear: 2026,
+          championshipSlug: "tz-4000",
+          championshipName: "TZ 4000",
+          roundNumber: 4,
+          circuitName: "Trelew",
+          eventDate: null,
+          participants: [],
+        },
       ],
-      nextCursor: null,
+      nextCursor: "cursor-2",
     });
 
     const element = await ResultsPage({
       searchParams: {
         lang: "en",
+        year: "2026",
+        limit: "10",
       },
     });
     const html = renderToStaticMarkup(element);
 
     expect(html).toContain("Share image");
     expect(html).toContain("/api/v1/results/events/event-1/image?lang=en");
+    expect(html).toContain("/api/v1/results/events/event-2/image?lang=en");
+    expect(html).toContain("/results?year=2026&amp;limit=10&amp;cursor=cursor-2&amp;lang=en");
+  });
+
+  it("renders spanish share image links without deriving the route from active filters", async () => {
+    getFiltersMock.mockResolvedValueOnce({
+      years: [2026],
+      championships: [
+        {
+          id: "champ-1",
+          seasonYear: 2026,
+          slug: "tz-4000",
+          name: "TZ 4000",
+          organizerName: null,
+        },
+      ],
+      drivers: [],
+    });
+    getCurrentChampionshipMock.mockResolvedValueOnce(null);
+    getResultsStatsMock.mockResolvedValueOnce([]);
+    getResultsEventParticipationMock.mockResolvedValueOnce({
+      items: [
+        {
+          eventId: "event-1",
+          seasonYear: 2026,
+          championshipSlug: "tz-4000",
+          championshipName: "TZ 4000",
+          roundNumber: 3,
+          circuitName: "Interlagos",
+          eventDate: null,
+          participants: [],
+        },
+      ],
+      nextCursor: null,
+    });
+
+    const element = await ResultsPage({
+      searchParams: {
+        championshipId: "champ-1",
+        year: "2026",
+      },
+    });
+    const html = renderToStaticMarkup(element);
+
+    expect(html).toContain("Imagen para compartir");
+    expect(html).toContain("/api/v1/results/events/event-1/image");
+    expect(html).not.toContain("/api/v1/results/events/tz-4000/image");
+    expect(html).not.toContain("/api/v1/results/events/3/image");
   });
 
   it("renders canonical session order qs, s, qf, f, and p without inserting empty sparse historical columns", async () => {
