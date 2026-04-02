@@ -59,7 +59,10 @@ Plans:
   3. Visitor does not see noisy empty session columns for historical events that lack newer session data.
   4. Visitor can see the championship/tournament organizer in an appropriate public label or heading.
   5. Visitor sees the recent-positions chart and related race statistics remain race-correct after the data-model change.
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 03-01-PLAN.md - Add organizer rendering to the public results hub and lock canonical sparse-column behavior with focused flow regressions.
+- [ ] 03-02-PLAN.md - Make driver trend and heatmap derivation final-race-only and add explicit sparkline-orientation coverage.
 
 ### Phase 4: Event Results Share Image
 **Goal**: Visitors can generate a shareable image that faithfully represents a specific public event results table.
