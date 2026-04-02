@@ -92,9 +92,24 @@ function buildResultsHref({
   return query ? `/results?${query}` : "/results";
 }
 
-function buildResultsShareImageHref(eventId: string, lang: "es" | "en"): string {
+function buildResultsShareImageHref(
+  eventId: string,
+  lang: "es" | "en",
+  driver?: string,
+): string {
   const path = `/api/v1/results/events/${eventId}/image`;
-  return lang === "en" ? `${path}?lang=en` : path;
+  const params = new URLSearchParams();
+
+  if (driver) {
+    params.set("driver", driver);
+  }
+
+  if (lang === "en") {
+    params.set("lang", "en");
+  }
+
+  const query = params.toString();
+  return query ? `${path}?${query}` : path;
 }
 
 export default async function ResultsPage({ searchParams }: ResultsPageProps) {
@@ -369,7 +384,7 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
                     emptyMessage={chromeCopy.results.emptyMessage}
                     renderEventActions={(event) => (
                       <Link
-                        href={buildResultsShareImageHref(event.eventId, lang)}
+                        href={buildResultsShareImageHref(event.eventId, lang, driver)}
                         className="text-[11px] font-semibold tracking-wider text-racing-yellow uppercase transition-colors hover:text-racing-white"
                       >
                         {i18n.shareImage}
