@@ -152,6 +152,15 @@ function validateRequiredText(value: string, fieldName: string): string {
   return normalized;
 }
 
+function validateOptionalText(value: string | null | undefined): string | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  const normalized = normalizeWhitespace(value);
+  return normalized || null;
+}
+
 function normalizeUserIdentity(value: string): string {
   return normalizeWhitespace(value).toLowerCase();
 }
@@ -1039,6 +1048,7 @@ export async function createChampionship(
     seasonYear,
     name,
     slug,
+    organizerName: validateOptionalText(input.organizerName),
     primarySessionLabel: validateRequiredText(input.primarySessionLabel, "primarySessionLabel"),
     secondarySessionLabel: validateRequiredText(input.secondarySessionLabel, "secondarySessionLabel"),
   };
@@ -1054,7 +1064,7 @@ export async function createChampionship(
           seasonYear: payload.seasonYear,
           name: payload.name,
           slug: payload.slug,
-          organizerName: null,
+          organizerName: payload.organizerName,
           primarySessionLabel: payload.primarySessionLabel,
           secondarySessionLabel: payload.secondarySessionLabel,
           isActive: true,
@@ -1102,6 +1112,9 @@ export async function updateChampionship(
   if (input.name !== undefined) {
     payload.name = validateRequiredText(input.name, "name");
   }
+  if (input.organizerName !== undefined) {
+    payload.organizerName = validateOptionalText(input.organizerName);
+  }
   if (input.primarySessionLabel !== undefined) {
     payload.primarySessionLabel = validateRequiredText(input.primarySessionLabel, "primarySessionLabel");
   }
@@ -1118,6 +1131,7 @@ export async function updateChampionship(
           ...before,
           seasonYear: payload.seasonYear ?? before.seasonYear,
           name: payload.name ?? before.name,
+          organizerName: payload.organizerName ?? before.organizerName,
           primarySessionLabel: payload.primarySessionLabel ?? before.primarySessionLabel,
           secondarySessionLabel: payload.secondarySessionLabel ?? before.secondarySessionLabel,
         },

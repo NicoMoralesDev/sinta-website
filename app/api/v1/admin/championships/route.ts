@@ -36,6 +36,7 @@ export async function POST(request: Request) {
     const body = await parseAdminJsonBody<{
       seasonYear?: number;
       name?: string;
+      organizerName?: string | null;
       primarySessionLabel?: string;
       secondarySessionLabel?: string;
     }>(request);
@@ -46,6 +47,7 @@ export async function POST(request: Request) {
         seasonYear: body.seasonYear ?? 0,
         name: body.name ?? "",
         slug: "",
+        organizerName: body.organizerName ?? null,
         primarySessionLabel: body.primarySessionLabel ?? "Sprint",
         secondarySessionLabel: body.secondarySessionLabel ?? "Final",
       },
@@ -65,6 +67,7 @@ export async function PATCH(request: Request) {
       id?: string;
       seasonYear?: number;
       name?: string;
+      organizerName?: string | null;
       primarySessionLabel?: string;
       secondarySessionLabel?: string;
     }>(request);
@@ -73,6 +76,7 @@ export async function PATCH(request: Request) {
     const result = await updateChampionship(actor, id, {
       seasonYear: body.seasonYear,
       name: body.name,
+      organizerName: body.organizerName,
       primarySessionLabel: body.primarySessionLabel,
       secondarySessionLabel: body.secondarySessionLabel,
     }, {
@@ -84,4 +88,3 @@ export async function PATCH(request: Request) {
     return handleAdminApiError(error);
   }
 }
-

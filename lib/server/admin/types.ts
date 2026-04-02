@@ -168,6 +168,7 @@ export type CreateChampionshipInput = {
   seasonYear: number;
   name: string;
   slug: string;
+  organizerName: string | null;
   primarySessionLabel: string;
   secondarySessionLabel: string;
 };
@@ -175,6 +176,7 @@ export type CreateChampionshipInput = {
 export type UpdateChampionshipInput = {
   seasonYear?: number;
   name?: string;
+  organizerName?: string | null;
   primarySessionLabel?: string;
   secondarySessionLabel?: string;
 };

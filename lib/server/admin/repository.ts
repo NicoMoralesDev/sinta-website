@@ -603,12 +603,13 @@ export async function createChampionshipRecord(input: CreateChampionshipInput): 
         season_year,
         name,
         slug,
+        organizer_name,
         primary_session_label,
         secondary_session_label,
         is_active,
         updated_at
       )
-      values ($1, $2, $3, $4, $5, true, now())
+      values ($1, $2, $3, $4, $5, $6, true, now())
       returning
         id,
         season_year,
@@ -621,7 +622,14 @@ export async function createChampionshipRecord(input: CreateChampionshipInput): 
         created_at::text,
         updated_at::text
     `,
-    [input.seasonYear, input.name, input.slug, input.primarySessionLabel, input.secondarySessionLabel],
+    [
+      input.seasonYear,
+      input.name,
+      input.slug,
+      input.organizerName,
+      input.primarySessionLabel,
+      input.secondarySessionLabel,
+    ],
   );
   const row = result.rows.at(0);
   if (!row) {
@@ -643,6 +651,10 @@ export async function updateChampionshipRecord(
   if (input.name !== undefined) {
     values.push(input.name);
     fields.push(`name = $${values.length}`);
+  }
+  if (input.organizerName !== undefined) {
+    values.push(input.organizerName);
+    fields.push(`organizer_name = $${values.length}`);
   }
   if (input.primarySessionLabel !== undefined) {
     values.push(input.primarySessionLabel);
