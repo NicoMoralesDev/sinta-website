@@ -1,89 +1,30 @@
-﻿import Link from "next/link";
+﻿import type { ReactNode } from "react";
+import Link from "next/link";
 
 import type {
   EventParticipationCard,
   EventParticipationEntry,
 } from "@/lib/server/history/types";
 import type { Language } from "@/app/content/site-content";
+import {
+  formatEventParticipationDate,
+  formatEventParticipationRoundLabel,
+  formatEventParticipationSeasonLabel,
+  formatEventParticipationSessionValue,
+  getEventParticipationSessionColumns,
+  type EventParticipationSessionColumn,
+} from "@/app/components/event-participation-helpers";
 
 type EventParticipationListProps = {
   lang: Language;
   events: EventParticipationCard[];
   emptyMessage: string;
   linkDrivers?: boolean;
-};
-
-type SessionColumn = {
-  sessionKind: EventParticipationEntry["sessions"][number]["sessionKind"];
-  sessionLabel: string;
+  renderEventActions?: (event: EventParticipationCard) => ReactNode;
 };
 
 function buildDriverHref(slug: string, lang: Language): string {
   return lang === "en" ? `/drivers/${slug}?lang=en` : `/drivers/${slug}`;
-}
-
-function formatSessionValue(
-  session: EventParticipationEntry["sessions"][number],
-  lang: Language,
-): string {
-  if (session.position !== null) {
-    return `P${session.position}`;
-  }
-
-  if (session.status === "ABSENT") {
-    return lang === "es" ? "AUS" : "ABS";
-  }
-
-  return session.status ?? session.rawValue;
-}
-
-function getSessionOrder(sessionKind: EventParticipationEntry["sessions"][number]["sessionKind"]): number {
-  if (sessionKind === "qs") {
-    return 0;
-  }
-
-  if (sessionKind === "s" || sessionKind === "primary") {
-    return 1;
-  }
-
-  if (sessionKind === "qf") {
-    return 2;
-  }
-
-  if (sessionKind === "f" || sessionKind === "secondary") {
-    return 3;
-  }
-
-  if (sessionKind === "p") {
-    return 4;
-  }
-
-  return 10;
-}
-
-function getSessionColumns(event: EventParticipationCard): SessionColumn[] {
-  const map = new Map<string, SessionColumn>();
-
-  for (const participant of event.participants) {
-    for (const session of participant.sessions) {
-      const key = `${session.sessionKind}:${session.sessionLabel}`;
-      if (!map.has(key)) {
-        map.set(key, {
-          sessionKind: session.sessionKind,
-          sessionLabel: session.sessionLabel,
-        });
-      }
-    }
-  }
-
-  return Array.from(map.values()).sort((left, right) => {
-    const byKind = getSessionOrder(left.sessionKind) - getSessionOrder(right.sessionKind);
-    if (byKind !== 0) {
-      return byKind;
-    }
-
-    return left.sessionLabel.localeCompare(right.sessionLabel);
-  });
 }
 
 function getSessionBadgeTone(session: EventParticipationEntry["sessions"][number] | null): string {
@@ -126,35 +67,12 @@ function getSessionBadgeTone(session: EventParticipationEntry["sessions"][number
   return "border-racing-yellow/40 bg-racing-yellow/10 text-racing-yellow";
 }
 
-function formatEventDate(event: EventParticipationCard, lang: Language): string | null {
-  if (!event.eventDate) {
-    return null;
-  }
-
-  return new Date(event.eventDate).toLocaleDateString(lang === "en" ? "en-US" : "es-AR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-function formatSeasonChampionship(event: EventParticipationCard, lang: Language): string {
-  if (lang === "en") {
-    return `Season ${event.seasonYear} - ${event.championshipName}`;
-  }
-
-  return `Temporada ${event.seasonYear} - ${event.championshipName}`;
-}
-
-function formatRoundCircuit(event: EventParticipationCard): string {
-  return `R${event.roundNumber} - ${event.circuitName}`;
-}
-
 export function EventParticipationList({
   lang,
   events,
   emptyMessage,
   linkDrivers = true,
+  renderEventActions,
 }: EventParticipationListProps) {
   if (events.length === 0) {
     return (
@@ -167,11 +85,20 @@ export function EventParticipationList({
   return (
     <div className="flex flex-col gap-4">
       {events.map((event, eventIndex) => {
-        const sessionColumns = getSessionColumns(event);
-        const columns = sessionColumns.length > 0 ? sessionColumns : [{ sessionKind: "f", sessionLabel: lang === "en" ? "Result" : "Resultado" } as SessionColumn];
+        const sessionColumns = getEventParticipationSessionColumns(event);
+        const columns =
+          sessionColumns.length > 0
+            ? sessionColumns
+            : [
+                {
+                  sessionKind: "f",
+                  sessionLabel: lang === "en" ? "Result" : "Resultado",
+                } as EventParticipationSessionColumn,
+              ];
         const gridTemplateColumns = `minmax(0,1fr) repeat(${columns.length}, minmax(90px, auto))`;
-        const eventDate = formatEventDate(event, lang);
+        const eventDate = formatEventParticipationDate(event, lang);
         const pilotLabel = lang === "en" ? "Driver" : "Piloto";
+        const eventActions = renderEventActions?.(event);
 
         return (
           <article
@@ -182,17 +109,22 @@ export function EventParticipationList({
             <header className="flex flex-wrap items-center justify-between gap-3 border-b border-racing-steel/20 bg-racing-carbon/80 px-4 py-3">
               <div>
                 <p className="font-mono text-xs font-semibold tracking-[0.14em] text-racing-yellow uppercase">
-                  {formatSeasonChampionship(event, lang)}
+                  {formatEventParticipationSeasonLabel(event, lang)}
                 </p>
                 <h3 className="font-mono text-sm font-bold tracking-wide text-racing-white uppercase md:text-base">
-                  {formatRoundCircuit(event)}
+                  {formatEventParticipationRoundLabel(event)}
                 </h3>
               </div>
 
-              {eventDate ? (
-                <span className="text-[11px] font-medium tracking-wider text-racing-white/45 uppercase">
-                  {eventDate}
-                </span>
+              {eventDate || eventActions ? (
+                <div className="flex flex-wrap items-center justify-end gap-3">
+                  {eventDate ? (
+                    <span className="text-[11px] font-medium tracking-wider text-racing-white/45 uppercase">
+                      {eventDate}
+                    </span>
+                  ) : null}
+                  {eventActions}
+                </div>
               ) : null}
             </header>
 
@@ -244,9 +176,9 @@ export function EventParticipationList({
                         <span
                           key={`${participant.driverSlug}-${column.sessionKind}`}
                           className={`justify-self-end inline-flex h-10 min-w-[84px] items-center justify-center rounded-sm border px-2 py-1 text-base font-mono font-bold tracking-wider uppercase ${getSessionBadgeTone(session)}`}
-                          aria-label={`${column.sessionLabel}: ${session ? formatSessionValue(session, lang) : "-"}`}
+                          aria-label={`${column.sessionLabel}: ${session ? formatEventParticipationSessionValue(session, lang) : "-"}`}
                         >
-                          {session ? formatSessionValue(session, lang) : "-"}
+                          {session ? formatEventParticipationSessionValue(session, lang) : "-"}
                         </span>
                       );
                     })}
