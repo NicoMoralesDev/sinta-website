@@ -134,7 +134,10 @@ describe("results event share image route", () => {
       "kevin-fontana",
     );
 
-    const [element] = imageResponseMock.mock.calls[0] as [React.ReactElement];
+    const [element] = imageResponseMock.mock.calls[0] as [
+      React.ReactElement,
+      { headers?: HeadersInit },
+    ];
     const markup = renderToStaticMarkup(element);
 
     expect(markup).toContain("Kevin Fontana");
