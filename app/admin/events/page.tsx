@@ -54,7 +54,7 @@ export default async function AdminEventsPage({ searchParams }: PageProps) {
       actor={actor}
       dryRun={context.dryRun}
       title="Eventos y Resultados"
-      subtitle="Edicion de eventos y resultados por evento."
+      subtitle="Edicion de eventos y resultados canonicos por evento."
     >
       <EventsManager
         events={events}

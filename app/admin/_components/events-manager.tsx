@@ -1,14 +1,18 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 
 import type {
+  AdminCanonicalResultField,
   AdminChampionship,
   AdminEvent,
+  AdminEventResultCellValue,
   AdminEventResultsGrid,
+  EventResultCellInput,
 } from "@/lib/server/admin/types";
+import { CANONICAL_RESULT_FIELDS, type ResultStatus } from "@/lib/server/history/types";
 
 type Props = {
   events: AdminEvent[];
@@ -22,13 +26,6 @@ type FormState = {
   success: string | null;
 };
 
-type EditableGridRow = {
-  driverId: string;
-  driverName: string;
-  primaryValue: string;
-  secondaryValue: string;
-};
-
 type EventDraft = {
   championshipId: string;
   roundNumber: string;
@@ -36,9 +33,40 @@ type EventDraft = {
   eventDate: string;
 };
 
-function cellToValue(cell: { position: number | null; status: string | null; rawValue: string } | null): string {
+type ResultValues = Record<AdminCanonicalResultField, string>;
+
+export type EditableResultRow = {
+  driverId: string;
+  driverName: string;
+  initialValues: ResultValues;
+  values: ResultValues;
+};
+
+type ParsedResultValue = {
+  position: number | null;
+  status: ResultStatus | null;
+  rawValue: string;
+};
+
+export type ParsedResultInput =
+  | { kind: "empty" }
+  | { kind: "invalid" }
+  | { kind: "value"; value: ParsedResultValue };
+
+export const COMPACT_RESULT_FIELD_LABELS: Record<AdminCanonicalResultField, string> = {
+  qs: "QS",
+  s: "S",
+  qf: "QF",
+  f: "F",
+  p: "P",
+};
+
+function cellToValue(cell: AdminEventResultCellValue | null | undefined): string {
   if (!cell) {
     return "";
+  }
+  if (cell.rawValue.trim()) {
+    return cell.rawValue;
   }
   if (cell.position !== null) {
     return String(cell.position);
@@ -46,7 +74,200 @@ function cellToValue(cell: { position: number | null; status: string | null; raw
   if (cell.status) {
     return cell.status;
   }
-  return cell.rawValue;
+  return "";
+}
+
+function createEmptyResultValues(): ResultValues {
+  return CANONICAL_RESULT_FIELDS.reduce((result, field) => {
+    result[field] = "";
+    return result;
+  }, {} as ResultValues);
+}
+
+function createCellKey(driverId: string, field: AdminCanonicalResultField): string {
+  return `${driverId}:${field}`;
+}
+
+function isPointsField(field: AdminCanonicalResultField): boolean {
+  return field === "p";
+}
+
+export function getResultFieldLabel(
+  field: AdminCanonicalResultField,
+  labels: Record<AdminCanonicalResultField, string>,
+  compact: boolean,
+): string {
+  return compact ? COMPACT_RESULT_FIELD_LABELS[field] : labels[field] ?? COMPACT_RESULT_FIELD_LABELS[field];
+}
+
+export function parseResultInput(field: AdminCanonicalResultField, value: string): ParsedResultInput {
+  const normalized = value.trim().toUpperCase();
+  if (!normalized) {
+    return { kind: "empty" };
+  }
+
+  if (/^\d+$/.test(normalized)) {
+    const numberValue = Number.parseInt(normalized, 10);
+    if (!Number.isFinite(numberValue)) {
+      return { kind: "invalid" };
+    }
+
+    if (isPointsField(field)) {
+      if (numberValue < 0) {
+        return { kind: "invalid" };
+      }
+
+      return {
+        kind: "value",
+        value: {
+          position: numberValue,
+          status: null,
+          rawValue: String(numberValue),
+        },
+      };
+    }
+
+    if (numberValue <= 0) {
+      return { kind: "invalid" };
+    }
+
+    return {
+      kind: "value",
+      value: {
+        position: numberValue,
+        status: null,
+        rawValue: String(numberValue),
+      },
+    };
+  }
+
+  if (isPointsField(field)) {
+    return { kind: "invalid" };
+  }
+
+  if (normalized === "DNF" || normalized === "DNQ" || normalized === "DSQ" || normalized === "ABSENT") {
+    return {
+      kind: "value",
+      value: {
+        position: null,
+        status: normalized,
+        rawValue: normalized,
+      },
+    };
+  }
+
+  return { kind: "invalid" };
+}
+
+function normalizeResultInputForComparison(field: AdminCanonicalResultField, value: string): string {
+  const parsed = parseResultInput(field, value);
+  if (parsed.kind === "empty") {
+    return "";
+  }
+  if (parsed.kind === "value") {
+    return parsed.value.rawValue;
+  }
+  return value.trim().toUpperCase();
+}
+
+export function createEditableResultRows(grid: AdminEventResultsGrid): EditableResultRow[] {
+  return grid.drivers.map((driver) => {
+    const initialValues = createEmptyResultValues();
+
+    for (const field of grid.fieldOrder) {
+      initialValues[field] = cellToValue(driver.results[field]);
+    }
+
+    return {
+      driverId: driver.driverId,
+      driverName: driver.driverName,
+      initialValues,
+      values: { ...initialValues },
+    };
+  });
+}
+
+export function getInvalidResultCellKeys(
+  rows: EditableResultRow[],
+  fieldOrder: AdminCanonicalResultField[],
+): Set<string> {
+  const invalidCellKeys = new Set<string>();
+
+  for (const row of rows) {
+    for (const field of fieldOrder) {
+      if (parseResultInput(field, row.values[field]).kind === "invalid") {
+        invalidCellKeys.add(createCellKey(row.driverId, field));
+      }
+    }
+  }
+
+  return invalidCellKeys;
+}
+
+export function getDirtyResultCellKeys(
+  rows: EditableResultRow[],
+  fieldOrder: AdminCanonicalResultField[],
+): Set<string> {
+  const dirtyCellKeys = new Set<string>();
+
+  for (const row of rows) {
+    for (const field of fieldOrder) {
+      if (
+        normalizeResultInputForComparison(field, row.values[field]) !==
+        normalizeResultInputForComparison(field, row.initialValues[field])
+      ) {
+        dirtyCellKeys.add(createCellKey(row.driverId, field));
+      }
+    }
+  }
+
+  return dirtyCellKeys;
+}
+
+export function serializeDirtyResultCells(
+  rows: EditableResultRow[],
+  fieldOrder: AdminCanonicalResultField[],
+): EventResultCellInput[] {
+  const dirtyRows: EventResultCellInput[] = [];
+
+  for (const row of rows) {
+    for (const field of fieldOrder) {
+      const normalizedCurrent = normalizeResultInputForComparison(field, row.values[field]);
+      const normalizedInitial = normalizeResultInputForComparison(field, row.initialValues[field]);
+
+      if (normalizedCurrent === normalizedInitial) {
+        continue;
+      }
+
+      const parsed = parseResultInput(field, row.values[field]);
+      if (parsed.kind === "invalid") {
+        throw new Error(`Invalid cell for ${row.driverName} in ${field}.`);
+      }
+
+      if (parsed.kind === "empty") {
+        dirtyRows.push({
+          driverId: row.driverId,
+          sessionKind: field,
+          position: null,
+          status: null,
+          rawValue: "",
+          isActive: false,
+        });
+        continue;
+      }
+
+      dirtyRows.push({
+        driverId: row.driverId,
+        sessionKind: field,
+        position: parsed.value.position,
+        status: parsed.value.status,
+        rawValue: parsed.value.rawValue,
+        isActive: true,
+      });
+    }
+  }
+
+  return dirtyRows;
 }
 
 function toDraft(event: AdminEvent): EventDraft {
@@ -58,41 +279,117 @@ function toDraft(event: AdminEvent): EventDraft {
   };
 }
 
-function parseCellInput(value: string):
-  | { position: number; status: null; rawValue: string }
-  | { position: null; status: "DNF" | "DNQ" | "DSQ" | "ABSENT"; rawValue: string }
-  | null {
-  const normalized = value.trim().toUpperCase();
-  if (!normalized) {
-    return null;
-  }
+type EventResultsEditorPanelProps = {
+  event: AdminEvent;
+  grid: AdminEventResultsGrid;
+  rows: EditableResultRow[];
+  invalidCellKeys: Set<string>;
+  dirtyCellKeys?: Set<string>;
+  isSaving: boolean;
+  onCellChange: (driverId: string, field: AdminCanonicalResultField, value: string) => void;
+  onSave: () => void;
+  registerInput?: (driverId: string, field: AdminCanonicalResultField, node: HTMLInputElement | null) => void;
+};
 
-  if (/^\d+$/.test(normalized)) {
-    const position = Number.parseInt(normalized, 10);
-    if (!Number.isFinite(position) || position <= 0) {
-      return null;
-    }
+export function EventResultsEditorPanel({
+  event,
+  grid,
+  rows,
+  invalidCellKeys,
+  dirtyCellKeys = new Set<string>(),
+  isSaving,
+  onCellChange,
+  onSave,
+  registerInput,
+}: EventResultsEditorPanelProps) {
+  return (
+    <>
+      <h4 className="font-mono text-xs font-semibold tracking-wider text-racing-yellow uppercase">
+        Resultados: {event.seasonYear} {event.championshipName} R{event.roundNumber} - {event.circuitName}
+      </h4>
+      <div className="mt-1 space-y-1 text-xs text-racing-white/55">
+        <p>Race fields accept positive integers or DNF / DNQ / DSQ / ABSENT.</p>
+        <p>Points accepts whole numbers &gt;= 0.</p>
+      </div>
 
-    return {
-      position,
-      status: null,
-      rawValue: normalized,
-    };
-  }
+      <div className="mt-3 overflow-x-auto">
+        <table className="min-w-[860px] table-fixed border-collapse text-xs">
+          <colgroup>
+            <col className="w-[220px]" />
+            {grid.fieldOrder.map((field) => (
+              <col key={field} className={field === "p" ? "w-[130px]" : "w-[120px]"} />
+            ))}
+          </colgroup>
+          <thead>
+            <tr className="border-b border-racing-steel/20 text-racing-white/70 uppercase">
+              <th className="px-2 py-2 text-left">Piloto</th>
+              {grid.fieldOrder.map((field) => (
+                <th key={field} className="px-2 py-2 text-center">
+                  <span className="hidden md:inline">{getResultFieldLabel(field, grid.fieldLabels, false)}</span>
+                  <span className="md:hidden">{getResultFieldLabel(field, grid.fieldLabels, true)}</span>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, index) => (
+              <tr
+                key={row.driverId}
+                className={`border-b border-racing-steel/10 align-top ${
+                  index % 2 === 0 ? "bg-[#2c2c2c]" : "bg-[#202020]"
+                }`}
+              >
+                <td className="px-2 py-2">
+                  <div className="font-medium text-racing-white">{row.driverName}</div>
+                </td>
+                {grid.fieldOrder.map((field) => {
+                  const cellKey = createCellKey(row.driverId, field);
+                  const isInvalid = invalidCellKeys.has(cellKey);
+                  const isDirty = dirtyCellKeys.has(cellKey);
 
-  if (normalized === "DNF" || normalized === "DNQ" || normalized === "DSQ" || normalized === "ABSENT") {
-    return {
-      position: null,
-      status: normalized,
-      rawValue: normalized,
-    };
-  }
+                  return (
+                    <td key={field} className="px-2 py-2">
+                      <label className="mb-1 block text-[11px] tracking-wider text-racing-white/45 uppercase md:hidden">
+                        {getResultFieldLabel(field, grid.fieldLabels, true)}
+                      </label>
+                      <input
+                        ref={(node) => registerInput?.(row.driverId, field, node)}
+                        value={row.values[field]}
+                        onChange={(eventInput) => onCellChange(row.driverId, field, eventInput.target.value)}
+                        aria-invalid={isInvalid || undefined}
+                        className={`h-9 w-full rounded-sm border px-2 py-1 text-center uppercase ${
+                          isInvalid
+                            ? "border-red-400 bg-red-950/30 text-red-100"
+                            : isDirty
+                              ? "border-racing-yellow/55 bg-racing-black text-racing-white"
+                              : "border-racing-steel/40 bg-racing-black text-racing-white"
+                        }`}
+                        placeholder={field === "p" ? "0" : "1 / DNF"}
+                      />
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-  return null;
+      <button
+        type="button"
+        disabled={isSaving}
+        onClick={onSave}
+        className="mt-3 rounded-sm bg-racing-yellow px-4 py-2 text-xs font-bold tracking-wider text-racing-black uppercase disabled:opacity-60"
+      >
+        {isSaving ? "Guardando..." : "Guardar resultados"}
+      </button>
+    </>
+  );
 }
 
 export function EventsManager({ events, championships, championshipFilterId = null }: Props) {
   const router = useRouter();
+  const resultInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const [state, setState] = useState<FormState>({ loading: false, error: null, success: null });
   const [eventDrafts, setEventDrafts] = useState<Record<string, EventDraft>>({});
@@ -100,7 +397,7 @@ export function EventsManager({ events, championships, championshipFilterId = nu
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [gridLoadingEventId, setGridLoadingEventId] = useState<string | null>(null);
   const [grid, setGrid] = useState<AdminEventResultsGrid | null>(null);
-  const [editableRows, setEditableRows] = useState<EditableGridRow[]>([]);
+  const [editableRows, setEditableRows] = useState<EditableResultRow[]>([]);
 
   useEffect(() => {
     const nextDrafts: Record<string, EventDraft> = {};
@@ -129,20 +426,19 @@ export function EventsManager({ events, championships, championshipFilterId = nu
     ? championshipMap.get(championshipFilterId) ?? null
     : null;
 
-  function getSessionLabelsForEvent(eventId: string | null): { primary: string; secondary: string } {
-    if (!eventId) {
-      return { primary: "Sprint", secondary: "Final" };
+  const invalidCellKeys = useMemo(() => {
+    if (!grid) {
+      return new Set<string>();
     }
-    const event = events.find((entry) => entry.id === eventId);
-    if (!event) {
-      return { primary: "Sprint", secondary: "Final" };
+    return getInvalidResultCellKeys(editableRows, grid.fieldOrder);
+  }, [editableRows, grid]);
+
+  const dirtyCellKeys = useMemo(() => {
+    if (!grid) {
+      return new Set<string>();
     }
-    const championship = championshipMap.get(event.championshipId);
-    return {
-      primary: championship?.primarySessionLabel || "Sprint",
-      secondary: championship?.secondarySessionLabel || "Final",
-    };
-  }
+    return getDirtyResultCellKeys(editableRows, grid.fieldOrder);
+  }, [editableRows, grid]);
 
   function updateDraft(id: string, field: keyof EventDraft, value: string) {
     setEventDrafts((previous) => ({
@@ -157,6 +453,22 @@ export function EventsManager({ events, championships, championshipFilterId = nu
         [field]: value,
       },
     }));
+  }
+
+  function updateResultCell(driverId: string, field: AdminCanonicalResultField, value: string) {
+    setEditableRows((previous) =>
+      previous.map((row) =>
+        row.driverId === driverId
+          ? {
+              ...row,
+              values: {
+                ...row.values,
+                [field]: value,
+              },
+            }
+          : row,
+      ),
+    );
   }
 
   async function refreshWithMessage(message: string, dryRun?: boolean) {
@@ -247,7 +559,7 @@ export function EventsManager({ events, championships, championshipFilterId = nu
     }
   }
 
-  async function loadGrid(eventId: string) {
+  async function loadGrid(eventId: string): Promise<void> {
     setSelectedEventId(eventId);
     setGridLoadingEventId(eventId);
     setState((previous) => ({ ...previous, error: null }));
@@ -263,14 +575,7 @@ export function EventsManager({ events, championships, championshipFilterId = nu
       }
 
       setGrid(json.grid);
-      setEditableRows(
-        json.grid.drivers.map((driver) => ({
-          driverId: driver.driverId,
-          driverName: driver.driverName,
-          primaryValue: cellToValue(driver.primary),
-          secondaryValue: cellToValue(driver.secondary),
-        })),
-      );
+      setEditableRows(createEditableResultRows(json.grid));
     } catch {
       setState({ loading: false, error: "Error de red al cargar resultados.", success: null });
       setGrid(null);
@@ -292,55 +597,31 @@ export function EventsManager({ events, championships, championshipFilterId = nu
   }
 
   async function saveResults() {
-    if (!selectedEventId) {
+    if (!selectedEventId || !grid) {
       return;
     }
 
     setState({ loading: true, error: null, success: null });
 
-    const rows: Array<{
-      driverId: string;
-      sessionKind: "primary" | "secondary";
-      position: number | null;
-      status: "DNF" | "DNQ" | "DSQ" | "ABSENT" | null;
-      rawValue: string;
-      isActive: boolean;
-    }> = [];
+    if (invalidCellKeys.size > 0) {
+      const firstInvalidCellKey = [...invalidCellKeys][0];
+      resultInputRefs.current[firstInvalidCellKey]?.focus();
+      setState({ loading: false, error: "Revisa los resultados marcados antes de guardar.", success: null });
+      return;
+    }
 
-    const labels = getSessionLabelsForEvent(selectedEventId);
+    let rows: EventResultCellInput[];
 
-    for (const row of editableRows) {
-      const primary = parseCellInput(row.primaryValue);
-      if (row.primaryValue.trim() && !primary) {
-        setState({ loading: false, error: `Valor inválido para ${row.driverName} en ${labels.primary}.`, success: null });
-        return;
-      }
-      if (primary) {
-        rows.push({
-          driverId: row.driverId,
-          sessionKind: "primary",
-          position: primary.position,
-          status: primary.status,
-          rawValue: primary.rawValue,
-          isActive: true,
-        });
-      }
+    try {
+      rows = serializeDirtyResultCells(editableRows, grid.fieldOrder);
+    } catch {
+      setState({ loading: false, error: "No se pudieron preparar los cambios de resultados.", success: null });
+      return;
+    }
 
-      const secondary = parseCellInput(row.secondaryValue);
-      if (row.secondaryValue.trim() && !secondary) {
-        setState({ loading: false, error: `Valor inválido para ${row.driverName} en ${labels.secondary}.`, success: null });
-        return;
-      }
-      if (secondary) {
-        rows.push({
-          driverId: row.driverId,
-          sessionKind: "secondary",
-          position: secondary.position,
-          status: secondary.status,
-          rawValue: secondary.rawValue,
-          isActive: true,
-        });
-      }
+    if (rows.length === 0) {
+      setState({ loading: false, error: null, success: "No hay cambios para guardar." });
+      return;
     }
 
     try {
@@ -377,7 +658,7 @@ export function EventsManager({ events, championships, championshipFilterId = nu
         {filteredChampionship ? (
           <p className="mt-1 text-xs text-racing-yellow/90">
             Filtro activo: {filteredChampionship.seasonYear} - {filteredChampionship.name}{" "}
-            <Link href="/admin/events" className="underline underline-offset-2 text-racing-white/80">
+            <Link href="/admin/events" className="text-racing-white/80 underline underline-offset-2">
               limpiar
             </Link>
           </p>
@@ -466,7 +747,6 @@ export function EventsManager({ events, championships, championshipFilterId = nu
             <tbody>
               {events.map((event, index) => {
                 const draft = eventDrafts[event.id] ?? toDraft(event);
-                const sessionLabels = getSessionLabelsForEvent(event.id);
                 const isSelected = selectedEventId === event.id;
                 const isLoadingGrid = gridLoadingEventId === event.id;
 
@@ -553,82 +833,24 @@ export function EventsManager({ events, championships, championshipFilterId = nu
                     {isSelected ? (
                       <tr className="border-b border-racing-steel/15 bg-racing-black/50">
                         <td colSpan={6} className="px-3 py-3">
-                          <h4 className="font-mono text-xs font-semibold tracking-wider text-racing-yellow uppercase">
-                            Resultados: {event.seasonYear} {event.championshipName} R{event.roundNumber} - {event.circuitName}
-                          </h4>
-                          <p className="mt-1 text-xs text-racing-white/55">
-                            Ingresa posiciones numéricas o estados: DNF, DNQ, DSQ, ABSENT.
-                          </p>
-                          <p className="mt-1 text-xs text-racing-white/45">
-                            Modelo actual: 2 sesiones por evento ({sessionLabels.primary} y {sessionLabels.secondary}).
-                          </p>
-
                           {isLoadingGrid ? <p className="mt-2 text-xs text-racing-white/60">Cargando resultados...</p> : null}
 
                           {!isLoadingGrid && grid ? (
-                            <>
-                              <div className="mt-2 overflow-auto">
-                                <table className="min-w-full table-fixed border-collapse text-xs">
-                                  <colgroup>
-                                    <col />
-                                    <col className="w-[170px]" />
-                                    <col className="w-[170px]" />
-                                  </colgroup>
-                                  <thead>
-                                    <tr className="border-b border-racing-steel/20 text-racing-white/70 uppercase">
-                                      <th className="px-2 py-2 text-left">Piloto</th>
-                                      <th className="px-2 py-2 text-center">Posición {sessionLabels.primary}</th>
-                                      <th className="px-2 py-2 text-center">Posición {sessionLabels.secondary}</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {editableRows.map((row, index) => (
-                                      <tr
-                                        key={row.driverId}
-                                        className={`border-b border-racing-steel/10 align-middle ${
-                                          index % 2 === 0 ? "bg-[#2c2c2c]" : "bg-[#202020]"
-                                        }`}
-                                      >
-                                        <td className="px-2 py-2">{row.driverName}</td>
-                                        <td className="px-2 py-2">
-                                          <input
-                                            value={row.primaryValue}
-                                            onChange={(eventInput) => {
-                                              const next = [...editableRows];
-                                              next[index] = { ...row, primaryValue: eventInput.target.value };
-                                              setEditableRows(next);
-                                            }}
-                                            className="h-8 w-full rounded-sm border border-racing-steel/40 bg-racing-black px-2 py-1 text-center"
-                                            placeholder="1 / DNF"
-                                          />
-                                        </td>
-                                        <td className="px-2 py-2">
-                                          <input
-                                            value={row.secondaryValue}
-                                            onChange={(eventInput) => {
-                                              const next = [...editableRows];
-                                              next[index] = { ...row, secondaryValue: eventInput.target.value };
-                                              setEditableRows(next);
-                                            }}
-                                            className="h-8 w-full rounded-sm border border-racing-steel/40 bg-racing-black px-2 py-1 text-center"
-                                            placeholder="1 / DNF"
-                                          />
-                                        </td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-
-                              <button
-                                type="button"
-                                disabled={state.loading}
-                                onClick={() => void saveResults()}
-                                className="mt-3 rounded-sm bg-racing-yellow px-4 py-2 text-xs font-bold tracking-wider text-racing-black uppercase disabled:opacity-60"
-                              >
-                                {state.loading ? "Guardando..." : "Guardar resultados"}
-                              </button>
-                            </>
+                            <EventResultsEditorPanel
+                              event={event}
+                              grid={grid}
+                              rows={editableRows}
+                              invalidCellKeys={invalidCellKeys}
+                              dirtyCellKeys={dirtyCellKeys}
+                              isSaving={state.loading}
+                              onCellChange={updateResultCell}
+                              onSave={() => {
+                                void saveResults();
+                              }}
+                              registerInput={(driverId, field, node) => {
+                                resultInputRefs.current[createCellKey(driverId, field)] = node;
+                              }}
+                            />
                           ) : null}
                         </td>
                       </tr>
