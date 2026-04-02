@@ -7,35 +7,38 @@
 
 ### Results Data
 
-- [ ] **DATA-01**: Admin can store an optional `qualy` result for an event participant without requiring `qualy` on historical events that do not have it
-- [ ] **DATA-02**: Admin can import or save event results with `qualy` values without losing existing sprint/final event results
-- [ ] **DATA-03**: Public consumers can retrieve event result data with `qualy` included when it exists for the event
+- [ ] **DATA-01**: Admin can store event participant results using the canonical columns `QS`, `S`, `QF`, `F`, and `P`
+- [ ] **DATA-02**: Admin can import or save event results with `QS`, `QF`, or `P` values without losing existing event data
+- [ ] **DATA-03**: Public consumers can retrieve event result data with canonical result fields and points-based ordering
+- [ ] **DATA-04**: Maintainer can store organizer metadata for each championship/tournament
 
 ### Admin Results
 
-- [ ] **ADMIN-01**: Admin can view and edit `qualy` results in the event results workflow alongside the existing result sessions
-- [ ] **ADMIN-02**: Admin does not see an unnecessary `qualy` input or empty `qualy` column for events where no `qualy` data exists
+- [ ] **ADMIN-01**: Admin can view and edit `QS`, `S`, `QF`, `F`, and `P` in the event results workflow
+- [ ] **ADMIN-02**: Admin can update a result cell or event row without unrelated persisted result values being dropped by the save flow
+- [ ] **ADMIN-03**: Admin can create and update championship/tournament organizer metadata in championship management
 
 ### Public Results
 
-- [ ] **RESULT-01**: Visitor can view `qualy` in an event results table when the selected event has recorded `qualy` data
-- [ ] **RESULT-02**: Visitor does not see an empty `qualy` column for events that only have the existing result sessions
-- [ ] **RESULT-03**: Visitor sees event result sessions in a clear and consistent order when `qualy` is present
+- [ ] **RESULT-01**: Visitor can view event result tables using the canonical column order `QS`, `S`, `QF`, `F`, `P`
+- [ ] **RESULT-02**: Visitor sees event participants ordered by points instead of final-race position
+- [ ] **RESULT-03**: Visitor does not see noisy empty session columns for historical events that lack `QS` or `QF` data
+- [ ] **RESULT-04**: Visitor can see the championship/tournament organizer rendered in an appropriate public championship label or heading
 
 ### Sharing
 
 - [ ] **SHARE-01**: Visitor can generate a shareable image for a specific event results table from the public results experience
-- [ ] **SHARE-02**: Generated share image includes all drivers in the selected event table and matches the visible result sessions for that event
+- [ ] **SHARE-02**: Generated share image includes all drivers in the selected event table and preserves the canonical column order and points-based ranking shown to the visitor
 
 ### Driver Stats
 
 - [ ] **STAT-01**: Visitor sees the recent-positions chart with race positions plotted in the correct direction so better finishes read as better performance
-- [ ] **STAT-02**: Visitor sees driver trend and aggregate race statistics remain race-correct after `qualy` support is added
+- [ ] **STAT-02**: Visitor sees driver trend and aggregate race statistics remain race-correct after `QS`, `QF`, and `P` support is added
 
 ### Documentation
 
 - [ ] **DOC-01**: Maintainer can read project documentation that reflects the current runtime setup and admin/results workflows
-- [ ] **DOC-02**: Maintainer can find documentation for the new `qualy` behavior, share-image flow, and any verification limits relevant to this milestone
+- [ ] **DOC-02**: Maintainer can find documentation for the `QS`/`S`/`QF`/`F`/`P` results model, points-based ordering, organizer metadata, share-image flow, and any verification limits relevant to this milestone
 
 ## v2 Requirements
 
@@ -46,7 +49,7 @@
 
 ### Results Data
 
-- **DATA-04**: Maintainer can backfill historical `qualy` results for older events from trusted source data
+- **DATA-05**: Maintainer can backfill historical `QS`, `QF`, or points data for older events from trusted source data
 
 ### Analytics
 
@@ -57,7 +60,7 @@
 | Feature | Reason |
 |---------|--------|
 | Direct social platform integrations | The current milestone only needs a simple shareable image, not network-specific publishing workflows |
-| Historical `qualy` backfill for older events | Older events should continue working without synthetic or partially trusted qualifying data |
+| Historical `QS`/`QF`/points backfill for older events | Older events should continue working without synthetic or partially trusted extra session data |
 | Multiple share-image layouts or templates | One stable event-table image is enough to validate the sharing feature |
 | Broad chart redesign or analytics expansion | The milestone only needs the current chart correctness fix |
 | Large documentation overhaul outside the touched workflows | The documentation pass should stay aligned to changed behavior, not become a repo-wide rewrite |
@@ -69,11 +72,14 @@
 | DATA-01 | Phase 1 | Pending |
 | DATA-02 | Phase 1 | Pending |
 | DATA-03 | Phase 1 | Pending |
+| DATA-04 | Phase 1 | Pending |
 | ADMIN-01 | Phase 2 | Pending |
 | ADMIN-02 | Phase 2 | Pending |
+| ADMIN-03 | Phase 2 | Pending |
 | RESULT-01 | Phase 3 | Pending |
 | RESULT-02 | Phase 3 | Pending |
 | RESULT-03 | Phase 3 | Pending |
+| RESULT-04 | Phase 3 | Pending |
 | SHARE-01 | Phase 4 | Pending |
 | SHARE-02 | Phase 4 | Pending |
 | STAT-01 | Phase 3 | Pending |
@@ -82,10 +88,10 @@
 | DOC-02 | Phase 5 | Pending |
 
 **Coverage:**
-- v1 requirements: 14 total
-- Mapped to phases: 14
+- v1 requirements: 16 total
+- Mapped to phases: 16
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-02*
-*Last updated: 2026-04-02 after roadmap creation*
+*Last updated: 2026-04-02 after scope revision*
