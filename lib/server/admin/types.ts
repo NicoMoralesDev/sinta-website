@@ -99,7 +99,7 @@ export type AdminEventResultRow = {
   driverId: string;
   driverSlug: string;
   driverName: string;
-  sessionKind: SessionKind;
+  sessionKind: AdminResultRecordKind;
   position: number | null;
   status: ResultStatus | null;
   rawValue: string;

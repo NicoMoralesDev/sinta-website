@@ -5,6 +5,7 @@ import type {
   AdminLiveBroadcastConfig,
   AdminAuditLog,
   AdminChampionship,
+  AdminResultRecordKind,
   AdminDriver,
   AdminDriverAlias,
   AdminEvent,
@@ -109,7 +110,7 @@ type AdminResultRow = {
   driver_id: string;
   driver_slug: string;
   driver_name: string;
-  session_kind: "primary" | "secondary";
+  session_kind: AdminResultRecordKind;
   position: number | null;
   status: "DNF" | "DNQ" | "DSQ" | "ABSENT" | null;
   raw_value: string;
@@ -1336,9 +1337,9 @@ export async function getEventResultsGrid(eventId: string): Promise<AdminEventRe
       rawValue: row.rawValue,
       isActive: row.isActive,
     };
-    if (row.sessionKind === "primary") {
+    if (row.sessionKind === "primary" || row.sessionKind === "s") {
       group.primary = value;
-    } else {
+    } else if (row.sessionKind === "secondary" || row.sessionKind === "f") {
       group.secondary = value;
     }
     byDriver.set(row.driverId, group);
@@ -1364,15 +1365,6 @@ export async function replaceEventResults(
   rows: EventResultCellInput[],
 ): Promise<AdminEventResultRow[]> {
   return withTransaction(async (client) => {
-    await client.query(
-      `
-        update event_results
-        set is_active = false, updated_at = now()
-        where event_id = $1
-      `,
-      [eventId],
-    );
-
     for (const row of rows) {
       await client.query(
         `

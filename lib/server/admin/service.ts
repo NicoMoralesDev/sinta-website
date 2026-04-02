@@ -1,4 +1,6 @@
 import {
+  CANONICAL_RESULT_FIELDS,
+  type CanonicalResultField,
   createAdminSessionToken,
   generateTemporaryPassword,
   getAdminRuntimeConfig,
@@ -57,11 +59,14 @@ import {
 import type {
   AdminLiveBroadcastConfig,
   AdminAuditLog,
+  AdminCanonicalResultField,
   AdminChampionship,
   AdminDriver,
   AdminDriverAlias,
   AdminEvent,
+  AdminEventResultRow,
   AdminEventResultsGrid,
+  AdminResultInputKind,
   AdminRole,
   AdminSession,
   StreamOverrideMode,
@@ -102,6 +107,7 @@ const YOUTUBE_VIDEO_ID_REGEX = /^[A-Za-z0-9_-]{11}$/;
 const ART_LOCAL_DATETIME_REGEX = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/;
 const ISO_DATETIME_WITH_TZ_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?(?:\.\d{1,3})?(Z|[+-]\d{2}:\d{2})$/;
 const STREAM_OVERRIDE_MODES = new Set<StreamOverrideMode>(["auto", "force_on", "force_off"]);
+const CANONICAL_RESULT_FIELD_SET = new Set<CanonicalResultField>(CANONICAL_RESULT_FIELDS);
 
 const COUNTRY_CATALOG: Record<string, { code: string; nameEs: string; nameEn: string }> = {
   ar: { code: "ar", nameEs: "Argentina", nameEn: "Argentina" },
@@ -525,12 +531,23 @@ function validateRole(role: string): AdminRole {
   return role;
 }
 
+function normalizeResultSessionKind(sessionKind: AdminResultInputKind): AdminCanonicalResultField {
+  if (sessionKind === "primary") {
+    return "s";
+  }
+  if (sessionKind === "secondary") {
+    return "f";
+  }
+  if (CANONICAL_RESULT_FIELD_SET.has(sessionKind)) {
+    return sessionKind;
+  }
+  throw new AdminValidationError("sessionKind is invalid.");
+}
+
 function validateResultCell(row: EventResultCellInput): EventResultCellInput {
   validateUuid(row.driverId, "driverId");
 
-  if (row.sessionKind !== "primary" && row.sessionKind !== "secondary") {
-    throw new AdminValidationError("sessionKind is invalid.");
-  }
+  const sessionKind = normalizeResultSessionKind(row.sessionKind);
 
   const hasPosition = row.position !== null;
   const hasStatus = row.status !== null;
@@ -539,7 +556,14 @@ function validateResultCell(row: EventResultCellInput): EventResultCellInput {
   }
 
   if (hasPosition) {
-    if (!Number.isInteger(row.position) || (row.position ?? 0) <= 0) {
+    if (!Number.isInteger(row.position)) {
+      throw new AdminValidationError("position must be an integer.");
+    }
+    if (sessionKind === "p") {
+      if ((row.position ?? 0) < 0) {
+        throw new AdminValidationError("position must be >= 0.");
+      }
+    } else if ((row.position ?? 0) <= 0) {
       throw new AdminValidationError("position must be > 0.");
     }
   }
@@ -550,7 +574,7 @@ function validateResultCell(row: EventResultCellInput): EventResultCellInput {
 
   return {
     driverId: row.driverId,
-    sessionKind: row.sessionKind,
+    sessionKind,
     position: row.position,
     status: row.status,
     rawValue: normalizeWhitespace(row.rawValue),
@@ -612,7 +636,11 @@ function toResultSnapshotRows(value: unknown): EventResultCellInput[] {
     }
 
     const sessionKind = row.sessionKind;
-    if (sessionKind !== "primary" && sessionKind !== "secondary") {
+    if (
+      sessionKind !== "primary" &&
+      sessionKind !== "secondary" &&
+      !CANONICAL_RESULT_FIELD_SET.has(sessionKind as CanonicalResultField)
+    ) {
       continue;
     }
 
@@ -637,14 +665,9 @@ function toResultSnapshotRows(value: unknown): EventResultCellInput[] {
 }
 
 function toEventResultCells(
-  rows: Array<{
-    driverId: string;
-    sessionKind: "primary" | "secondary";
-    position: number | null;
-    status: "DNF" | "DNQ" | "DSQ" | "ABSENT" | null;
-    rawValue: string;
-    isActive: boolean;
-  }>,
+  rows: Array<
+    Pick<AdminEventResultRow, "driverId" | "sessionKind" | "position" | "status" | "rawValue" | "isActive">
+  >,
 ): EventResultCellInput[] {
   return rows.map((row) => ({
     driverId: row.driverId,
@@ -654,6 +677,30 @@ function toEventResultCells(
     rawValue: row.rawValue,
     isActive: row.isActive,
   }));
+}
+
+function mergeEventResultCells(
+  persistedRows: AdminEventResultRow[],
+  submittedRows: EventResultCellInput[],
+): EventResultCellInput[] {
+  const merged = new Map<string, EventResultCellInput>();
+
+  for (const row of persistedRows) {
+    merged.set(`${row.driverId}:${row.sessionKind}`, {
+      driverId: row.driverId,
+      sessionKind: row.sessionKind,
+      position: row.position,
+      status: row.status,
+      rawValue: row.rawValue,
+      isActive: row.isActive,
+    });
+  }
+
+  for (const row of submittedRows) {
+    merged.set(`${row.driverId}:${row.sessionKind}`, row);
+  }
+
+  return Array.from(merged.values());
 }
 
 function requestIdFromOptions(options?: RequestOptions): string | null {
@@ -1552,7 +1599,7 @@ export async function updateEventResults(
 
   const beforeRows = await listEventResultsByEventId(id);
   const beforeSnapshot = toEventResultCells(beforeRows);
-  const afterSnapshot = normalizedRows;
+  const afterSnapshot = mergeEventResultCells(beforeRows, normalizedRows);
 
   const dryRun = getAdminWriteDryRunMode();
   if (dryRun) {
@@ -1563,7 +1610,7 @@ export async function updateEventResults(
     );
   }
 
-  const updatedRows = await replaceEventResults(id, normalizedRows);
+  const updatedRows = await replaceEventResults(id, afterSnapshot);
 
   await insertAuditLog({
     ...actorRecord(actor),

@@ -6,6 +6,8 @@ import {
   requireAdminActor,
 } from "@/app/api/v1/admin/_utils";
 import { getEventResults, updateEventResults } from "@/lib/server/admin/service";
+import type { AdminResultInputKind } from "@/lib/server/admin/types";
+import type { ResultStatus } from "@/lib/server/history/types";
 
 export const runtime = "nodejs";
 
@@ -31,9 +33,9 @@ export async function PUT(request: Request, context: RouteContext) {
     const { id } = await context.params;
     const body = await parseAdminJsonBody<{ rows?: Array<{
       driverId: string;
-      sessionKind: "primary" | "secondary";
+      sessionKind: AdminResultInputKind;
       position: number | null;
-      status: "DNF" | "DNQ" | "DSQ" | "ABSENT" | null;
+      status: ResultStatus | null;
       rawValue: string;
       isActive: boolean;
     }> }>(request);
@@ -47,4 +49,3 @@ export async function PUT(request: Request, context: RouteContext) {
     return handleAdminApiError(error);
   }
 }
-
