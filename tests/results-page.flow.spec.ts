@@ -199,7 +199,47 @@ describe("results page flow", () => {
     expect(sparseSection).not.toContain(">P<");
   });
 
-  it("accepts organizerName in the current championship payload without breaking the existing page", async () => {
+  it("renders organizer metadata for a selected championship in English and Spanish", async () => {
+    getFiltersMock.mockResolvedValueOnce({
+      years: [2026],
+      championships: [
+        {
+          id: "champ-1",
+          seasonYear: 2026,
+          slug: "tz-4000",
+          name: "TZ 4000",
+          organizerName: "SINTA",
+        },
+      ],
+      drivers: [],
+    });
+    getCurrentChampionshipMock.mockResolvedValueOnce({
+      championship: {
+        id: "champ-2",
+        seasonYear: 2026,
+        slug: "other-series",
+        name: "Other Series",
+        organizerName: null,
+      },
+      events: [],
+      leaderboard: [],
+    });
+    getResultsStatsMock.mockResolvedValueOnce([]);
+    getResultsEventParticipationMock.mockResolvedValueOnce({
+      items: [],
+      nextCursor: null,
+    });
+
+    const englishElement = await ResultsPage({
+      searchParams: {
+        lang: "en",
+        championshipId: "champ-1",
+      },
+    });
+    const englishHtml = renderToStaticMarkup(englishElement);
+
+    expect(englishHtml).toContain("Organizer: SINTA");
+
     getFiltersMock.mockResolvedValueOnce({
       years: [2026],
       championships: [
@@ -230,6 +270,39 @@ describe("results page flow", () => {
       nextCursor: null,
     });
 
+    const spanishElement = await ResultsPage({
+      searchParams: {
+        championshipId: "champ-1",
+      },
+    });
+    const spanishHtml = renderToStaticMarkup(spanishElement);
+
+    expect(spanishHtml).toContain("Organizador: SINTA");
+  });
+
+  it("renders organizer metadata from the current championship when no filter is active", async () => {
+    getFiltersMock.mockResolvedValueOnce({
+      years: [2026],
+      championships: [],
+      drivers: [],
+    });
+    getCurrentChampionshipMock.mockResolvedValueOnce({
+      championship: {
+        id: "champ-1",
+        seasonYear: 2026,
+        slug: "tz-4000",
+        name: "TZ 4000",
+        organizerName: "SINTA",
+      },
+      events: [],
+      leaderboard: [],
+    });
+    getResultsStatsMock.mockResolvedValueOnce([]);
+    getResultsEventParticipationMock.mockResolvedValueOnce({
+      items: [],
+      nextCursor: null,
+    });
+
     const element = await ResultsPage({
       searchParams: {
         lang: "en",
@@ -238,6 +311,49 @@ describe("results page flow", () => {
     const html = renderToStaticMarkup(element);
 
     expect(html).toContain("Current championship");
-    expect(html).toContain("Browse historical race results");
+    expect(html).toContain("Organizer: SINTA");
+  });
+
+  it("omits organizer metadata when organizerName is null", async () => {
+    getFiltersMock.mockResolvedValueOnce({
+      years: [2026],
+      championships: [
+        {
+          id: "champ-1",
+          seasonYear: 2026,
+          slug: "tz-4000",
+          name: "TZ 4000",
+          organizerName: null,
+        },
+      ],
+      drivers: [],
+    });
+    getCurrentChampionshipMock.mockResolvedValueOnce({
+      championship: {
+        id: "champ-1",
+        seasonYear: 2026,
+        slug: "tz-4000",
+        name: "TZ 4000",
+        organizerName: null,
+      },
+      events: [],
+      leaderboard: [],
+    });
+    getResultsStatsMock.mockResolvedValueOnce([]);
+    getResultsEventParticipationMock.mockResolvedValueOnce({
+      items: [],
+      nextCursor: null,
+    });
+
+    const element = await ResultsPage({
+      searchParams: {
+        lang: "en",
+        championshipId: "champ-1",
+      },
+    });
+    const html = renderToStaticMarkup(element);
+
+    expect(html).not.toContain("Organizer:");
+    expect(html).not.toContain("Organizador:");
   });
 });
