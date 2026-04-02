@@ -8,7 +8,7 @@
 ### Results Data
 
 - [x] **DATA-01**: Admin can store event participant results using the canonical columns `QS`, `S`, `QF`, `F`, and `P`
-- [ ] **DATA-02**: Admin can import or save event results with `QS`, `QF`, or `P` values without losing existing event data
+- [x] **DATA-02**: Admin can import or save event results with `QS`, `QF`, or `P` values without losing existing event data
 - [x] **DATA-03**: Public consumers can retrieve event result data with canonical result fields and points-based ordering
 - [x] **DATA-04**: Maintainer can store organizer metadata for each championship/tournament
 
@@ -70,7 +70,7 @@
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | DATA-01 | Phase 1 | Complete |
-| DATA-02 | Phase 1 | Pending |
+| DATA-02 | Phase 1 | Complete |
 | DATA-03 | Phase 1 | Complete |
 | DATA-04 | Phase 1 | Complete |
 | ADMIN-01 | Phase 2 | Pending |
