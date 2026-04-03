@@ -193,6 +193,20 @@ function isMissingLiveBroadcastConfigSchemaError(error: unknown): boolean {
   return /\blive_broadcast_config\b/.test(maybeMessage);
 }
 
+function isMissingChampionshipOrganizerColumnError(error: unknown): boolean {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const maybeCode = (error as { code?: unknown }).code;
+  const maybeMessage = (error as { message?: unknown }).message;
+  if (maybeCode !== "42703" || typeof maybeMessage !== "string") {
+    return false;
+  }
+
+  return /\borganizer_name\b/.test(maybeMessage);
+}
+
 function eventStreamSelectClause(useLegacyFallback: boolean): string {
   if (useLegacyFallback) {
     return `
@@ -208,6 +222,36 @@ function eventStreamSelectClause(useLegacyFallback: boolean): string {
         e.stream_start_at::text,
         e.stream_end_at::text,
         e.stream_override_mode,
+  `;
+}
+
+function championshipSelectClause(useLegacyOrganizerFallback: boolean): string {
+  if (useLegacyOrganizerFallback) {
+    return `
+        id,
+        season_year,
+        name,
+        slug,
+        null::text as organizer_name,
+        primary_session_label,
+        secondary_session_label,
+        is_active,
+        created_at::text,
+        updated_at::text
+    `;
+  }
+
+  return `
+        id,
+        season_year,
+        name,
+        slug,
+        organizer_name,
+        primary_session_label,
+        secondary_session_label,
+        is_active,
+        created_at::text,
+        updated_at::text
   `;
 }
 
@@ -569,50 +613,49 @@ export async function updateAdminUserPassword(
 }
 
 export async function listAdminChampionships(includeInactive: boolean): Promise<AdminChampionship[]> {
-  const result = await getDbPool().query<AdminChampionshipRow>(
-    `
+  const buildQuery = (useLegacyOrganizerFallback: boolean) => `
       select
-        id,
-        season_year,
-        name,
-        slug,
-        organizer_name,
-        primary_session_label,
-        secondary_session_label,
-        is_active,
-        created_at::text,
-        updated_at::text
+        ${championshipSelectClause(useLegacyOrganizerFallback)}
       from championships
       where ($1::boolean = true or is_active = true)
       order by season_year desc, name asc
-    `,
-    [includeInactive],
-  );
-  return result.rows.map(mapChampionship);
+    `;
+
+  try {
+    const result = await getDbPool().query<AdminChampionshipRow>(buildQuery(false), [includeInactive]);
+    return result.rows.map(mapChampionship);
+  } catch (error) {
+    if (!isMissingChampionshipOrganizerColumnError(error)) {
+      throw error;
+    }
+
+    const result = await getDbPool().query<AdminChampionshipRow>(buildQuery(true), [includeInactive]);
+    return result.rows.map(mapChampionship);
+  }
 }
 
 export async function getChampionshipById(id: string): Promise<AdminChampionship | null> {
-  const result = await getDbPool().query<AdminChampionshipRow>(
-    `
+  const buildQuery = (useLegacyOrganizerFallback: boolean) => `
       select
-        id,
-        season_year,
-        name,
-        slug,
-        organizer_name,
-        primary_session_label,
-        secondary_session_label,
-        is_active,
-        created_at::text,
-        updated_at::text
+        ${championshipSelectClause(useLegacyOrganizerFallback)}
       from championships
       where id = $1
       limit 1
-    `,
-    [id],
-  );
-  const row = result.rows.at(0);
-  return row ? mapChampionship(row) : null;
+    `;
+
+  try {
+    const result = await getDbPool().query<AdminChampionshipRow>(buildQuery(false), [id]);
+    const row = result.rows.at(0);
+    return row ? mapChampionship(row) : null;
+  } catch (error) {
+    if (!isMissingChampionshipOrganizerColumnError(error)) {
+      throw error;
+    }
+
+    const result = await getDbPool().query<AdminChampionshipRow>(buildQuery(true), [id]);
+    const row = result.rows.at(0);
+    return row ? mapChampionship(row) : null;
+  }
 }
 
 export async function createChampionshipRecord(input: CreateChampionshipInput): Promise<AdminChampionship> {

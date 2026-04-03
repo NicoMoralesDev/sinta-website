@@ -217,6 +217,10 @@ function getSessionOrderExpression(columnName: string): string {
   `;
 }
 
+function getFinalRaceSessionFilter(columnName: string): string {
+  return `${columnName}::text in ('f', 'secondary')`;
+}
+
 function isMissingLiveBroadcastConfigSchemaError(error: unknown): boolean {
   if (!error || typeof error !== "object") {
     return false;
@@ -705,7 +709,7 @@ export async function getHighlights(query: {
           and c.is_active = true
           and er.is_active = true
           and d.is_active = true
-          and er.session_kind = 'f'
+          and ${getFinalRaceSessionFilter("er.session_kind")}
           and er.position is not null
       )
       select
@@ -745,7 +749,7 @@ export async function getDriverStats(query: StatsQuery): Promise<DriverStats[]> 
     "e.is_active = true",
     "c.is_active = true",
     "d.is_active = true",
-    "er.session_kind = 'f'",
+    getFinalRaceSessionFilter("er.session_kind"),
   ];
 
   appendStatsFilters(query, values, whereClauses);
@@ -785,7 +789,7 @@ export async function getResultsOverview(query: OverviewQuery): Promise<TeamOver
     "e.is_active = true",
     "c.is_active = true",
     "d.is_active = true",
-    "er.session_kind = 'f'",
+    getFinalRaceSessionFilter("er.session_kind"),
   ];
 
   appendOverviewFilters(query, values, whereClauses);
@@ -910,7 +914,7 @@ export async function getCurrentChampionshipSummary(
         and er.is_active = true
         and d.is_active = true
         and e.is_active = true
-        and er.session_kind = 'f'
+        and ${getFinalRaceSessionFilter("er.session_kind")}
       group by d.id, d.slug, d.canonical_name
       order by wins desc, podiums desc, top_10 desc, completed desc, avg_position asc nulls last, d.canonical_name asc
       limit 8

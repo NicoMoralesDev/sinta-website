@@ -465,8 +465,8 @@ describe("history repository", () => {
     await getResultsOverview({});
     await getCurrentChampionshipSummary(1);
 
-    expect(String(queryMock.mock.calls[0]?.[0] ?? "")).toContain("er.session_kind = 'f'");
-    expect(String(queryMock.mock.calls[1]?.[0] ?? "")).toContain("er.session_kind = 'f'");
-    expect(String(queryMock.mock.calls[6]?.[0] ?? "")).toContain("er.session_kind = 'f'");
+    expect(String(queryMock.mock.calls[0]?.[0] ?? "")).toContain("er.session_kind::text in ('f', 'secondary')");
+    expect(String(queryMock.mock.calls[1]?.[0] ?? "")).toContain("er.session_kind::text in ('f', 'secondary')");
+    expect(String(queryMock.mock.calls[6]?.[0] ?? "")).toContain("er.session_kind::text in ('f', 'secondary')");
   });
 });
