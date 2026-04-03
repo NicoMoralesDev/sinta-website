@@ -12,6 +12,9 @@ import {
   formatEventParticipationSeasonLabel,
   formatEventParticipationSessionValue,
   getEventParticipationSessionColumns,
+  getEventParticipationSessionGroup,
+  getEventParticipationSessionPresentation,
+  isPointsSessionKind,
   type EventParticipationSessionColumn,
 } from "@/app/components/event-participation-helpers";
 
@@ -30,6 +33,10 @@ function buildDriverHref(slug: string, lang: Language): string {
 function getSessionBadgeTone(session: EventParticipationEntry["sessions"][number] | null): string {
   if (!session) {
     return "border-racing-steel/40 bg-racing-steel/10 text-racing-white/40";
+  }
+
+  if (isPointsSessionKind(session.sessionKind)) {
+    return "border-racing-yellow/35 bg-racing-black/35 text-racing-yellow";
   }
 
   if (session.position === 1) {
@@ -67,6 +74,17 @@ function getSessionBadgeTone(session: EventParticipationEntry["sessions"][number
   return "border-racing-yellow/40 bg-racing-yellow/10 text-racing-yellow";
 }
 
+function hasLeadingSeparator(columns: EventParticipationSessionColumn[], index: number): boolean {
+  if (index === 0) {
+    return true;
+  }
+
+  return (
+    getEventParticipationSessionGroup(columns[index - 1]?.sessionKind ?? "qs") !==
+    getEventParticipationSessionGroup(columns[index]?.sessionKind ?? "qs")
+  );
+}
+
 export function EventParticipationList({
   lang,
   events,
@@ -95,7 +113,7 @@ export function EventParticipationList({
                   sessionLabel: lang === "en" ? "Result" : "Resultado",
                 } as EventParticipationSessionColumn,
               ];
-        const gridTemplateColumns = `minmax(0,1fr) repeat(${columns.length}, minmax(90px, auto))`;
+        const desktopGridTemplateColumns = `minmax(160px,1.65fr) repeat(${columns.length}, minmax(76px,1fr))`;
         const eventDate = formatEventParticipationDate(event, lang);
         const pilotLabel = lang === "en" ? "Driver" : "Piloto";
         const eventActions = renderEventActions?.(event);
@@ -129,62 +147,144 @@ export function EventParticipationList({
             </header>
 
             <div className="mx-4 my-4 overflow-hidden rounded-sm border border-racing-steel/20">
-              <div
-                className="grid items-center gap-2 border-b border-racing-steel/20 bg-racing-carbon/80 px-3 py-2 text-[11px] font-semibold tracking-wider text-racing-white/55 uppercase"
-                style={{ gridTemplateColumns }}
-              >
-                <span>{pilotLabel}</span>
-                {columns.map((column) => (
-                  <span
-                    key={column.sessionKind}
-                    className="justify-self-end inline-flex min-w-[84px] justify-center text-center"
-                  >
-                    {column.sessionLabel}
-                  </span>
-                ))}
+              <div className="hidden md:block">
+                <div
+                  className="grid items-center gap-2 border-b border-racing-steel/20 bg-racing-carbon/80 px-3 py-2 text-[11px] font-semibold tracking-wider text-racing-white/55 uppercase"
+                  style={{ gridTemplateColumns: desktopGridTemplateColumns }}
+                >
+                  <span>{pilotLabel}</span>
+                  {columns.map((column, index) => {
+                    const label = getEventParticipationSessionPresentation(column, lang);
+                    const separator = hasLeadingSeparator(columns, index);
+
+                    return (
+                      <span
+                        key={column.sessionKind}
+                        className={`flex min-h-10 items-center justify-center text-center ${
+                          separator ? "border-l-2 border-racing-yellow/80 pl-2" : ""
+                        }`}
+                      >
+                        <span className="flex flex-col leading-tight">
+                          {label.fullLabelLines.map((line, lineIndex) => (
+                            <span key={`${column.sessionKind}-${lineIndex}`}>{line}</span>
+                          ))}
+                        </span>
+                      </span>
+                    );
+                  })}
+                </div>
+
+                {event.participants.map((participant, participantIndex) => {
+                  const sessionByKind = new Map(
+                    participant.sessions.map((session) => [session.sessionKind, session]),
+                  );
+                  const rowTone = participantIndex % 2 === 0 ? "bg-[#2c2c2c]" : "bg-[#202020]";
+
+                  return (
+                    <div
+                      key={`${event.eventId}-${participant.driverSlug}`}
+                      className={`grid items-center gap-2 border-b border-racing-steel/20 px-3 py-3 last:border-b-0 ${rowTone}`}
+                      style={{ gridTemplateColumns: desktopGridTemplateColumns }}
+                    >
+                      <div>
+                        {linkDrivers ? (
+                          <Link
+                            href={buildDriverHref(participant.driverSlug, lang)}
+                            className="font-sans text-sm font-semibold tracking-wide text-racing-white transition-colors hover:text-racing-yellow"
+                          >
+                            {participant.driverName}
+                          </Link>
+                        ) : (
+                          <p className="font-sans text-sm font-semibold tracking-wide text-racing-white">
+                            {participant.driverName}
+                          </p>
+                        )}
+                      </div>
+
+                      {columns.map((column, index) => {
+                        const label = getEventParticipationSessionPresentation(column, lang);
+                        const session = sessionByKind.get(column.sessionKind) ?? null;
+                        const separator = hasLeadingSeparator(columns, index);
+
+                        return (
+                          <div
+                            key={`${participant.driverSlug}-${column.sessionKind}`}
+                            className={separator ? "border-l-2 border-racing-yellow/80 pl-2" : ""}
+                          >
+                            <span
+                              className={`flex h-10 w-full items-center justify-center rounded-sm border px-2 py-1 text-base font-mono font-bold tracking-wider uppercase ${getSessionBadgeTone(session)}`}
+                              aria-label={`${label.accessibilityLabel}: ${
+                                session ? formatEventParticipationSessionValue(session, lang) : "-"
+                              }`}
+                            >
+                              {session ? formatEventParticipationSessionValue(session, lang) : "-"}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
               </div>
 
-              {event.participants.map((participant, participantIndex) => {
-                const sessionByKind = new Map(participant.sessions.map((session) => [session.sessionKind, session]));
-                const rowTone =
-                  participantIndex % 2 === 0 ? "bg-[#2c2c2c]" : "bg-[#202020]";
+              <div className="md:hidden">
+                {event.participants.map((participant, participantIndex) => {
+                  const sessionByKind = new Map(
+                    participant.sessions.map((session) => [session.sessionKind, session]),
+                  );
+                  const rowTone = participantIndex % 2 === 0 ? "bg-[#2c2c2c]" : "bg-[#202020]";
 
-                return (
-                  <div
-                    key={`${event.eventId}-${participant.driverSlug}`}
-                    className={`grid items-center gap-2 border-b border-racing-steel/20 px-3 py-3 last:border-b-0 ${rowTone}`}
-                    style={{ gridTemplateColumns }}
-                  >
-                    <div>
-                      {linkDrivers ? (
-                        <Link
-                          href={buildDriverHref(participant.driverSlug, lang)}
-                          className="font-sans text-sm font-semibold tracking-wide text-racing-white transition-colors hover:text-racing-yellow"
-                        >
-                          {participant.driverName}
-                        </Link>
-                      ) : (
-                        <p className="font-sans text-sm font-semibold tracking-wide text-racing-white">
-                          {participant.driverName}
-                        </p>
-                      )}
+                  return (
+                    <div
+                      key={`${event.eventId}-${participant.driverSlug}-mobile`}
+                      className={`border-b border-racing-steel/20 px-3 py-3 last:border-b-0 ${rowTone}`}
+                    >
+                      <div className="flex flex-col gap-3">
+                        <div>
+                          {linkDrivers ? (
+                            <Link
+                              href={buildDriverHref(participant.driverSlug, lang)}
+                              className="font-sans text-sm font-semibold tracking-wide text-racing-white transition-colors hover:text-racing-yellow"
+                            >
+                              {participant.driverName}
+                            </Link>
+                          ) : (
+                            <p className="font-sans text-sm font-semibold tracking-wide text-racing-white">
+                              {participant.driverName}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2">
+                          {columns.map((column) => {
+                            const label = getEventParticipationSessionPresentation(column, lang);
+                            const session = sessionByKind.get(column.sessionKind) ?? null;
+
+                            return (
+                              <div
+                                key={`${participant.driverSlug}-${column.sessionKind}-mobile`}
+                                className="rounded-sm border border-racing-steel/15 bg-racing-black/25 p-2"
+                              >
+                                <span className="block text-[10px] font-semibold tracking-wider text-racing-white/55 uppercase">
+                                  {label.compactLabel}
+                                </span>
+                                <span
+                                  className={`mt-2 flex h-8 items-center justify-center rounded-sm border px-2 text-sm font-mono font-bold tracking-wider uppercase ${getSessionBadgeTone(session)}`}
+                                  aria-label={`${label.accessibilityLabel}: ${
+                                    session ? formatEventParticipationSessionValue(session, lang) : "-"
+                                  }`}
+                                >
+                                  {session ? formatEventParticipationSessionValue(session, lang) : "-"}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
-
-                    {columns.map((column) => {
-                      const session = sessionByKind.get(column.sessionKind) ?? null;
-                      return (
-                        <span
-                          key={`${participant.driverSlug}-${column.sessionKind}`}
-                          className={`justify-self-end inline-flex h-10 min-w-[84px] items-center justify-center rounded-sm border px-2 py-1 text-base font-mono font-bold tracking-wider uppercase ${getSessionBadgeTone(session)}`}
-                          aria-label={`${column.sessionLabel}: ${session ? formatEventParticipationSessionValue(session, lang) : "-"}`}
-                        >
-                          {session ? formatEventParticipationSessionValue(session, lang) : "-"}
-                        </span>
-                      );
-                    })}
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </article>
         );

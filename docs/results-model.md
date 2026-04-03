@@ -4,13 +4,20 @@
 
 The stored field order is `qs`, `s`, `qf`, `f`, `p`, matching `CANONICAL_RESULT_FIELDS` in `lib/server/history/types.ts`.
 
-Public and admin surfaces present the same contract with uppercase labels: `QS`, `S`, `QF`, `F`, `P`. Championships still control the display labels for sprint and final, so `s` and `f` can render with championship-specific names while the stored keys stay canonical.
+Public and admin surfaces still share the same canonical stored fields, but the public presentation now splits labels by viewport:
+
+- Small screens use compact labels such as `QS`, `S`, `QF`, `F`, and `PTS`.
+- Larger screens expand those labels to readable text (`Qualy Sprint`, `Sprint`, `Qualy Final`, `Final`, `Points`/`Puntos`) and can wrap them onto two lines when needed.
+
+Championships still control the display labels for sprint and final, so `s` and `f` can render with championship-specific names while the stored keys stay canonical.
 
 ## Display and ordering rules
 
 Event participants are ordered by points first. When legacy rows do not include canonical points, the fallback order is final-race position and then driver name.
 
 Visible columns follow the same canonical order. Sparse historical events omit missing columns instead of fabricating `QS`, `QF`, or `P` cells that do not exist in storage.
+
+Points cells render raw numeric totals such as `25`, not `P25`. They also use a dedicated neutral points style instead of reusing the finishing-position winner/podium palette.
 
 ## Organizer metadata
 
@@ -27,7 +34,7 @@ Supported query parameters:
 - `driver=<slug>` filters the image to the selected driver within that event.
 - `lang=en` switches labels and date formatting to English.
 
-The generated image stays aligned with the public event card for the visible canonical columns, participant set, and participant order. That means canonical ordering, sparse historical column omission, and the active driver filter stay aligned with the `/results` page instead of using a separate export-only model. The shipped route also responds with `Cache-Control: public, s-maxage=120, stale-while-revalidate=600`.
+The generated image stays aligned with the public event card for the visible canonical columns, participant set, participant order, and points semantics. That means canonical ordering, sparse historical column omission, raw numeric points values, and the active driver filter stay aligned with the `/results` page instead of using a separate export-only model. The shipped route also responds with `Cache-Control: public, s-maxage=120, stale-while-revalidate=600`.
 
 ## Verification limits
 

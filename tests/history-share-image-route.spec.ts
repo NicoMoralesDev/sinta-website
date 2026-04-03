@@ -85,7 +85,7 @@ describe("history share image helpers", () => {
         },
         "en",
       ),
-    ).toBe("P25");
+    ).toBe("25");
 
     const sparseColumns = getEventParticipationSessionColumns(sparseEvent).map(
       (column) => column.sessionLabel,
@@ -193,7 +193,9 @@ describe("results event share image route", () => {
 
     expect(markup.indexOf("Zeta Driver")).toBeLessThan(markup.indexOf("Alpha Driver"));
     expect(markup).toContain("F");
-    expect(markup).toContain("P");
+    expect(markup).toContain("PTS");
+    expect(markup).toContain("25");
+    expect(markup).not.toContain("P25");
     expect(options.height).toBe(1350);
   });
 

@@ -112,6 +112,84 @@ function buildResultsShareImageHref(
   return query ? `${path}?${query}` : path;
 }
 
+type ResultsSummaryEntry = {
+  driverKey: string;
+  driverName: string;
+  wins: number;
+  podiums: number;
+  top10: number;
+  totalPoints: number;
+};
+
+type ResultsSummaryLabels = {
+  driver: string;
+  wins: { full: string; compact: string };
+  podiums: { full: string; compact: string };
+  top10: { full: string; compact: string };
+  totalPoints: { full: string; compact: string };
+};
+
+function ResultsSummaryTable({
+  entries,
+  labels,
+}: {
+  entries: ResultsSummaryEntry[];
+  labels: ResultsSummaryLabels;
+}) {
+  return (
+    <div className="mt-3 overflow-hidden rounded-sm border border-racing-steel/20 bg-racing-black/40">
+      <table className="w-full table-fixed border-collapse text-[11px] sm:text-xs">
+        <colgroup>
+          <col />
+          <col className="w-10 sm:w-12" />
+          <col className="w-10 sm:w-14" />
+          <col className="w-11 sm:w-14" />
+          <col className="w-12 sm:w-14" />
+        </colgroup>
+        <thead className="border-b border-racing-steel/20 text-racing-white/55 uppercase">
+          <tr>
+            <th className="px-3 py-2 text-left">{labels.driver}</th>
+            <th className="px-1.5 py-2 text-right sm:px-2">
+              <span className="sm:hidden">{labels.wins.compact}</span>
+              <span className="hidden sm:block">{labels.wins.full}</span>
+            </th>
+            <th className="px-1.5 py-2 text-right sm:px-2">
+              <span className="sm:hidden">{labels.podiums.compact}</span>
+              <span className="hidden sm:block leading-tight">{labels.podiums.full}</span>
+            </th>
+            <th className="px-1.5 py-2 text-right sm:px-2">
+              <span className="sm:hidden">{labels.top10.compact}</span>
+              <span className="hidden sm:block">{labels.top10.full}</span>
+            </th>
+            <th className="px-2 py-2 text-right">
+              <span className="sm:hidden">{labels.totalPoints.compact}</span>
+              <span className="hidden sm:block leading-tight">{labels.totalPoints.full}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {entries.map((entry, index) => (
+            <tr
+              key={entry.driverKey}
+              className={`border-b border-racing-steel/10 last:border-0 ${
+                index % 2 === 0 ? "bg-[#2c2c2c]" : "bg-[#202020]"
+              }`}
+            >
+              <td className="px-3 py-2 text-racing-white/85">{entry.driverName}</td>
+              <td className="px-1.5 py-2 text-right font-mono text-racing-yellow sm:px-2">{entry.wins}</td>
+              <td className="px-1.5 py-2 text-right font-mono text-racing-yellow sm:px-2">
+                {entry.podiums}
+              </td>
+              <td className="px-1.5 py-2 text-right font-mono text-racing-yellow sm:px-2">{entry.top10}</td>
+              <td className="px-2 py-2 text-right font-mono text-racing-yellow">{entry.totalPoints}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default async function ResultsPage({ searchParams }: ResultsPageProps) {
   const rawInput = await Promise.resolve(searchParams);
   const query = toSearchParams(rawInput);
@@ -150,6 +228,13 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
           noCurrent: "Current championship is not available yet.",
           filterCurrent: "Open current championship",
           rankingDriver: "Driver",
+          summaryLabels: {
+            driver: "Driver",
+            wins: { full: "Wins", compact: "W" },
+            podiums: { full: "Podiums", compact: "POD" },
+            top10: { full: "Top 10", compact: "T10" },
+            totalPoints: { full: "Points", compact: "PTS" },
+          },
         }
       : {
           eyebrow: "Historial",
@@ -174,6 +259,13 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
           noCurrent: "Todavía no hay torneo vigente disponible.",
           filterCurrent: "Abrir torneo vigente",
           rankingDriver: "Piloto",
+          summaryLabels: {
+            driver: "Piloto",
+            wins: { full: "Victorias", compact: "V" },
+            podiums: { full: "Podios", compact: "POD" },
+            top10: { full: "Top 10", compact: "T10" },
+            totalPoints: { full: "Puntos", compact: "PTS" },
+          },
         };
 
   const [filters, current] = await Promise.all([
@@ -414,39 +506,17 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
                 {ranking.length === 0 ? (
                   <p className="mt-3 text-sm text-racing-white/60">{i18n.noLeaderboard}</p>
                 ) : (
-                  <div className="mt-3 overflow-hidden rounded-sm border border-racing-steel/20 bg-racing-black/40">
-                    <table className="w-full table-fixed border-collapse text-xs">
-                      <colgroup>
-                        <col />
-                        <col className="w-10" />
-                        <col className="w-10" />
-                        <col className="w-12" />
-                      </colgroup>
-                      <thead className="border-b border-racing-steel/20 text-racing-white/55 uppercase">
-                        <tr>
-                          <th className="px-3 py-2 text-left">{i18n.rankingDriver}</th>
-                          <th className="px-2 py-2 text-right">W</th>
-                          <th className="px-2 py-2 text-right">P</th>
-                          <th className="px-3 py-2 text-right">T10</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {ranking.slice(0, 8).map((entry, index) => (
-                          <tr
-                            key={entry.driverSlug}
-                            className={`border-b border-racing-steel/10 last:border-0 ${
-                              index % 2 === 0 ? "bg-[#2c2c2c]" : "bg-[#202020]"
-                            }`}
-                          >
-                            <td className="px-3 py-2 text-racing-white/85">{entry.canonicalName}</td>
-                            <td className="px-2 py-2 text-right font-mono text-racing-yellow">{entry.wins}</td>
-                            <td className="px-2 py-2 text-right font-mono text-racing-yellow">{entry.podiums}</td>
-                            <td className="px-3 py-2 text-right font-mono text-racing-yellow">{entry.top10}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                  <ResultsSummaryTable
+                    labels={i18n.summaryLabels}
+                    entries={ranking.slice(0, 8).map((entry) => ({
+                      driverKey: entry.driverSlug,
+                      driverName: entry.canonicalName,
+                      wins: entry.wins,
+                      podiums: entry.podiums,
+                      top10: entry.top10,
+                      totalPoints: entry.totalPoints,
+                    }))}
+                  />
                 )}
               </section>
 
@@ -467,39 +537,17 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
                     {current.leaderboard.length === 0 ? (
                       <p className="mt-3 text-sm text-racing-white/60">{i18n.noLeaderboard}</p>
                     ) : (
-                      <div className="mt-3 overflow-hidden rounded-sm border border-racing-steel/20 bg-racing-black/40">
-                        <table className="w-full table-fixed border-collapse text-xs">
-                          <colgroup>
-                            <col />
-                            <col className="w-10" />
-                            <col className="w-10" />
-                            <col className="w-12" />
-                          </colgroup>
-                          <thead className="border-b border-racing-steel/20 text-racing-white/55 uppercase">
-                            <tr>
-                              <th className="px-3 py-2 text-left">{i18n.rankingDriver}</th>
-                              <th className="px-2 py-2 text-right">W</th>
-                              <th className="px-2 py-2 text-right">P</th>
-                              <th className="px-3 py-2 text-right">T10</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {current.leaderboard.slice(0, 8).map((entry, index) => (
-                              <tr
-                                key={entry.driverSlug}
-                                className={`border-b border-racing-steel/10 last:border-0 ${
-                                  index % 2 === 0 ? "bg-[#2c2c2c]" : "bg-[#202020]"
-                                }`}
-                              >
-                                <td className="px-3 py-2 text-racing-white/85">{entry.driverName}</td>
-                                <td className="px-2 py-2 text-right font-mono text-racing-yellow">{entry.wins}</td>
-                                <td className="px-2 py-2 text-right font-mono text-racing-yellow">{entry.podiums}</td>
-                                <td className="px-3 py-2 text-right font-mono text-racing-yellow">{entry.top10}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+                      <ResultsSummaryTable
+                        labels={i18n.summaryLabels}
+                        entries={current.leaderboard.slice(0, 8).map((entry) => ({
+                          driverKey: entry.driverSlug,
+                          driverName: entry.driverName,
+                          wins: entry.wins,
+                          podiums: entry.podiums,
+                          top10: entry.top10,
+                          totalPoints: entry.totalPoints,
+                        }))}
+                      />
                     )}
                     {currentHref ? (
                       <Link

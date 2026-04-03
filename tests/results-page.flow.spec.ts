@@ -30,6 +30,7 @@ import {
   formatEventParticipationSeasonLabel,
   formatEventParticipationSessionValue,
   getEventParticipationSessionColumns,
+  getEventParticipationSessionPresentation,
 } from "@/app/components/event-participation-helpers";
 
 describe("results page flow", () => {
@@ -64,12 +65,23 @@ describe("results page flow", () => {
       "F",
       "P",
     ]);
+    expect(getEventParticipationSessionPresentation(getEventParticipationSessionColumns(event)[4]!, "en")).toEqual({
+      compactLabel: "PTS",
+      fullLabelLines: ["Points"],
+      accessibilityLabel: "Points",
+    });
     expect(
       formatEventParticipationSessionValue(
         { sessionKind: "f", sessionLabel: "F", rawValue: "DNF", position: null, status: "DNF" },
         "en",
       ),
     ).toBe("DNF");
+    expect(
+      formatEventParticipationSessionValue(
+        { sessionKind: "p", sessionLabel: "P", rawValue: "25", position: 25, status: null },
+        "en",
+      ),
+    ).toBe("25");
     expect(formatEventParticipationSeasonLabel(event, "en")).toBe("Season 2026 - TZ 4000");
     expect(formatEventParticipationRoundLabel(event)).toBe("R6 - Interlagos");
     expect(formatEventParticipationDate(event, "en")).toBeTruthy();
@@ -407,7 +419,7 @@ describe("results page flow", () => {
     const sIndex = html.indexOf(">S<");
     const qfIndex = html.indexOf(">QF<");
     const fIndex = html.indexOf(">F<");
-    const pIndex = html.indexOf(">P<");
+    const pIndex = html.indexOf(">PTS<");
     const trelewIndex = html.indexOf("Trelew");
     const sparseSection = trelewIndex === -1 ? "" : html.slice(trelewIndex);
 
@@ -419,7 +431,99 @@ describe("results page flow", () => {
     expect(sparseSection).toContain(">F<");
     expect(sparseSection).not.toContain(">QS<");
     expect(sparseSection).not.toContain(">QF<");
-    expect(sparseSection).not.toContain(">P<");
+    expect(sparseSection).not.toContain(">PTS<");
+  });
+
+  it("renders full desktop labels, compact points labels, and total points in both sidebar summaries", async () => {
+    getFiltersMock.mockResolvedValueOnce({
+      years: [2026],
+      championships: [],
+      drivers: [],
+    });
+    getCurrentChampionshipMock.mockResolvedValueOnce({
+      championship: {
+        id: "champ-1",
+        seasonYear: 2026,
+        slug: "tz-4000",
+        name: "TZ 4000",
+        organizerName: "SINTA",
+      },
+      events: [],
+      leaderboard: [
+        {
+          driverSlug: "current-driver",
+          driverName: "Current Driver",
+          wins: 1,
+          podiums: 2,
+          top10: 3,
+          totalPoints: 64,
+          completed: 3,
+          avgPosition: 4.5,
+        },
+      ],
+    });
+    getResultsStatsMock.mockResolvedValueOnce([
+      {
+        driverSlug: "rank-driver",
+        canonicalName: "Rank Driver",
+        wins: 3,
+        podiums: 5,
+        top5: 6,
+        top10: 8,
+        totalPoints: 88,
+        completed: 8,
+        dnf: 0,
+        dnq: 0,
+        dsq: 0,
+        absent: 0,
+      },
+    ]);
+    getResultsEventParticipationMock.mockResolvedValueOnce({
+      items: [
+        {
+          eventId: "event-5",
+          seasonYear: 2026,
+          championshipSlug: "tz-4000",
+          championshipName: "TZ 4000",
+          roundNumber: 4,
+          circuitName: "Interlagos",
+          eventDate: null,
+          participants: [
+            {
+              driverSlug: "kevin-fontana",
+              driverName: "Kevin Fontana",
+              sessions: [
+                { sessionKind: "qs", sessionLabel: "QS", rawValue: "4", position: 4, status: null },
+                { sessionKind: "s", sessionLabel: "S", rawValue: "3", position: 3, status: null },
+                { sessionKind: "qf", sessionLabel: "QF", rawValue: "2", position: 2, status: null },
+                { sessionKind: "f", sessionLabel: "F", rawValue: "1", position: 1, status: null },
+                { sessionKind: "p", sessionLabel: "P", rawValue: "25", position: 25, status: null },
+              ],
+            },
+          ],
+        },
+      ],
+      nextCursor: null,
+    });
+
+    const element = await ResultsPage({
+      searchParams: {
+        lang: "en",
+      },
+    });
+    const html = renderToStaticMarkup(element);
+
+    expect(html).toContain("Qualy");
+    expect(html).toContain("Sprint");
+    expect(html).toContain("Points");
+    expect(html).toContain(">PTS<");
+    expect(html).toContain(">25<");
+    expect(html).not.toContain(">P25<");
+    expect(html).toContain("Podiums");
+    expect(html).toContain("Rank Driver");
+    expect(html).toContain("Current Driver");
+    expect(html).toContain(">88<");
+    expect(html).toContain(">64<");
   });
 
   it("preserves service participant order in rendered markup", async () => {

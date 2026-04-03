@@ -61,6 +61,7 @@ type DbDriverStatsRow = {
   podiums: number;
   top_5: number;
   top_10: number;
+  total_points: number;
   completed: number;
   dnf: number;
   dnq: number;
@@ -113,6 +114,7 @@ type DbCurrentLeaderboardRow = {
   wins: number;
   podiums: number;
   top_10: number;
+  total_points: number;
   completed: number;
   avg_position: number | null;
 };
@@ -275,6 +277,7 @@ function toDriverStats(row: DbDriverStatsRow): DriverStats {
     podiums: Number(row.podiums ?? 0),
     top5: Number(row.top_5 ?? 0),
     top10: Number(row.top_10 ?? 0),
+    totalPoints: Number(row.total_points ?? 0),
     completed: Number(row.completed ?? 0),
     dnf: Number(row.dnf ?? 0),
     dnq: Number(row.dnq ?? 0),
@@ -744,12 +747,12 @@ export async function getHighlights(query: {
 
 export async function getDriverStats(query: StatsQuery): Promise<DriverStats[]> {
   const values: unknown[] = [];
+  const finalRaceFilter = getFinalRaceSessionFilter("er.session_kind");
   const whereClauses: string[] = [
     "er.is_active = true",
     "e.is_active = true",
     "c.is_active = true",
     "d.is_active = true",
-    getFinalRaceSessionFilter("er.session_kind"),
   ];
 
   appendStatsFilters(query, values, whereClauses);
@@ -759,22 +762,23 @@ export async function getDriverStats(query: StatsQuery): Promise<DriverStats[]> 
       select
         d.slug as driver_slug,
         d.canonical_name,
-        count(*) filter (where er.position = 1) as wins,
-        count(*) filter (where er.position is not null and er.position <= 3) as podiums,
-        count(*) filter (where er.position is not null and er.position <= 5) as top_5,
-        count(*) filter (where er.position is not null and er.position <= 10) as top_10,
-        count(*) filter (where er.position is not null) as completed,
-        count(*) filter (where er.status = 'DNF') as dnf,
-        count(*) filter (where er.status = 'DNQ') as dnq,
-        count(*) filter (where er.status = 'DSQ') as dsq,
-        count(*) filter (where er.status = 'ABSENT') as absent
+        count(*) filter (where ${finalRaceFilter} and er.position = 1) as wins,
+        count(*) filter (where ${finalRaceFilter} and er.position is not null and er.position <= 3) as podiums,
+        count(*) filter (where ${finalRaceFilter} and er.position is not null and er.position <= 5) as top_5,
+        count(*) filter (where ${finalRaceFilter} and er.position is not null and er.position <= 10) as top_10,
+        coalesce(sum(er.position) filter (where er.session_kind = 'p' and er.position is not null), 0) as total_points,
+        count(*) filter (where ${finalRaceFilter} and er.position is not null) as completed,
+        count(*) filter (where ${finalRaceFilter} and er.status = 'DNF') as dnf,
+        count(*) filter (where ${finalRaceFilter} and er.status = 'DNQ') as dnq,
+        count(*) filter (where ${finalRaceFilter} and er.status = 'DSQ') as dsq,
+        count(*) filter (where ${finalRaceFilter} and er.status = 'ABSENT') as absent
       from event_results er
       join events e on e.id = er.event_id
       join championships c on c.id = e.championship_id
       join drivers d on d.id = er.driver_id
       where ${whereClauses.join(" and ")}
       group by d.id, d.slug, d.canonical_name
-      order by wins desc, podiums desc, d.canonical_name asc
+      order by wins desc, podiums desc, total_points desc, d.canonical_name asc
     `,
     values,
   );
@@ -901,11 +905,14 @@ export async function getCurrentChampionshipSummary(
       select
         d.slug as driver_slug,
         d.canonical_name as driver_name,
-        count(*) filter (where er.position = 1) as wins,
-        count(*) filter (where er.position is not null and er.position <= 3) as podiums,
-        count(*) filter (where er.position is not null and er.position <= 10) as top_10,
-        count(*) filter (where er.position is not null) as completed,
-        avg(er.position::numeric) filter (where er.position is not null) as avg_position
+        count(*) filter (where ${getFinalRaceSessionFilter("er.session_kind")} and er.position = 1) as wins,
+        count(*) filter (where ${getFinalRaceSessionFilter("er.session_kind")} and er.position is not null and er.position <= 3) as podiums,
+        count(*) filter (where ${getFinalRaceSessionFilter("er.session_kind")} and er.position is not null and er.position <= 10) as top_10,
+        coalesce(sum(er.position) filter (where er.session_kind = 'p' and er.position is not null), 0) as total_points,
+        count(*) filter (where ${getFinalRaceSessionFilter("er.session_kind")} and er.position is not null) as completed,
+        avg(er.position::numeric) filter (
+          where ${getFinalRaceSessionFilter("er.session_kind")} and er.position is not null
+        ) as avg_position
       from event_results er
       join drivers d on d.id = er.driver_id
       join events e on e.id = er.event_id
@@ -914,9 +921,8 @@ export async function getCurrentChampionshipSummary(
         and er.is_active = true
         and d.is_active = true
         and e.is_active = true
-        and ${getFinalRaceSessionFilter("er.session_kind")}
       group by d.id, d.slug, d.canonical_name
-      order by wins desc, podiums desc, top_10 desc, completed desc, avg_position asc nulls last, d.canonical_name asc
+      order by wins desc, podiums desc, total_points desc, top_10 desc, completed desc, avg_position asc nulls last, d.canonical_name asc
       limit 8
     `,
     [latest.championship_id],
@@ -937,6 +943,7 @@ export async function getCurrentChampionshipSummary(
       wins: Number(row.wins ?? 0),
       podiums: Number(row.podiums ?? 0),
       top10: Number(row.top_10 ?? 0),
+      totalPoints: Number(row.total_points ?? 0),
       completed: Number(row.completed ?? 0),
       avgPosition: row.avg_position === null ? null : Number(row.avg_position),
     })),
@@ -1124,6 +1131,7 @@ function zeroStats(slug: string, canonicalName: string): DriverStats {
     podiums: 0,
     top5: 0,
     top10: 0,
+    totalPoints: 0,
     completed: 0,
     dnf: 0,
     dnq: 0,

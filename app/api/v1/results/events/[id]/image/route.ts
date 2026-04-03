@@ -9,6 +9,9 @@ import {
   formatEventParticipationSeasonLabel,
   formatEventParticipationSessionValue,
   getEventParticipationSessionColumns,
+  getEventParticipationSessionGroup,
+  getEventParticipationSessionPresentation,
+  isPointsSessionKind,
   type EventParticipationSessionColumn,
 } from "@/app/components/event-participation-helpers";
 import type { EventParticipationCard } from "@/lib/server/history/types";
@@ -31,7 +34,37 @@ function getFallbackColumns(lang: "es" | "en"): EventParticipationSessionColumn[
   ];
 }
 
-function getSessionTone(value: string): { background: string; border: string; color: string } {
+function hasLeadingSeparator(columns: EventParticipationSessionColumn[], index: number): boolean {
+  if (index === 0) {
+    return true;
+  }
+
+  return (
+    getEventParticipationSessionGroup(columns[index - 1]?.sessionKind ?? "qs") !==
+    getEventParticipationSessionGroup(columns[index]?.sessionKind ?? "qs")
+  );
+}
+
+function getSessionTone(
+  session: EventParticipationCard["participants"][number]["sessions"][number] | null,
+  value: string,
+): { background: string; border: string; color: string } {
+  if (!session) {
+    return {
+      background: "rgba(148, 163, 184, 0.12)",
+      border: "rgba(148, 163, 184, 0.35)",
+      color: "rgba(255, 255, 255, 0.45)",
+    };
+  }
+
+  if (isPointsSessionKind(session.sessionKind)) {
+    return {
+      background: "rgba(17, 17, 17, 0.82)",
+      border: "rgba(255, 213, 52, 0.45)",
+      color: "#ffd534",
+    };
+  }
+
   if (value === "P1") {
     return {
       background: "#ffd534",
@@ -227,25 +260,31 @@ function renderEventImage(event: EventParticipationCard, lang: "es" | "en") {
             },
             pilotLabel,
           ),
-          ...visibleColumns.map((column) =>
-            createElement(
+          ...visibleColumns.map((column, index) => {
+            const label = getEventParticipationSessionPresentation(column, lang);
+
+            return createElement(
               "div",
               {
                 key: column.sessionKind,
                 style: {
                   display: "flex",
-                  width: "96px",
+                  width: "112px",
                   justifyContent: "center",
                   fontSize: "18px",
                   fontWeight: 700,
                   textTransform: "uppercase",
                   letterSpacing: "0.14em",
                   color: "rgba(255, 255, 255, 0.68)",
+                  borderLeft: hasLeadingSeparator(visibleColumns, index)
+                    ? "3px solid rgba(255, 213, 52, 0.9)"
+                    : undefined,
+                  paddingLeft: hasLeadingSeparator(visibleColumns, index) ? "16px" : undefined,
                 },
               },
-              column.sessionLabel,
-            ),
-          ),
+              label.compactLabel,
+            );
+          }),
         ),
         ...event.participants.map((participant, participantIndex) => {
           const sessionByKind = new Map(
@@ -285,7 +324,10 @@ function renderEventImage(event: EventParticipationCard, lang: "es" | "en") {
               const value = session
                 ? formatEventParticipationSessionValue(session, lang)
                 : "-";
-              const tone = getSessionTone(value);
+              const tone = getSessionTone(session, value);
+              const columnIndex = visibleColumns.findIndex(
+                (visibleColumn) => visibleColumn.sessionKind === column.sessionKind,
+              );
 
               return createElement(
                 "div",
@@ -293,22 +335,37 @@ function renderEventImage(event: EventParticipationCard, lang: "es" | "en") {
                   key: `${participant.driverSlug}-${column.sessionKind}`,
                   style: {
                     display: "flex",
-                    width: "96px",
+                    width: "112px",
                     justifyContent: "center",
                     alignItems: "center",
-                    minHeight: "44px",
                     marginLeft: "12px",
-                    borderRadius: "4px",
-                    border: `1px solid ${tone.border}`,
-                    background: tone.background,
-                    color: tone.color,
-                    fontSize: "22px",
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.08em",
+                    borderLeft: hasLeadingSeparator(visibleColumns, columnIndex)
+                      ? "3px solid rgba(255, 213, 52, 0.9)"
+                      : undefined,
+                    paddingLeft: hasLeadingSeparator(visibleColumns, columnIndex) ? "16px" : undefined,
                   },
                 },
-                value,
+                createElement(
+                  "div",
+                  {
+                    style: {
+                      display: "flex",
+                      width: "100%",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      minHeight: "44px",
+                      borderRadius: "4px",
+                      border: `1px solid ${tone.border}`,
+                      background: tone.background,
+                      color: tone.color,
+                      fontSize: "22px",
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.08em",
+                    },
+                  },
+                  value,
+                ),
               );
             }),
           );

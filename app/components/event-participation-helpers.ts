@@ -9,6 +9,95 @@ export type EventParticipationSessionColumn = {
   sessionLabel: string;
 };
 
+type EventParticipationSessionLabel = {
+  compact: string;
+  full: string[];
+};
+
+const SESSION_LABELS: Record<
+  EventParticipationEntry["sessions"][number]["sessionKind"],
+  Record<Language, EventParticipationSessionLabel>
+> = {
+  qs: {
+    en: { compact: "QS", full: ["Qualy", "Sprint"] },
+    es: { compact: "QS", full: ["Qualy", "Sprint"] },
+  },
+  s: {
+    en: { compact: "S", full: ["Sprint"] },
+    es: { compact: "S", full: ["Sprint"] },
+  },
+  primary: {
+    en: { compact: "S", full: ["Sprint"] },
+    es: { compact: "S", full: ["Sprint"] },
+  },
+  qf: {
+    en: { compact: "QF", full: ["Qualy", "Final"] },
+    es: { compact: "QF", full: ["Qualy", "Final"] },
+  },
+  f: {
+    en: { compact: "F", full: ["Final"] },
+    es: { compact: "F", full: ["Final"] },
+  },
+  secondary: {
+    en: { compact: "F", full: ["Final"] },
+    es: { compact: "F", full: ["Final"] },
+  },
+  p: {
+    en: { compact: "PTS", full: ["Points"] },
+    es: { compact: "PTS", full: ["Puntos"] },
+  },
+};
+
+export type EventParticipationSessionPresentation = {
+  compactLabel: string;
+  fullLabelLines: string[];
+  accessibilityLabel: string;
+};
+
+export type EventParticipationSessionGroup = "opening" | "final" | "points";
+
+function splitLabel(label: string): string[] {
+  return label
+    .split(/\s+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+export function isPointsSessionKind(
+  sessionKind: EventParticipationEntry["sessions"][number]["sessionKind"],
+): boolean {
+  return sessionKind === "p";
+}
+
+export function getEventParticipationSessionGroup(
+  sessionKind: EventParticipationEntry["sessions"][number]["sessionKind"],
+): EventParticipationSessionGroup {
+  if (sessionKind === "p") {
+    return "points";
+  }
+
+  if (sessionKind === "qf" || sessionKind === "f" || sessionKind === "secondary") {
+    return "final";
+  }
+
+  return "opening";
+}
+
+export function getEventParticipationSessionPresentation(
+  column: EventParticipationSessionColumn,
+  lang: Language,
+): EventParticipationSessionPresentation {
+  const labels = SESSION_LABELS[column.sessionKind]?.[lang];
+  const fullLabelLines = labels?.full.length ? labels.full : splitLabel(column.sessionLabel);
+  const compactLabel = labels?.compact ?? column.sessionLabel;
+
+  return {
+    compactLabel,
+    fullLabelLines: fullLabelLines.length > 0 ? fullLabelLines : [column.sessionLabel],
+    accessibilityLabel: fullLabelLines.length > 0 ? fullLabelLines.join(" ") : column.sessionLabel,
+  };
+}
+
 export function getEventParticipationSessionOrder(
   sessionKind: EventParticipationEntry["sessions"][number]["sessionKind"],
 ): number {
@@ -69,6 +158,10 @@ export function formatEventParticipationSessionValue(
   lang: Language,
 ): string {
   if (session.position !== null) {
+    if (isPointsSessionKind(session.sessionKind)) {
+      return String(session.position);
+    }
+
     return `P${session.position}`;
   }
 

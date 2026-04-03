@@ -100,6 +100,7 @@ export type DriverStats = {
   podiums: number;
   top5: number;
   top10: number;
+  totalPoints: number;
   completed: number;
   dnf: number;
   dnq: number;
@@ -165,6 +166,7 @@ export type CurrentChampionshipSummary = {
     wins: number;
     podiums: number;
     top10: number;
+    totalPoints: number;
     completed: number;
     avgPosition: number | null;
   }>;
