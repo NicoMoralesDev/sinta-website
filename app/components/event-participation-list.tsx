@@ -265,7 +265,7 @@ export function EventParticipationList({
                                 key={`${participant.driverSlug}-${column.sessionKind}-mobile`}
                                 className="rounded-sm border border-racing-steel/15 bg-racing-black/25 p-2"
                               >
-                                <span className="block text-[10px] font-semibold tracking-wider text-racing-white/55 uppercase">
+                                <span className="block text-center text-[10px] font-semibold tracking-wider text-racing-white/55 uppercase">
                                   {label.compactLabel}
                                 </span>
                                 <span

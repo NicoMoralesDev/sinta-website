@@ -122,4 +122,35 @@ describe("home page flow", () => {
     expect(headerHtml).not.toContain("/#calendar");
     expect(html).not.toContain("Watkins Glen 2H");
   });
+
+  it("renders share image links for recent results on the home page", async () => {
+    getHomeRecentEventParticipationMock.mockResolvedValue([
+      {
+        eventId: "event-1",
+        seasonYear: 2026,
+        championshipSlug: "tz-4000",
+        championshipName: "TZ 4000",
+        roundNumber: 4,
+        circuitName: "San Luis",
+        eventDate: null,
+        participants: [],
+      },
+    ]);
+
+    const spanishElement = await HomePage({
+      searchParams: {},
+    });
+    const spanishHtml = renderToStaticMarkup(spanishElement);
+
+    expect(spanishHtml).toContain("Imagen para compartir");
+    expect(spanishHtml).toContain("/api/v1/results/events/event-1/image");
+
+    const englishElement = await HomePage({
+      searchParams: { lang: "en" },
+    });
+    const englishHtml = renderToStaticMarkup(englishElement);
+
+    expect(englishHtml).toContain("Share image");
+    expect(englishHtml).toContain("/api/v1/results/events/event-1/image?lang=en");
+  });
 });

@@ -519,7 +519,10 @@ describe("results page flow", () => {
     expect(html).toContain(">PTS<");
     expect(html).toContain(">25<");
     expect(html).not.toContain(">P25<");
-    expect(html).toContain("Podiums");
+    expect(html).toContain(">W<");
+    expect(html).toContain(">P<");
+    expect(html).toContain(">T10<");
+    expect(html).toContain(">PTS<");
     expect(html).toContain("Rank Driver");
     expect(html).toContain("Current Driver");
     expect(html).toContain(">88<");

@@ -39,7 +39,21 @@ function buildCurrentChampionshipHref(
   return query ? `/results?${query}` : "/results";
 }
 
+function buildResultsShareImageHref(eventId: string, lang: Language): string {
+  const path = `/api/v1/results/events/${eventId}/image`;
+  const params = new URLSearchParams();
+
+  if (lang === "en") {
+    params.set("lang", "en");
+  }
+
+  const query = params.toString();
+  return query ? `${path}?${query}` : path;
+}
+
 export function Results({ lang, copy, events, currentChampionship }: ResultsProps) {
+  const shareImageLabel = lang === "en" ? "Share image" : "Imagen para compartir";
+
   return (
     <section id="results" className="relative bg-racing-carbon py-24 md:py-32">
       <div className="track-line absolute top-0 left-0 w-full" />
@@ -60,7 +74,19 @@ export function Results({ lang, copy, events, currentChampionship }: ResultsProp
           </h2>
         </div>
 
-        <EventParticipationList lang={lang} events={events} emptyMessage={copy.emptyMessage} />
+        <EventParticipationList
+          lang={lang}
+          events={events}
+          emptyMessage={copy.emptyMessage}
+          renderEventActions={(event) => (
+            <Link
+              href={buildResultsShareImageHref(event.eventId, lang)}
+              className="text-[11px] font-semibold tracking-wider text-racing-yellow uppercase transition-colors hover:text-racing-white"
+            >
+              {shareImageLabel}
+            </Link>
+          )}
+        />
 
         <div className="mt-8 flex flex-wrap gap-3">
           <Link

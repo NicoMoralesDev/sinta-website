@@ -149,22 +149,10 @@ function ResultsSummaryTable({
         <thead className="border-b border-racing-steel/20 text-racing-white/55 uppercase">
           <tr>
             <th className="px-3 py-2 text-left">{labels.driver}</th>
-            <th className="px-1.5 py-2 text-right sm:px-2">
-              <span className="sm:hidden">{labels.wins.compact}</span>
-              <span className="hidden sm:block">{labels.wins.full}</span>
-            </th>
-            <th className="px-1.5 py-2 text-right sm:px-2">
-              <span className="sm:hidden">{labels.podiums.compact}</span>
-              <span className="hidden sm:block leading-tight">{labels.podiums.full}</span>
-            </th>
-            <th className="px-1.5 py-2 text-right sm:px-2">
-              <span className="sm:hidden">{labels.top10.compact}</span>
-              <span className="hidden sm:block">{labels.top10.full}</span>
-            </th>
-            <th className="px-2 py-2 text-right">
-              <span className="sm:hidden">{labels.totalPoints.compact}</span>
-              <span className="hidden sm:block leading-tight">{labels.totalPoints.full}</span>
-            </th>
+            <th className="px-1.5 py-2 text-right sm:px-2">{labels.wins.compact}</th>
+            <th className="px-1.5 py-2 text-right sm:px-2">{labels.podiums.compact}</th>
+            <th className="px-1.5 py-2 text-right sm:px-2">{labels.top10.compact}</th>
+            <th className="px-2 py-2 text-right">{labels.totalPoints.compact}</th>
           </tr>
         </thead>
         <tbody>
@@ -231,7 +219,7 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
           summaryLabels: {
             driver: "Driver",
             wins: { full: "Wins", compact: "W" },
-            podiums: { full: "Podiums", compact: "POD" },
+            podiums: { full: "Podiums", compact: "P" },
             top10: { full: "Top 10", compact: "T10" },
             totalPoints: { full: "Points", compact: "PTS" },
           },
@@ -262,7 +250,7 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
           summaryLabels: {
             driver: "Piloto",
             wins: { full: "Victorias", compact: "V" },
-            podiums: { full: "Podios", compact: "POD" },
+            podiums: { full: "Podios", compact: "P" },
             top10: { full: "Top 10", compact: "T10" },
             totalPoints: { full: "Puntos", compact: "PTS" },
           },
