@@ -132,9 +132,11 @@ type ResultsSummaryLabels = {
 function ResultsSummaryTable({
   entries,
   labels,
+  showTotalPoints = true,
 }: {
   entries: ResultsSummaryEntry[];
   labels: ResultsSummaryLabels;
+  showTotalPoints?: boolean;
 }) {
   return (
     <div className="mt-3 overflow-hidden rounded-sm border border-racing-steel/20 bg-racing-black/40">
@@ -144,7 +146,7 @@ function ResultsSummaryTable({
           <col className="w-10 sm:w-12" />
           <col className="w-10 sm:w-14" />
           <col className="w-11 sm:w-14" />
-          <col className="w-12 sm:w-14" />
+          {showTotalPoints ? <col className="w-12 sm:w-14" /> : null}
         </colgroup>
         <thead className="border-b border-racing-steel/20 text-racing-white/55 uppercase">
           <tr>
@@ -152,7 +154,9 @@ function ResultsSummaryTable({
             <th className="px-1.5 py-2 text-right sm:px-2">{labels.wins.compact}</th>
             <th className="px-1.5 py-2 text-right sm:px-2">{labels.podiums.compact}</th>
             <th className="px-1.5 py-2 text-right sm:px-2">{labels.top10.compact}</th>
-            <th className="px-2 py-2 text-right">{labels.totalPoints.compact}</th>
+            {showTotalPoints ? (
+              <th className="px-2 py-2 text-right">{labels.totalPoints.compact}</th>
+            ) : null}
           </tr>
         </thead>
         <tbody>
@@ -169,7 +173,9 @@ function ResultsSummaryTable({
                 {entry.podiums}
               </td>
               <td className="px-1.5 py-2 text-right font-mono text-racing-yellow sm:px-2">{entry.top10}</td>
-              <td className="px-2 py-2 text-right font-mono text-racing-yellow">{entry.totalPoints}</td>
+              {showTotalPoints ? (
+                <td className="px-2 py-2 text-right font-mono text-racing-yellow">{entry.totalPoints}</td>
+              ) : null}
             </tr>
           ))}
         </tbody>
@@ -496,6 +502,7 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
                 ) : (
                   <ResultsSummaryTable
                     labels={i18n.summaryLabels}
+                    showTotalPoints={false}
                     entries={ranking.slice(0, 8).map((entry) => ({
                       driverKey: entry.driverSlug,
                       driverName: entry.canonicalName,

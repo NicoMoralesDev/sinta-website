@@ -434,7 +434,7 @@ describe("results page flow", () => {
     expect(sparseSection).not.toContain(">PTS<");
   });
 
-  it("renders full desktop labels, compact points labels, and total points in both sidebar summaries", async () => {
+  it("renders full desktop labels, keeps points only in the current championship summary, and omits them from the historical pilot summary", async () => {
     getFiltersMock.mockResolvedValueOnce({
       years: [2026],
       championships: [],
@@ -522,11 +522,23 @@ describe("results page flow", () => {
     expect(html).toContain(">W<");
     expect(html).toContain(">P<");
     expect(html).toContain(">T10<");
-    expect(html).toContain(">PTS<");
     expect(html).toContain("Rank Driver");
     expect(html).toContain("Current Driver");
-    expect(html).toContain(">88<");
     expect(html).toContain(">64<");
+    expect(html).not.toContain(">88<");
+
+    const rankingSectionStart = html.indexOf("Driver snapshot");
+    const currentSectionStart = html.indexOf("Current championship");
+    const rankingSection =
+      rankingSectionStart === -1 || currentSectionStart === -1
+        ? ""
+        : html.slice(rankingSectionStart, currentSectionStart);
+    const currentSection = currentSectionStart === -1 ? "" : html.slice(currentSectionStart);
+
+    expect(rankingSection).not.toContain(">PTS<");
+    expect(rankingSection).not.toContain("88");
+    expect(currentSection).toContain(">PTS<");
+    expect(currentSection).toContain(">64<");
   });
 
   it("preserves service participant order in rendered markup", async () => {
