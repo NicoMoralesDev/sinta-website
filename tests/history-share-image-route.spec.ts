@@ -199,7 +199,7 @@ describe("results event share image route", () => {
     expect(options.height).toBe(1350);
   });
 
-  it("falls back to the simplified image layout when the primary ImageResponse render fails", async () => {
+  it("renders the simplified image layout without depending on the primary layout path", async () => {
     getResultsEventParticipationByIdMock.mockResolvedValueOnce({
       ...buildEvent(1),
       participants: [
@@ -213,16 +213,12 @@ describe("results event share image route", () => {
         },
       ],
     });
-    imageResponseMock
-      .mockImplementationOnce(() => {
-        throw new Error("Primary layout failed");
-      })
-      .mockImplementationOnce((element: React.ReactElement, options: { headers?: HeadersInit }) => {
-        return new Response(renderToStaticMarkup(element), {
-          status: 200,
-          headers: options.headers,
-        });
+    imageResponseMock.mockImplementationOnce((element: React.ReactElement, options: { headers?: HeadersInit }) => {
+      return new Response(renderToStaticMarkup(element), {
+        status: 200,
+        headers: options.headers,
       });
+    });
 
     const response = await GET(
       new Request("http://localhost/api/v1/results/events/550e8400-e29b-41d4-a716-446655440000/image"),
@@ -235,7 +231,7 @@ describe("results event share image route", () => {
     const markup = await response.text();
 
     expect(response.status).toBe(200);
-    expect(imageResponseMock).toHaveBeenCalledTimes(2);
+    expect(imageResponseMock).toHaveBeenCalledTimes(1);
     expect(markup).toContain("Kevin Fontana");
     expect(markup).toContain("18.5");
     expect(markup).toContain("PTS");

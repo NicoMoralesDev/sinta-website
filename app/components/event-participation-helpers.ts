@@ -56,8 +56,12 @@ export type EventParticipationSessionPresentation = {
 
 export type EventParticipationSessionGroup = "opening" | "final" | "points";
 
-function splitLabel(label: string): string[] {
-  return label
+function normalizeText(value: string | null | undefined): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function splitLabel(label: string | null | undefined): string[] {
+  return normalizeText(label)
     .split(/\s+/)
     .map((part) => part.trim())
     .filter(Boolean);
@@ -88,13 +92,14 @@ export function getEventParticipationSessionPresentation(
   lang: Language,
 ): EventParticipationSessionPresentation {
   const labels = SESSION_LABELS[column.sessionKind]?.[lang];
-  const fullLabelLines = labels?.full.length ? labels.full : splitLabel(column.sessionLabel);
-  const compactLabel = labels?.compact ?? column.sessionLabel;
+  const fallbackLabel = normalizeText(column.sessionLabel) || column.sessionKind.toUpperCase();
+  const fullLabelLines = labels?.full.length ? labels.full : splitLabel(fallbackLabel);
+  const compactLabel = labels?.compact ?? fallbackLabel;
 
   return {
     compactLabel,
-    fullLabelLines: fullLabelLines.length > 0 ? fullLabelLines : [column.sessionLabel],
-    accessibilityLabel: fullLabelLines.length > 0 ? fullLabelLines.join(" ") : column.sessionLabel,
+    fullLabelLines: fullLabelLines.length > 0 ? fullLabelLines : [fallbackLabel],
+    accessibilityLabel: fullLabelLines.length > 0 ? fullLabelLines.join(" ") : fallbackLabel,
   };
 }
 
@@ -131,11 +136,12 @@ export function getEventParticipationSessionColumns(
 
   for (const participant of event.participants) {
     for (const session of participant.sessions) {
-      const key = `${session.sessionKind}:${session.sessionLabel}`;
+      const sessionLabel = normalizeText(session.sessionLabel) || session.sessionKind.toUpperCase();
+      const key = `${session.sessionKind}:${sessionLabel}`;
       if (!map.has(key)) {
         map.set(key, {
           sessionKind: session.sessionKind,
-          sessionLabel: session.sessionLabel,
+          sessionLabel,
         });
       }
     }
@@ -149,7 +155,7 @@ export function getEventParticipationSessionColumns(
       return byKind;
     }
 
-    return left.sessionLabel.localeCompare(right.sessionLabel);
+    return normalizeText(left.sessionLabel).localeCompare(normalizeText(right.sessionLabel));
   });
 }
 
@@ -169,7 +175,7 @@ export function formatEventParticipationSessionValue(
     return lang === "es" ? "AUS" : "ABS";
   }
 
-  return session.status ?? session.rawValue;
+  return (session.status ?? normalizeText(session.rawValue)) || "-";
 }
 
 export function formatEventParticipationSeasonLabel(
@@ -177,16 +183,16 @@ export function formatEventParticipationSeasonLabel(
   lang: Language,
 ): string {
   if (lang === "en") {
-    return `Season ${event.seasonYear} - ${event.championshipName}`;
+    return `Season ${event.seasonYear} - ${normalizeText(event.championshipName) || "Championship"}`;
   }
 
-  return `Temporada ${event.seasonYear} - ${event.championshipName}`;
+  return `Temporada ${event.seasonYear} - ${normalizeText(event.championshipName) || "Campeonato"}`;
 }
 
 export function formatEventParticipationRoundLabel(
   event: EventParticipationCard,
 ): string {
-  return `R${event.roundNumber} - ${event.circuitName}`;
+  return `R${event.roundNumber} - ${normalizeText(event.circuitName) || "Circuito"}`;
 }
 
 export function formatEventParticipationDate(

@@ -25,6 +25,15 @@ type RouteContext = {
 
 const CACHE_CONTROL = "public, s-maxage=120, stale-while-revalidate=600";
 
+function sanitizeText(value: string | null | undefined, fallback = ""): string {
+  if (typeof value !== "string") {
+    return fallback;
+  }
+
+  const normalized = value.trim();
+  return normalized || fallback;
+}
+
 function getFallbackColumns(lang: "es" | "en"): EventParticipationSessionColumn[] {
   return [
     {
@@ -125,6 +134,23 @@ function getSessionTone(
     background: "rgba(255, 213, 52, 0.1)",
     border: "rgba(255, 213, 52, 0.45)",
     color: "#ffd534",
+  };
+}
+
+function sanitizeEvent(event: EventParticipationCard): EventParticipationCard {
+  return {
+    ...event,
+    championshipName: sanitizeText(event.championshipName, "Championship"),
+    circuitName: sanitizeText(event.circuitName, "Circuit"),
+    participants: event.participants.map((participant, participantIndex) => ({
+      ...participant,
+      driverName: sanitizeText(participant.driverName, `Driver ${participantIndex + 1}`),
+      sessions: participant.sessions.map((session) => ({
+        ...session,
+        sessionLabel: sanitizeText(session.sessionLabel, session.sessionKind.toUpperCase()),
+        rawValue: sanitizeText(session.rawValue, "-"),
+      })),
+    })),
   };
 }
 
@@ -527,6 +553,7 @@ function renderEventImageFallback(event: EventParticipationCard, lang: "es" | "e
 }
 
 function createEventImageResponse(event: EventParticipationCard, lang: "es" | "en"): ImageResponse {
+  const safeEvent = sanitizeEvent(event);
   const imageHeight = Math.max(1350, 420 + event.participants.length * 72);
   const options = {
     width: 1080,
@@ -536,11 +563,7 @@ function createEventImageResponse(event: EventParticipationCard, lang: "es" | "e
     },
   };
 
-  try {
-    return new ImageResponse(renderEventImage(event, lang), options);
-  } catch {
-    return new ImageResponse(renderEventImageFallback(event, lang), options);
-  }
+  return new ImageResponse(renderEventImageFallback(safeEvent, lang), options);
 }
 
 export async function GET(request: Request, context: RouteContext) {
