@@ -199,6 +199,48 @@ describe("results event share image route", () => {
     expect(options.height).toBe(1350);
   });
 
+  it("falls back to the simplified image layout when the primary ImageResponse render fails", async () => {
+    getResultsEventParticipationByIdMock.mockResolvedValueOnce({
+      ...buildEvent(1),
+      participants: [
+        {
+          driverSlug: "kevin-fontana",
+          driverName: "Kevin Fontana",
+          sessions: [
+            { sessionKind: "f", sessionLabel: "F", rawValue: "1", position: 1, status: null },
+            { sessionKind: "p", sessionLabel: "P", rawValue: "18.5", position: 18.5, status: null },
+          ],
+        },
+      ],
+    });
+    imageResponseMock
+      .mockImplementationOnce(() => {
+        throw new Error("Primary layout failed");
+      })
+      .mockImplementationOnce((element: React.ReactElement, options: { headers?: HeadersInit }) => {
+        return new Response(renderToStaticMarkup(element), {
+          status: 200,
+          headers: options.headers,
+        });
+      });
+
+    const response = await GET(
+      new Request("http://localhost/api/v1/results/events/550e8400-e29b-41d4-a716-446655440000/image"),
+      {
+        params: Promise.resolve({
+          id: "550e8400-e29b-41d4-a716-446655440000",
+        }),
+      },
+    );
+    const markup = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(imageResponseMock).toHaveBeenCalledTimes(2);
+    expect(markup).toContain("Kevin Fontana");
+    expect(markup).toContain("18.5");
+    expect(markup).toContain("PTS");
+  });
+
   it("returns 400 for invalid event ids", async () => {
     getResultsEventParticipationByIdMock.mockRejectedValueOnce(
       new HistoryValidationError("eventId must be a UUID."),

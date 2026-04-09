@@ -375,6 +375,174 @@ function renderEventImage(event: EventParticipationCard, lang: "es" | "en") {
   );
 }
 
+function renderEventImageFallback(event: EventParticipationCard, lang: "es" | "en") {
+  const columns = getEventParticipationSessionColumns(event);
+  const visibleColumns = columns.length > 0 ? columns : getFallbackColumns(lang);
+  const eventDate = formatEventParticipationDate(event, lang);
+  const title = `${formatEventParticipationSeasonLabel(event, lang)} - ${formatEventParticipationRoundLabel(event)}`;
+
+  return createElement(
+    "div",
+    {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        width: "100%",
+        height: "100%",
+        backgroundColor: "#101010",
+        color: "#ffffff",
+        padding: "36px",
+        fontFamily: "sans-serif",
+      },
+    },
+    createElement(
+      "div",
+      {
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          border: "1px solid #3f3f46",
+          backgroundColor: "#18181b",
+          padding: "24px",
+        },
+      },
+      createElement(
+        "div",
+        {
+          style: {
+            fontSize: "18px",
+            fontWeight: 700,
+            textTransform: "uppercase",
+            color: "#ffd534",
+            marginBottom: "8px",
+          },
+        },
+        title,
+      ),
+      eventDate
+        ? createElement(
+            "div",
+            {
+              style: {
+                fontSize: "14px",
+                color: "#d4d4d8",
+                marginBottom: "18px",
+              },
+            },
+            eventDate,
+          )
+        : null,
+      createElement(
+        "div",
+        {
+          style: {
+            display: "flex",
+            borderBottom: "1px solid #3f3f46",
+            paddingBottom: "12px",
+            marginBottom: "8px",
+          },
+        },
+        createElement(
+          "div",
+          {
+            style: {
+              flex: 1,
+              fontSize: "14px",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              color: "#d4d4d8",
+            },
+          },
+          lang === "en" ? "Driver" : "Piloto",
+        ),
+        ...visibleColumns.map((column) =>
+          createElement(
+            "div",
+            {
+              key: `fallback-header-${column.sessionKind}`,
+              style: {
+                width: "88px",
+                fontSize: "14px",
+                fontWeight: 700,
+                textAlign: "center",
+                textTransform: "uppercase",
+                color: "#d4d4d8",
+              },
+            },
+            getEventParticipationSessionPresentation(column, lang).compactLabel,
+          ),
+        ),
+      ),
+      ...event.participants.map((participant, participantIndex) => {
+        const sessionByKind = new Map(
+          participant.sessions.map((session) => [session.sessionKind, session]),
+        );
+
+        return createElement(
+          "div",
+          {
+            key: `fallback-${event.eventId}-${participant.driverSlug}`,
+            style: {
+              display: "flex",
+              alignItems: "center",
+              borderBottom:
+                participantIndex === event.participants.length - 1 ? "none" : "1px solid #27272a",
+              paddingTop: "10px",
+              paddingBottom: "10px",
+            },
+          },
+          createElement(
+            "div",
+            {
+              style: {
+                flex: 1,
+                fontSize: "20px",
+                fontWeight: 700,
+              },
+            },
+            participant.driverName,
+          ),
+          ...visibleColumns.map((column) => {
+            const session = sessionByKind.get(column.sessionKind) ?? null;
+
+            return createElement(
+              "div",
+              {
+                key: `fallback-${participant.driverSlug}-${column.sessionKind}`,
+                style: {
+                  width: "88px",
+                  fontSize: "18px",
+                  fontWeight: 700,
+                  textAlign: "center",
+                  color: isPointsSessionKind(column.sessionKind) ? "#ffd534" : "#ffffff",
+                },
+              },
+              session ? formatEventParticipationSessionValue(session, lang) : "-",
+            );
+          }),
+        );
+      }),
+    ),
+  );
+}
+
+function createEventImageResponse(event: EventParticipationCard, lang: "es" | "en"): ImageResponse {
+  const imageHeight = Math.max(1350, 420 + event.participants.length * 72);
+  const options = {
+    width: 1080,
+    height: imageHeight,
+    headers: {
+      "Cache-Control": CACHE_CONTROL,
+    },
+  };
+
+  try {
+    return new ImageResponse(renderEventImage(event, lang), options);
+  } catch {
+    return new ImageResponse(renderEventImageFallback(event, lang), options);
+  }
+}
+
 export async function GET(request: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
@@ -382,15 +550,8 @@ export async function GET(request: Request, context: RouteContext) {
     const driver = url.searchParams.get("driver");
     const lang = resolveLanguage(url.searchParams.get("lang") ?? undefined);
     const event = await getResultsEventParticipationById(id, driver ?? undefined);
-    const imageHeight = Math.max(1350, 420 + event.participants.length * 72);
 
-    return new ImageResponse(renderEventImage(event, lang), {
-      width: 1080,
-      height: imageHeight,
-      headers: {
-        "Cache-Control": CACHE_CONTROL,
-      },
-    });
+    return createEventImageResponse(event, lang);
   } catch (error) {
     return handleApiError(error);
   }
