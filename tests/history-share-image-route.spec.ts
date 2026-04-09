@@ -196,7 +196,29 @@ describe("results event share image route", () => {
     expect(markup).toContain("PTS");
     expect(markup).toContain("18.5");
     expect(markup).not.toContain("P25");
-    expect(options.height).toBe(1350);
+    expect(options.height).toBe(420);
+  });
+
+  it("shrinks the image height to the rendered content instead of keeping a fixed tall canvas", async () => {
+    getResultsEventParticipationByIdMock.mockResolvedValueOnce(buildEvent(8));
+
+    const response = await GET(
+      new Request("http://localhost/api/v1/results/events/550e8400-e29b-41d4-a716-446655440000/image"),
+      {
+        params: Promise.resolve({
+          id: "550e8400-e29b-41d4-a716-446655440000",
+        }),
+      },
+    );
+
+    expect(response.status).toBe(200);
+
+    const [, options] = imageResponseMock.mock.calls[0] as [
+      React.ReactElement,
+      { width: number; height: number },
+    ];
+
+    expect(options.height).toBe(604);
   });
 
   it("renders the simplified image layout without depending on the primary layout path", async () => {
@@ -322,6 +344,6 @@ describe("results event share image route", () => {
       { width: number; height: number },
     ];
 
-    expect(options.height).toBeGreaterThan(1350);
+    expect(options.height).toBe(868);
   });
 });
