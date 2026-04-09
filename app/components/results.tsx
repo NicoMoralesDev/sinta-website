@@ -1,7 +1,8 @@
 import Link from "next/link";
 
 import type { EventParticipationCard } from "@/lib/server/history/types";
-import { ResultShareButton, buildResultsShareFileName } from "@/app/components/result-share-button";
+import { ResultShareButton } from "@/app/components/result-share-button";
+import { buildResultsShareFileName } from "@/app/components/result-share";
 
 import type { Language, ResultsCopy } from "../content/site-content";
 import { EventParticipationList } from "./event-participation-list";

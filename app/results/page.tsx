@@ -3,7 +3,8 @@
 import { Footer } from "@/app/components/footer";
 import { Navbar } from "@/app/components/navbar";
 import { EventParticipationList } from "@/app/components/event-participation-list";
-import { ResultShareButton, buildResultsShareFileName } from "@/app/components/result-share-button";
+import { ResultShareButton } from "@/app/components/result-share-button";
+import { buildResultsShareFileName } from "@/app/components/result-share";
 import { resolveLanguage, siteCopy } from "@/app/content/site-content";
 import {
   getCurrentChampionship,
