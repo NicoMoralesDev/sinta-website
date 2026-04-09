@@ -1,18 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { buildResultsShareFileName } from "@/app/components/result-share";
 
 type ShareNavigator = {
   share?: (data: ShareData) => Promise<void>;
   canShare?: (data: ShareData) => boolean;
+  clipboard?: {
+    write?: (items: ClipboardItem[]) => Promise<void>;
+  };
 };
 
-export type ShareResultStatus = "shared-file" | "shared-url" | "opened" | "aborted";
+export type ShareResultStatus = "shared-file" | "copied-image" | "opened" | "aborted";
 
 type ShareResultsImageArgs = {
   fetchImpl: typeof fetch;
   navigatorObject?: ShareNavigator;
+  clipboardItemCtor?: typeof ClipboardItem;
   imageUrl: string;
   title: string;
   text: string;
@@ -24,39 +27,62 @@ function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === "AbortError";
 }
 
-async function buildShareFile(fetchImpl: typeof fetch, imageUrl: string, fileName: string): Promise<File | null> {
+async function buildShareAsset(
+  fetchImpl: typeof fetch,
+  imageUrl: string,
+  fileName: string,
+): Promise<{ blob: Blob; file: File } | null> {
   const response = await fetchImpl(imageUrl, { cache: "no-store" });
   if (!response.ok) {
     return null;
   }
 
   const blob = await response.blob();
-  return new File([blob], fileName, {
-    type: response.headers.get("content-type") ?? "image/png",
-  });
+  const type = response.headers.get("content-type") ?? "image/png";
+
+  return {
+    blob,
+    file: new File([blob], fileName, { type }),
+  };
+}
+
+async function copyImageToClipboard(
+  blob: Blob,
+  navigatorObject: ShareNavigator | undefined,
+  clipboardItemCtor: typeof ClipboardItem | undefined,
+): Promise<boolean> {
+  if (!navigatorObject?.clipboard?.write || !clipboardItemCtor || !blob.type.startsWith("image/")) {
+    return false;
+  }
+
+  await navigatorObject.clipboard.write([
+    new clipboardItemCtor({
+      [blob.type]: blob,
+    }),
+  ]);
+
+  return true;
 }
 
 export async function shareResultsImage({
   fetchImpl,
   navigatorObject,
+  clipboardItemCtor,
   imageUrl,
   title,
   text,
   fileName,
   openFallback,
 }: ShareResultsImageArgs): Promise<ShareResultStatus> {
-  if (!navigatorObject?.share) {
-    openFallback(imageUrl);
-    return "opened";
-  }
+  let asset: { blob: Blob; file: File } | null = null;
 
   try {
-    const file = await buildShareFile(fetchImpl, imageUrl, fileName);
-    if (file && navigatorObject.canShare?.({ files: [file] })) {
+    asset = await buildShareAsset(fetchImpl, imageUrl, fileName);
+    if (asset && navigatorObject?.share && navigatorObject.canShare?.({ files: [asset.file] })) {
       await navigatorObject.share({
         title,
         text,
-        files: [file],
+        files: [asset.file],
       });
       return "shared-file";
     }
@@ -67,12 +93,9 @@ export async function shareResultsImage({
   }
 
   try {
-    await navigatorObject.share({
-      title,
-      text,
-      url: imageUrl,
-    });
-    return "shared-url";
+    if (asset && (await copyImageToClipboard(asset.blob, navigatorObject, clipboardItemCtor))) {
+      return "copied-image";
+    }
   } catch (error) {
     if (isAbortError(error)) {
       return "aborted";
@@ -116,6 +139,7 @@ export function ResultShareButton({
       await shareResultsImage({
         fetchImpl: fetch,
         navigatorObject: navigator,
+        clipboardItemCtor: typeof ClipboardItem === "undefined" ? undefined : ClipboardItem,
         imageUrl,
         title: shareTitle,
         text: shareText,

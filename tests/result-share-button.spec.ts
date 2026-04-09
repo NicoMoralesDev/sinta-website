@@ -20,6 +20,7 @@ describe("result share button helpers", () => {
     const status = await shareResultsImage({
       fetchImpl,
       navigatorObject,
+      clipboardItemCtor: undefined,
       imageUrl: "https://example.com/image.png",
       title: "Share",
       text: "Result image",
@@ -39,11 +40,22 @@ describe("result share button helpers", () => {
     expect(openFallback).not.toHaveBeenCalled();
   });
 
-  it("falls back to URL sharing when file sharing is unavailable", async () => {
-    const shareMock = vi.fn().mockResolvedValue(undefined);
+  it("copies the fetched image to the clipboard when file sharing is unavailable", async () => {
+    const writeMock = vi.fn().mockResolvedValue(undefined);
+    class ClipboardItemMock {
+      items: Record<string, Blob>;
+
+      constructor(items: Record<string, Blob>) {
+        this.items = items;
+      }
+    }
+
     const navigatorObject = {
-      share: shareMock,
+      share: vi.fn().mockResolvedValue(undefined),
       canShare: vi.fn().mockReturnValue(false),
+      clipboard: {
+        write: writeMock,
+      },
     };
     const fetchImpl = vi.fn().mockResolvedValue(
       new Response(new Blob(["png-binary"], { type: "image/png" }), {
@@ -55,6 +67,7 @@ describe("result share button helpers", () => {
     const status = await shareResultsImage({
       fetchImpl,
       navigatorObject,
+      clipboardItemCtor: ClipboardItemMock as unknown as typeof ClipboardItem,
       imageUrl: "https://example.com/image.png",
       title: "Share",
       text: "Result image",
@@ -62,12 +75,8 @@ describe("result share button helpers", () => {
       openFallback: vi.fn(),
     });
 
-    expect(status).toBe("shared-url");
-    expect(shareMock).toHaveBeenCalledWith({
-      title: "Share",
-      text: "Result image",
-      url: "https://example.com/image.png",
-    });
+    expect(status).toBe("copied-image");
+    expect(writeMock).toHaveBeenCalledTimes(1);
   });
 
   it("opens the fallback URL when sharing is unavailable", async () => {
@@ -76,6 +85,7 @@ describe("result share button helpers", () => {
     const status = await shareResultsImage({
       fetchImpl: vi.fn(),
       navigatorObject: {},
+      clipboardItemCtor: undefined,
       imageUrl: "https://example.com/image.png",
       title: "Share",
       text: "Result image",
