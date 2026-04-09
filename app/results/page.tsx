@@ -4,7 +4,12 @@ import { Footer } from "@/app/components/footer";
 import { Navbar } from "@/app/components/navbar";
 import { EventParticipationList } from "@/app/components/event-participation-list";
 import { ResultShareButton } from "@/app/components/result-share-button";
-import { buildResultsShareFileName } from "@/app/components/result-share";
+import {
+  buildCurrentChampionshipShareCopy,
+  buildCurrentChampionshipShareFileName,
+  buildResultsShareCopy,
+  buildResultsShareFileName,
+} from "@/app/components/result-share";
 import { resolveLanguage, siteCopy } from "@/app/content/site-content";
 import {
   getCurrentChampionship,
@@ -114,21 +119,16 @@ function buildResultsShareImageHref(
   return query ? `${path}?${query}` : path;
 }
 
-function buildResultsShareCopy(
-  event: { seasonYear: number; championshipName: string; roundNumber: number; circuitName: string },
-  lang: "es" | "en",
-): { title: string; text: string } {
+function buildCurrentChampionshipShareImageHref(lang: "es" | "en"): string {
+  const path = "/api/v1/results/current/image";
+  const params = new URLSearchParams();
+
   if (lang === "en") {
-    return {
-      title: `SINTA Results - R${event.roundNumber} - ${event.circuitName}`,
-      text: `${event.seasonYear} ${event.championshipName}`,
-    };
+    params.set("lang", "en");
   }
 
-  return {
-    title: `Resultados SINTA - R${event.roundNumber} - ${event.circuitName}`,
-    text: `${event.seasonYear} ${event.championshipName}`,
-  };
+  const query = params.toString();
+  return query ? `${path}?${query}` : path;
 }
 
 type ResultsSummaryEntry = {
@@ -366,6 +366,7 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
         lang,
       })
     : null;
+  const currentShareCopy = current ? buildCurrentChampionshipShareCopy(current, lang) : null;
 
   return (
     <>
@@ -560,17 +561,31 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
                     {current.leaderboard.length === 0 ? (
                       <p className="mt-3 text-sm text-racing-white/60">{i18n.noLeaderboard}</p>
                     ) : (
-                      <ResultsSummaryTable
-                        labels={i18n.summaryLabels}
-                        entries={current.leaderboard.slice(0, 8).map((entry) => ({
-                          driverKey: entry.driverSlug,
-                          driverName: entry.driverName,
-                          wins: entry.wins,
-                          podiums: entry.podiums,
-                          top10: entry.top10,
-                          totalPoints: entry.totalPoints,
-                        }))}
-                      />
+                      <>
+                        <ResultsSummaryTable
+                          labels={i18n.summaryLabels}
+                          entries={current.leaderboard.slice(0, 8).map((entry) => ({
+                            driverKey: entry.driverSlug,
+                            driverName: entry.driverName,
+                            wins: entry.wins,
+                            podiums: entry.podiums,
+                            top10: entry.top10,
+                            totalPoints: entry.totalPoints,
+                          }))}
+                        />
+                        <ResultShareButton
+                          imageHref={buildCurrentChampionshipShareImageHref(lang)}
+                          label={i18n.shareImage}
+                          pendingLabel={i18n.sharingImage}
+                          shareTitle={currentShareCopy?.title ?? ""}
+                          shareText={currentShareCopy?.text ?? ""}
+                          fileName={buildCurrentChampionshipShareFileName(
+                            current.championship.seasonYear,
+                            current.championship.name,
+                          )}
+                          className="mt-4 inline-flex text-[11px] font-semibold tracking-wider text-racing-yellow uppercase transition-colors hover:text-racing-white disabled:opacity-60"
+                        />
+                      </>
                     )}
                     {currentHref ? (
                       <Link

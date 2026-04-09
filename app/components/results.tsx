@@ -2,7 +2,10 @@ import Link from "next/link";
 
 import type { EventParticipationCard } from "@/lib/server/history/types";
 import { ResultShareButton } from "@/app/components/result-share-button";
-import { buildResultsShareFileName } from "@/app/components/result-share";
+import {
+  buildResultsShareCopy,
+  buildResultsShareFileName,
+} from "@/app/components/result-share";
 
 import type { Language, ResultsCopy } from "../content/site-content";
 import { EventParticipationList } from "./event-participation-list";
@@ -51,20 +54,6 @@ function buildResultsShareImageHref(eventId: string, lang: Language): string {
 
   const query = params.toString();
   return query ? `${path}?${query}` : path;
-}
-
-function buildResultsShareCopy(event: EventParticipationCard, lang: Language): { title: string; text: string } {
-  if (lang === "en") {
-    return {
-      title: `SINTA Results - R${event.roundNumber} - ${event.circuitName}`,
-      text: `${event.seasonYear} ${event.championshipName}`,
-    };
-  }
-
-  return {
-    title: `Resultados SINTA - R${event.roundNumber} - ${event.circuitName}`,
-    text: `${event.seasonYear} ${event.championshipName}`,
-  };
 }
 
 export function Results({ lang, copy, events, currentChampionship }: ResultsProps) {

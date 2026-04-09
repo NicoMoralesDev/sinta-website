@@ -32,6 +32,10 @@ import {
   getEventParticipationSessionColumns,
   getEventParticipationSessionPresentation,
 } from "@/app/components/event-participation-helpers";
+import {
+  buildCurrentChampionshipShareCopy,
+  buildResultsShareCopy,
+} from "@/app/components/result-share";
 
 describe("results page flow", () => {
   it("uses shared event participation helpers for canonical columns and labels", () => {
@@ -85,6 +89,41 @@ describe("results page flow", () => {
     expect(formatEventParticipationSeasonLabel(event, "en")).toBe("Season 2026 - TZ 4000");
     expect(formatEventParticipationRoundLabel(event)).toBe("R6 - Interlagos");
     expect(formatEventParticipationDate(event, "en")).toBeTruthy();
+  });
+
+  it("builds localized share copy with date, championship, round, and circuit", () => {
+    expect(
+      buildResultsShareCopy(
+        {
+          eventDate: "2026-04-08T00:00:00.000Z",
+          championshipName: "Clase 3",
+          roundNumber: 5,
+          circuitName: "Posadas",
+        },
+        "es",
+      ),
+    ).toEqual({
+      title: "Resultados SINTA - Clase 3",
+      text: "08 de abr de 2026 - Clase 3 - R5 - Posadas",
+    });
+
+    expect(
+      buildCurrentChampionshipShareCopy(
+        {
+          championship: {
+            id: "champ-1",
+            seasonYear: 2026,
+            slug: "clase-3",
+            name: "Clase 3",
+            organizerName: null,
+          },
+        },
+        "es",
+      ),
+    ).toEqual({
+      title: "Posiciones SINTA - Clase 3",
+      text: "2026 - Clase 3 - Torneo vigente",
+    });
   });
 
   it("renders optional event header actions beside the shared event date", () => {
@@ -361,7 +400,18 @@ describe("results page flow", () => {
         organizerName: "SINTA",
       },
       events: [],
-      leaderboard: [],
+      leaderboard: [
+        {
+          driverSlug: "current-driver",
+          driverName: "Current Driver",
+          wins: 1,
+          podiums: 2,
+          top10: 3,
+          totalPoints: 64,
+          completed: 3,
+          avgPosition: 4.5,
+        },
+      ],
     });
     getResultsStatsMock.mockResolvedValueOnce([]);
     getResultsEventParticipationMock.mockResolvedValueOnce({
@@ -423,7 +473,11 @@ describe("results page flow", () => {
     const fIndex = html.indexOf(">F<");
     const pIndex = html.indexOf(">PTS<");
     const trelewIndex = html.indexOf("Trelew");
-    const sparseSection = trelewIndex === -1 ? "" : html.slice(trelewIndex);
+    const currentSectionStart = html.indexOf("Current championship");
+    const sparseSection =
+      trelewIndex === -1
+        ? ""
+        : html.slice(trelewIndex, currentSectionStart === -1 ? undefined : currentSectionStart);
 
     expect(qsIndex).toBeGreaterThan(-1);
     expect(qsIndex).toBeLessThan(sIndex);
@@ -657,7 +711,18 @@ describe("results page flow", () => {
         organizerName: "SINTA",
       },
       events: [],
-      leaderboard: [],
+      leaderboard: [
+        {
+          driverSlug: "current-driver",
+          driverName: "Current Driver",
+          wins: 1,
+          podiums: 2,
+          top10: 3,
+          totalPoints: 64,
+          completed: 3,
+          avgPosition: 4.5,
+        },
+      ],
     });
     getResultsStatsMock.mockResolvedValueOnce([]);
     getResultsEventParticipationMock.mockResolvedValueOnce({
@@ -690,7 +755,18 @@ describe("results page flow", () => {
         organizerName: "SINTA",
       },
       events: [],
-      leaderboard: [],
+      leaderboard: [
+        {
+          driverSlug: "current-driver",
+          driverName: "Current Driver",
+          wins: 1,
+          podiums: 2,
+          top10: 3,
+          totalPoints: 64,
+          completed: 3,
+          avgPosition: 4.5,
+        },
+      ],
     });
     getResultsStatsMock.mockResolvedValueOnce([]);
     getResultsEventParticipationMock.mockResolvedValueOnce({
@@ -707,6 +783,7 @@ describe("results page flow", () => {
 
     expect(html).toContain("Current championship");
     expect(html).toContain("Organizer: SINTA");
+    expect(html).toContain('data-share-image-href="/api/v1/results/current/image?lang=en"');
   });
 
   it("omits organizer metadata when organizerName is null", async () => {
