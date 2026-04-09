@@ -586,21 +586,29 @@ function validateResultCell(row: EventResultCellInput): EventResultCellInput {
   }
 
   if (hasPosition) {
-    if (!Number.isInteger(row.position)) {
-      throw new AdminValidationError("position must be an integer.");
-    }
     if (sessionKind === "p") {
+      if (typeof row.position !== "number" || !Number.isFinite(row.position)) {
+        throw new AdminValidationError("position must be a number.");
+      }
+      if (Math.round((row.position ?? 0) * 10) !== (row.position ?? 0) * 10) {
+        throw new AdminValidationError("Points rows support at most one decimal place.");
+      }
       if ((row.position ?? 0) < 0) {
         throw new AdminValidationError("position must be >= 0.");
       }
-    } else if ((row.position ?? 0) <= 0) {
-      throw new AdminValidationError("position must be > 0.");
+    } else {
+      if (!Number.isInteger(row.position)) {
+        throw new AdminValidationError("position must be an integer.");
+      }
+      if ((row.position ?? 0) <= 0) {
+        throw new AdminValidationError("position must be > 0.");
+      }
     }
   }
 
   if (hasStatus) {
     if (sessionKind === "p") {
-      throw new AdminValidationError("Points rows must use integer values only.");
+      throw new AdminValidationError("Points rows must use numeric values only.");
     }
     if (!["DNF", "DNQ", "DSQ", "ABSENT"].includes(String(row.status))) {
       throw new AdminValidationError("status is invalid.");
@@ -612,7 +620,12 @@ function validateResultCell(row: EventResultCellInput): EventResultCellInput {
     sessionKind,
     position: row.position,
     status: row.status,
-    rawValue,
+    rawValue:
+      hasPosition && sessionKind === "p"
+        ? Number.isInteger(row.position)
+          ? String(row.position)
+          : row.position!.toFixed(1)
+        : rawValue,
     isActive: true,
   };
 }

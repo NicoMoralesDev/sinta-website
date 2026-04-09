@@ -3,6 +3,7 @@
 import { Footer } from "@/app/components/footer";
 import { Navbar } from "@/app/components/navbar";
 import { EventParticipationList } from "@/app/components/event-participation-list";
+import { ResultShareButton, buildResultsShareFileName } from "@/app/components/result-share-button";
 import { resolveLanguage, siteCopy } from "@/app/content/site-content";
 import {
   getCurrentChampionship,
@@ -112,6 +113,23 @@ function buildResultsShareImageHref(
   return query ? `${path}?${query}` : path;
 }
 
+function buildResultsShareCopy(
+  event: { seasonYear: number; championshipName: string; roundNumber: number; circuitName: string },
+  lang: "es" | "en",
+): { title: string; text: string } {
+  if (lang === "en") {
+    return {
+      title: `SINTA Results - R${event.roundNumber} - ${event.circuitName}`,
+      text: `${event.seasonYear} ${event.championshipName}`,
+    };
+  }
+
+  return {
+    title: `Resultados SINTA - R${event.roundNumber} - ${event.circuitName}`,
+    text: `${event.seasonYear} ${event.championshipName}`,
+  };
+}
+
 type ResultsSummaryEntry = {
   driverKey: string;
   driverName: string;
@@ -216,6 +234,7 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
           currentTitle: "Current championship",
           organizerLabel: "Organizer",
           shareImage: "Share image",
+          sharingImage: "Sharing...",
           backHome: "Back to home",
           next: "Load more",
           noLeaderboard: "No ranking data for this filter.",
@@ -247,6 +266,7 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
           currentTitle: "Torneo vigente",
           organizerLabel: "Organizador",
           shareImage: "Imagen para compartir",
+          sharingImage: "Compartiendo...",
           backHome: "Volver al inicio",
           next: "Cargar más",
           noLeaderboard: "No hay ranking para este filtro.",
@@ -468,14 +488,21 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
                     lang={lang}
                     events={eventsResult.result.items}
                     emptyMessage={chromeCopy.results.emptyMessage}
-                    renderEventActions={(event) => (
-                      <Link
-                        href={buildResultsShareImageHref(event.eventId, lang, driver)}
-                        className="text-[11px] font-semibold tracking-wider text-racing-yellow uppercase transition-colors hover:text-racing-white"
-                      >
-                        {i18n.shareImage}
-                      </Link>
-                    )}
+                    renderEventActions={(event) => {
+                      const shareCopy = buildResultsShareCopy(event, lang);
+
+                      return (
+                        <ResultShareButton
+                          imageHref={buildResultsShareImageHref(event.eventId, lang, driver)}
+                          label={i18n.shareImage}
+                          pendingLabel={i18n.sharingImage}
+                          shareTitle={shareCopy.title}
+                          shareText={shareCopy.text}
+                          fileName={buildResultsShareFileName(event.roundNumber, event.circuitName)}
+                          className="text-[11px] font-semibold tracking-wider text-racing-yellow uppercase transition-colors hover:text-racing-white disabled:opacity-60"
+                        />
+                      );
+                    }}
                   />
 
                   {nextHref ? (

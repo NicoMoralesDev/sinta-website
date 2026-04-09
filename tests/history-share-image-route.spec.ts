@@ -79,13 +79,13 @@ describe("history share image helpers", () => {
         {
           sessionKind: "p",
           sessionLabel: "P",
-          rawValue: "25",
-          position: 25,
+          rawValue: "25.5",
+          position: 25.5,
           status: null,
         },
         "en",
       ),
-    ).toBe("25");
+    ).toBe("25.5");
 
     const sparseColumns = getEventParticipationSessionColumns(sparseEvent).map(
       (column) => column.sessionLabel,
@@ -161,7 +161,7 @@ describe("results event share image route", () => {
           driverName: "Alpha Driver",
           sessions: [
             { sessionKind: "f", sessionLabel: "F", rawValue: "1", position: 1, status: null },
-            { sessionKind: "p", sessionLabel: "P", rawValue: "18", position: 18, status: null },
+            { sessionKind: "p", sessionLabel: "P", rawValue: "18.5", position: 18.5, status: null },
           ],
         },
       ],
@@ -194,7 +194,7 @@ describe("results event share image route", () => {
     expect(markup.indexOf("Zeta Driver")).toBeLessThan(markup.indexOf("Alpha Driver"));
     expect(markup).toContain("F");
     expect(markup).toContain("PTS");
-    expect(markup).toContain("25");
+    expect(markup).toContain("18.5");
     expect(markup).not.toContain("P25");
     expect(options.height).toBe(1350);
   });

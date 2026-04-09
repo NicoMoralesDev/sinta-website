@@ -92,6 +92,10 @@ function isPointsField(field: AdminCanonicalResultField): boolean {
   return field === "p";
 }
 
+function normalizePointsNumber(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
 export function getResultFieldLabel(
   field: AdminCanonicalResultField,
   labels: Record<AdminCanonicalResultField, string>,
@@ -106,28 +110,29 @@ export function parseResultInput(field: AdminCanonicalResultField, value: string
     return { kind: "empty" };
   }
 
-  if (/^\d+$/.test(normalized)) {
-    const numberValue = Number.parseInt(normalized, 10);
-    if (!Number.isFinite(numberValue)) {
+  if (isPointsField(field)) {
+    if (!/^\d+(\.\d)?$/.test(normalized)) {
       return { kind: "invalid" };
     }
 
-    if (isPointsField(field)) {
-      if (numberValue < 0) {
-        return { kind: "invalid" };
-      }
-
-      return {
-        kind: "value",
-        value: {
-          position: numberValue,
-          status: null,
-          rawValue: String(numberValue),
-        },
-      };
+    const numberValue = Number.parseFloat(normalized);
+    if (!Number.isFinite(numberValue) || numberValue < 0) {
+      return { kind: "invalid" };
     }
 
-    if (numberValue <= 0) {
+    return {
+      kind: "value",
+      value: {
+        position: numberValue,
+        status: null,
+        rawValue: normalizePointsNumber(numberValue),
+      },
+    };
+  }
+
+  if (/^\d+$/.test(normalized)) {
+    const numberValue = Number.parseInt(normalized, 10);
+    if (!Number.isFinite(numberValue) || numberValue <= 0) {
       return { kind: "invalid" };
     }
 
@@ -139,10 +144,6 @@ export function parseResultInput(field: AdminCanonicalResultField, value: string
         rawValue: String(numberValue),
       },
     };
-  }
-
-  if (isPointsField(field)) {
-    return { kind: "invalid" };
   }
 
   if (normalized === "DNF" || normalized === "DNQ" || normalized === "DSQ" || normalized === "ABSENT") {
@@ -309,7 +310,7 @@ export function EventResultsEditorPanel({
       </h4>
       <div className="mt-1 space-y-1 text-xs text-racing-white/55">
         <p>Race fields accept positive integers or DNF / DNQ / DSQ / ABSENT.</p>
-        <p>Points accepts whole numbers &gt;= 0.</p>
+        <p>Points accepts numbers &gt;= 0 with an optional single decimal using `.`.</p>
       </div>
 
       <div className="mt-3 overflow-x-auto">
@@ -364,7 +365,7 @@ export function EventResultsEditorPanel({
                               ? "border-racing-yellow/55 bg-racing-black text-racing-white"
                               : "border-racing-steel/40 bg-racing-black text-racing-white"
                         }`}
-                        placeholder={field === "p" ? "0" : "1 / DNF"}
+                        placeholder={field === "p" ? "0 / 18.5" : "1 / DNF"}
                       />
                     </td>
                   );

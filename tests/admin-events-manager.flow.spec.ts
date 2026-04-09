@@ -86,7 +86,7 @@ describe("admin events manager flow", () => {
     expect(html).toContain(">F<");
     expect(html).toContain(">P<");
     expect(html).toContain("Race fields accept positive integers or DNF / DNQ / DSQ / ABSENT.");
-    expect(html).toContain("Points accepts whole numbers &gt;= 0.");
+    expect(html).toContain("Points accepts numbers &gt;= 0 with an optional single decimal using `.`.");
     expect(html).toContain('aria-invalid="true"');
   });
 
@@ -108,6 +108,12 @@ describe("admin events manager flow", () => {
       kind: "value",
       value: { position: 0, status: null, rawValue: "0" },
     });
+    expect(parseResultInput("p", "18.5")).toEqual({
+      kind: "value",
+      value: { position: 18.5, status: null, rawValue: "18.5" },
+    });
+    expect(parseResultInput("p", "18,5")).toEqual({ kind: "invalid" });
+    expect(parseResultInput("p", "18.55")).toEqual({ kind: "invalid" });
     expect(parseResultInput("p", "DNF")).toEqual({ kind: "invalid" });
   });
 
@@ -116,7 +122,7 @@ describe("admin events manager flow", () => {
     const rows = createEditableResultRows(grid);
 
     rows[0].values.f = "";
-    rows[0].values.p = "21";
+    rows[0].values.p = "21.5";
 
     expect(serializeDirtyResultCells(rows, grid.fieldOrder)).toEqual([
       {
@@ -130,9 +136,9 @@ describe("admin events manager flow", () => {
       {
         driverId: "driver-1",
         sessionKind: "p",
-        position: 21,
+        position: 21.5,
         status: null,
-        rawValue: "21",
+        rawValue: "21.5",
         isActive: true,
       },
     ]);

@@ -244,8 +244,8 @@ describe("results page flow", () => {
     const html = renderToStaticMarkup(element);
 
     expect(html).toContain("Share image");
-    expect(html).toContain("/api/v1/results/events/event-1/image?lang=en");
-    expect(html).toContain("/api/v1/results/events/event-2/image?lang=en");
+    expect(html).toContain('data-share-image-href="/api/v1/results/events/event-1/image?lang=en"');
+    expect(html).toContain('data-share-image-href="/api/v1/results/events/event-2/image?lang=en"');
     expect(html).toContain("/results?year=2026&amp;limit=10&amp;cursor=cursor-2&amp;lang=en");
   });
 
@@ -292,7 +292,9 @@ describe("results page flow", () => {
     });
     const html = renderToStaticMarkup(element);
 
-    expect(html).toContain("/api/v1/results/events/event-1/image?driver=kevin-fontana&amp;lang=en");
+    expect(html).toContain(
+      'data-share-image-href="/api/v1/results/events/event-1/image?driver=kevin-fontana&amp;lang=en"',
+    );
     expect(html).toContain(
       "/results?year=2026&amp;championshipId=champ-1&amp;driver=kevin-fontana&amp;limit=10&amp;cursor=cursor-2&amp;lang=en",
     );
@@ -339,9 +341,9 @@ describe("results page flow", () => {
     const html = renderToStaticMarkup(element);
 
     expect(html).toContain("Imagen para compartir");
-    expect(html).toContain("/api/v1/results/events/event-1/image");
-    expect(html).not.toContain("/api/v1/results/events/tz-4000/image");
-    expect(html).not.toContain("/api/v1/results/events/3/image");
+    expect(html).toContain('data-share-image-href="/api/v1/results/events/event-1/image"');
+    expect(html).not.toContain('data-share-image-href="/api/v1/results/events/tz-4000/image"');
+    expect(html).not.toContain('data-share-image-href="/api/v1/results/events/3/image"');
   });
 
   it("renders canonical session order qs, s, qf, f, and p without inserting empty sparse historical columns", async () => {

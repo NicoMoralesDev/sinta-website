@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import type { EventParticipationCard } from "@/lib/server/history/types";
+import { ResultShareButton, buildResultsShareFileName } from "@/app/components/result-share-button";
 
 import type { Language, ResultsCopy } from "../content/site-content";
 import { EventParticipationList } from "./event-participation-list";
@@ -51,8 +52,23 @@ function buildResultsShareImageHref(eventId: string, lang: Language): string {
   return query ? `${path}?${query}` : path;
 }
 
+function buildResultsShareCopy(event: EventParticipationCard, lang: Language): { title: string; text: string } {
+  if (lang === "en") {
+    return {
+      title: `SINTA Results - R${event.roundNumber} - ${event.circuitName}`,
+      text: `${event.seasonYear} ${event.championshipName}`,
+    };
+  }
+
+  return {
+    title: `Resultados SINTA - R${event.roundNumber} - ${event.circuitName}`,
+    text: `${event.seasonYear} ${event.championshipName}`,
+  };
+}
+
 export function Results({ lang, copy, events, currentChampionship }: ResultsProps) {
   const shareImageLabel = lang === "en" ? "Share image" : "Imagen para compartir";
+  const sharingLabel = lang === "en" ? "Sharing..." : "Compartiendo...";
 
   return (
     <section id="results" className="relative bg-racing-carbon py-24 md:py-32">
@@ -78,14 +94,21 @@ export function Results({ lang, copy, events, currentChampionship }: ResultsProp
           lang={lang}
           events={events}
           emptyMessage={copy.emptyMessage}
-          renderEventActions={(event) => (
-            <Link
-              href={buildResultsShareImageHref(event.eventId, lang)}
-              className="text-[11px] font-semibold tracking-wider text-racing-yellow uppercase transition-colors hover:text-racing-white"
-            >
-              {shareImageLabel}
-            </Link>
-          )}
+          renderEventActions={(event) => {
+            const shareCopy = buildResultsShareCopy(event, lang);
+
+            return (
+              <ResultShareButton
+                imageHref={buildResultsShareImageHref(event.eventId, lang)}
+                label={shareImageLabel}
+                pendingLabel={sharingLabel}
+                shareTitle={shareCopy.title}
+                shareText={shareCopy.text}
+                fileName={buildResultsShareFileName(event.roundNumber, event.circuitName)}
+                className="text-[11px] font-semibold tracking-wider text-racing-yellow uppercase transition-colors hover:text-racing-white disabled:opacity-60"
+              />
+            );
+          }}
         />
 
         <div className="mt-8 flex flex-wrap gap-3">

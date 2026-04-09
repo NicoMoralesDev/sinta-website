@@ -185,7 +185,7 @@ maybeDescribe("results contract migration", () => {
     },
   );
 
-  it("verifies the applied schema accepts canonical rows, allows zero-point rows, and preserves numeric/status exclusivity", async () => {
+  it("verifies the applied schema accepts canonical rows, allows decimal points rows, and preserves numeric/status exclusivity", async () => {
     const constraintResult = await client.query<{ conname: string; definition: string }>(
       `select conname, pg_get_constraintdef(oid) as definition
        from pg_constraint
@@ -209,9 +209,9 @@ maybeDescribe("results contract migration", () => {
     expect(exclusivityConstraint).toContain("(positionisnotnull)and(statusisnull)");
     expect(exclusivityConstraint).toContain("(positionisnull)and(statusisnotnull)");
     expect(pointsConstraint).toContain("positionisnull");
-    expect(pointsConstraint).toContain("position>0");
-    expect(pointsConstraint).toContain("position=0");
-    expect(pointsConstraint).toMatch(/session_kind=.*'p'/);
+    expect(pointsConstraint).toContain("session_kind='p'");
+    expect(pointsConstraint).toContain("position>=0");
+    expect(pointsConstraint).toContain("position=trunc(position)");
 
     await client.query(
       `insert into event_results (
@@ -240,6 +240,23 @@ maybeDescribe("results contract migration", () => {
         raw_value,
         is_active,
         updated_at
+      ) values ($1, $2, 'p', 18.5, null, '18.5', true, now())`,
+      [
+        "00000000-0000-0000-0000-000000000010",
+        "00000000-0000-0000-0000-000000000104",
+      ],
+    );
+
+    await client.query(
+      `insert into event_results (
+        event_id,
+        driver_id,
+        session_kind,
+        position,
+        status,
+        raw_value,
+        is_active,
+        updated_at
       ) values
         ($1, $2, 'qs', 1, null, '1', true, now()),
         ($1, $3, 'qf', 3, null, '3', true, now())`,
@@ -251,16 +268,17 @@ maybeDescribe("results contract migration", () => {
     );
 
     const canonicalRows = await client.query<{ session_kind: string; position: number | null }>(
-      `select session_kind::text as session_kind, position
+      `select session_kind::text as session_kind, position::double precision as position
        from event_results
        where session_kind in ('qs', 'qf', 'p')
-       order by session_kind asc`,
+       order by position asc, session_kind asc`,
     );
 
     expect(canonicalRows.rows).toEqual([
       { session_kind: "p", position: 0 },
-      { session_kind: "qf", position: 3 },
       { session_kind: "qs", position: 1 },
+      { session_kind: "qf", position: 3 },
+      { session_kind: "p", position: 18.5 },
     ]);
 
     await expectQueryToFail(
@@ -275,6 +293,25 @@ maybeDescribe("results contract migration", () => {
         is_active,
         updated_at
       ) values ($1, $2, 's', 0, null, '0', true, now())`,
+      [
+        "00000000-0000-0000-0000-000000000010",
+        "00000000-0000-0000-0000-000000000104",
+      ],
+      /event_results_position_check/,
+    );
+
+    await expectQueryToFail(
+      client,
+      `insert into event_results (
+        event_id,
+        driver_id,
+        session_kind,
+        position,
+        status,
+        raw_value,
+        is_active,
+        updated_at
+      ) values ($1, $2, 's', 1.5, null, '1.5', true, now())`,
       [
         "00000000-0000-0000-0000-000000000010",
         "00000000-0000-0000-0000-000000000104",

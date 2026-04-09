@@ -565,7 +565,7 @@ async function fetchResultsForEvents(
         d.canonical_name as driver_name,
         er.session_kind,
         ${getSessionLabelExpression()} as session_label,
-        er.position,
+        er.position::double precision as position,
         er.status::text as status,
         er.raw_value
       from event_results er
@@ -698,7 +698,7 @@ export async function getHighlights(query: {
           e.round_number,
           e.circuit_name,
           d.canonical_name as best_driver_name,
-          er.position as best_position,
+          er.position::double precision as best_position,
           row_number() over (
             partition by e.id
             order by er.position asc nulls last, d.canonical_name asc
@@ -766,7 +766,7 @@ export async function getDriverStats(query: StatsQuery): Promise<DriverStats[]> 
         count(*) filter (where ${finalRaceFilter} and er.position is not null and er.position <= 3) as podiums,
         count(*) filter (where ${finalRaceFilter} and er.position is not null and er.position <= 5) as top_5,
         count(*) filter (where ${finalRaceFilter} and er.position is not null and er.position <= 10) as top_10,
-        coalesce(sum(er.position) filter (where er.session_kind = 'p' and er.position is not null), 0) as total_points,
+        coalesce(sum(er.position) filter (where er.session_kind = 'p' and er.position is not null), 0)::double precision as total_points,
         count(*) filter (where ${finalRaceFilter} and er.position is not null) as completed,
         count(*) filter (where ${finalRaceFilter} and er.status = 'DNF') as dnf,
         count(*) filter (where ${finalRaceFilter} and er.status = 'DNQ') as dnq,
@@ -908,9 +908,9 @@ export async function getCurrentChampionshipSummary(
         count(*) filter (where ${getFinalRaceSessionFilter("er.session_kind")} and er.position = 1) as wins,
         count(*) filter (where ${getFinalRaceSessionFilter("er.session_kind")} and er.position is not null and er.position <= 3) as podiums,
         count(*) filter (where ${getFinalRaceSessionFilter("er.session_kind")} and er.position is not null and er.position <= 10) as top_10,
-        coalesce(sum(er.position) filter (where er.session_kind = 'p' and er.position is not null), 0) as total_points,
+        coalesce(sum(er.position) filter (where er.session_kind = 'p' and er.position is not null), 0)::double precision as total_points,
         count(*) filter (where ${getFinalRaceSessionFilter("er.session_kind")} and er.position is not null) as completed,
-        avg(er.position::numeric) filter (
+        avg(er.position::double precision) filter (
           where ${getFinalRaceSessionFilter("er.session_kind")} and er.position is not null
         ) as avg_position
       from event_results er

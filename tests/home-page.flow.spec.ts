@@ -143,7 +143,7 @@ describe("home page flow", () => {
     const spanishHtml = renderToStaticMarkup(spanishElement);
 
     expect(spanishHtml).toContain("Imagen para compartir");
-    expect(spanishHtml).toContain("/api/v1/results/events/event-1/image");
+    expect(spanishHtml).toContain('data-share-image-href="/api/v1/results/events/event-1/image"');
 
     const englishElement = await HomePage({
       searchParams: { lang: "en" },
@@ -151,6 +151,6 @@ describe("home page flow", () => {
     const englishHtml = renderToStaticMarkup(englishElement);
 
     expect(englishHtml).toContain("Share image");
-    expect(englishHtml).toContain("/api/v1/results/events/event-1/image?lang=en");
+    expect(englishHtml).toContain('data-share-image-href="/api/v1/results/events/event-1/image?lang=en"');
   });
 });

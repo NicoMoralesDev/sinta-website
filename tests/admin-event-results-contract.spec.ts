@@ -388,7 +388,7 @@ describe("admin event results contract", () => {
     expect(replaceEventResultsMock).not.toHaveBeenCalled();
   });
 
-  it("rejects points rows that are negative or non-integer", async () => {
+  it("rejects points rows that are negative or have more than one decimal place", async () => {
     await expect(
       adminService.updateEventResults(
         ACTOR,
@@ -417,9 +417,9 @@ describe("admin event results contract", () => {
             {
               driverId: DRIVER.id,
               sessionKind: "p",
-              position: 2.5,
+              position: 2.55,
               status: null,
-              rawValue: "2.5",
+              rawValue: "2.55",
               isActive: true,
             },
           ],
@@ -428,6 +428,39 @@ describe("admin event results contract", () => {
     ).rejects.toThrow(AdminValidationError);
 
     expect(replaceEventResultsMock).not.toHaveBeenCalled();
+  });
+
+  it("accepts one-decimal points rows", async () => {
+    await expect(
+      adminService.updateEventResults(
+        ACTOR,
+        EVENT.id,
+        {
+          rows: [
+            {
+              driverId: DRIVER.id,
+              sessionKind: "p",
+              position: 18.5,
+              status: null,
+              rawValue: "18.5",
+              isActive: true,
+            },
+          ],
+        },
+      ),
+    ).resolves.toMatchObject({
+      ok: true,
+      data: {
+        rows: [
+          expect.objectContaining({
+            driverId: DRIVER.id,
+            sessionKind: "p",
+            position: 18.5,
+            rawValue: "18.5",
+          }),
+        ],
+      },
+    });
   });
 
   it("accepts explicit clear tombstones through the admin results route adapter", async () => {

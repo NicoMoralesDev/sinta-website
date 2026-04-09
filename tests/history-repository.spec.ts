@@ -217,7 +217,7 @@ describe("history repository", () => {
             wins: 2,
             podiums: 4,
             top_10: 5,
-            total_points: 92,
+            total_points: 92.5,
             completed: 5,
             avg_position: 2.4,
           },
@@ -232,7 +232,7 @@ describe("history repository", () => {
     expect(summary?.championship.organizerName).toBe("SINTA");
     expect(summary?.events).toHaveLength(1);
     expect(summary?.leaderboard[0]?.driverSlug).toBe("kevin-fontana");
-    expect(summary?.leaderboard[0]?.totalPoints).toBe(92);
+    expect(summary?.leaderboard[0]?.totalPoints).toBe(92.5);
     expect(firstQuery).toContain("c.organizer_name");
     expect(firstQuery).toContain("e.event_date is not null and e.event_date <= current_date");
     expect(firstQuery).toContain("e.event_date desc nulls last");
@@ -401,7 +401,7 @@ describe("history repository", () => {
             podiums: 4,
             top_5: 5,
             top_10: 6,
-            total_points: 118,
+            total_points: 118.5,
             completed: 6,
             dnf: 1,
             dnq: 0,
@@ -458,7 +458,7 @@ describe("history repository", () => {
             wins: 2,
             podiums: 4,
             top_10: 5,
-            total_points: 118,
+            total_points: 118.5,
             completed: 5,
             avg_position: 2.4,
           },
@@ -469,8 +469,8 @@ describe("history repository", () => {
     await getResultsOverview({});
     const current = await getCurrentChampionshipSummary(1);
 
-    expect(stats[0]?.totalPoints).toBe(118);
-    expect(current?.leaderboard[0]?.totalPoints).toBe(118);
+    expect(stats[0]?.totalPoints).toBe(118.5);
+    expect(current?.leaderboard[0]?.totalPoints).toBe(118.5);
     expect(String(queryMock.mock.calls[0]?.[0] ?? "")).toContain("er.session_kind::text in ('f', 'secondary')");
     expect(String(queryMock.mock.calls[1]?.[0] ?? "")).toContain("er.session_kind::text in ('f', 'secondary')");
     expect(String(queryMock.mock.calls[6]?.[0] ?? "")).toContain("er.session_kind::text in ('f', 'secondary')");
