@@ -56,7 +56,7 @@ maybeDescribe("results contract migration", () => {
 
   beforeAll(async () => {
     client = await getDbPool().connect();
-    schemaName = `migration_009_${Date.now()}`;
+    schemaName = `migration_010_${Date.now()}`;
 
     await client.query("begin");
     await client.query(`create schema "${schemaName}"`);
@@ -69,6 +69,7 @@ maybeDescribe("results contract migration", () => {
     );
 
     await applyMigration(client, "001_results_schema.sql");
+    await applyMigration(client, "005_results_views_active_filters.sql");
     await applyMigration(client, "004_admin_auth_softdelete_audit.sql");
 
     await client.query(
@@ -146,6 +147,7 @@ maybeDescribe("results contract migration", () => {
     );
 
     await applyMigration(client, "009_canonical_results_contract.sql");
+    await applyMigration(client, "010_points_decimal_support.sql");
   });
 
   afterAll(async () => {
@@ -337,6 +339,21 @@ maybeDescribe("results contract migration", () => {
       ],
       /event_results_check/,
     );
+  });
+
+  it("recreates dependent read views after widening event_results.position", async () => {
+    const viewResult = await client.query<{ viewname: string }>(
+      `select viewname
+       from pg_views
+       where schemaname = current_schema()
+         and viewname in ('v_driver_stats', 'v_event_highlights')
+       order by viewname asc`,
+    );
+
+    expect(viewResult.rows).toEqual([
+      { viewname: "v_driver_stats" },
+      { viewname: "v_event_highlights" },
+    ]);
   });
 
   it("verifies championships exposes a nullable organizer_name column", async () => {
