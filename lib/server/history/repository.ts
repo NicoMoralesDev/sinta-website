@@ -223,6 +223,10 @@ function getFinalRaceSessionFilter(columnName: string): string {
   return `${columnName}::text in ('f', 'secondary')`;
 }
 
+function getChampionshipResultSessionFilter(columnName: string): string {
+  return `${columnName}::text in ('s', 'primary', 'f', 'secondary')`;
+}
+
 function isMissingLiveBroadcastConfigSchemaError(error: unknown): boolean {
   if (!error || typeof error !== "object") {
     return false;
@@ -905,13 +909,13 @@ export async function getCurrentChampionshipSummary(
       select
         d.slug as driver_slug,
         d.canonical_name as driver_name,
-        count(*) filter (where ${getFinalRaceSessionFilter("er.session_kind")} and er.position = 1) as wins,
-        count(*) filter (where ${getFinalRaceSessionFilter("er.session_kind")} and er.position is not null and er.position <= 3) as podiums,
-        count(*) filter (where ${getFinalRaceSessionFilter("er.session_kind")} and er.position is not null and er.position <= 10) as top_10,
+        count(*) filter (where ${getChampionshipResultSessionFilter("er.session_kind")} and er.position = 1) as wins,
+        count(*) filter (where ${getChampionshipResultSessionFilter("er.session_kind")} and er.position is not null and er.position <= 3) as podiums,
+        count(*) filter (where ${getChampionshipResultSessionFilter("er.session_kind")} and er.position is not null and er.position <= 10) as top_10,
         coalesce(sum(er.position) filter (where er.session_kind = 'p' and er.position is not null), 0)::double precision as total_points,
-        count(*) filter (where ${getFinalRaceSessionFilter("er.session_kind")} and er.position is not null) as completed,
+        count(*) filter (where ${getChampionshipResultSessionFilter("er.session_kind")} and er.position is not null) as completed,
         avg(er.position::double precision) filter (
-          where ${getFinalRaceSessionFilter("er.session_kind")} and er.position is not null
+          where ${getChampionshipResultSessionFilter("er.session_kind")} and er.position is not null
         ) as avg_position
       from event_results er
       join drivers d on d.id = er.driver_id

@@ -64,6 +64,23 @@ async function copyImageToClipboard(
   return true;
 }
 
+function canShareImageFiles(
+  navigatorObject: ShareNavigator | undefined,
+  fileName: string,
+): boolean {
+  if (!navigatorObject?.share || !navigatorObject.canShare || typeof File === "undefined") {
+    return false;
+  }
+
+  try {
+    return navigatorObject.canShare({
+      files: [new File([""], fileName, { type: "image/png" })],
+    });
+  } catch {
+    return false;
+  }
+}
+
 export async function shareResultsImage({
   fetchImpl,
   navigatorObject,
@@ -75,10 +92,16 @@ export async function shareResultsImage({
   openFallback,
 }: ShareResultsImageArgs): Promise<ShareResultStatus> {
   let asset: { blob: Blob; file: File } | null = null;
+  const supportsFileShare = canShareImageFiles(navigatorObject, fileName);
+
+  if (!supportsFileShare) {
+    openFallback(imageUrl);
+    return "opened";
+  }
 
   try {
     asset = await buildShareAsset(fetchImpl, imageUrl, fileName);
-    if (asset && navigatorObject?.share && navigatorObject.canShare?.({ files: [asset.file] })) {
+    if (asset && navigatorObject?.share) {
       await navigatorObject.share({
         title,
         text,

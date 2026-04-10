@@ -40,8 +40,9 @@ describe("result share button helpers", () => {
     expect(openFallback).not.toHaveBeenCalled();
   });
 
-  it("copies the fetched image to the clipboard when file sharing is unavailable", async () => {
+  it("copies the fetched image to the clipboard when native file sharing fails", async () => {
     const writeMock = vi.fn().mockResolvedValue(undefined);
+    const shareMock = vi.fn().mockRejectedValue(new Error("Share failed."));
     class ClipboardItemMock {
       items: Record<string, Blob>;
 
@@ -51,8 +52,8 @@ describe("result share button helpers", () => {
     }
 
     const navigatorObject = {
-      share: vi.fn().mockResolvedValue(undefined),
-      canShare: vi.fn().mockReturnValue(false),
+      share: shareMock,
+      canShare: vi.fn().mockReturnValue(true),
       clipboard: {
         write: writeMock,
       },
@@ -76,14 +77,16 @@ describe("result share button helpers", () => {
     });
 
     expect(status).toBe("copied-image");
+    expect(shareMock).toHaveBeenCalledTimes(1);
     expect(writeMock).toHaveBeenCalledTimes(1);
   });
 
   it("opens the fallback URL when sharing is unavailable", async () => {
     const openFallback = vi.fn();
+    const fetchImpl = vi.fn();
 
     const status = await shareResultsImage({
-      fetchImpl: vi.fn(),
+      fetchImpl,
       navigatorObject: {},
       clipboardItemCtor: undefined,
       imageUrl: "https://example.com/image.png",
@@ -94,6 +97,7 @@ describe("result share button helpers", () => {
     });
 
     expect(status).toBe("opened");
+    expect(fetchImpl).not.toHaveBeenCalled();
     expect(openFallback).toHaveBeenCalledWith("https://example.com/image.png");
   });
 });

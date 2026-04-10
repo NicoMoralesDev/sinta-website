@@ -226,6 +226,7 @@ describe("history repository", () => {
 
     const summary = await getCurrentChampionshipSummary(3);
     const firstQuery = String(queryMock.mock.calls[0]?.[0] ?? "");
+    const leaderboardQuery = String(queryMock.mock.calls[3]?.[0] ?? "");
 
     expect(summary).not.toBeNull();
     expect(summary?.championship.slug).toBe("tz-4000");
@@ -236,6 +237,8 @@ describe("history repository", () => {
     expect(firstQuery).toContain("c.organizer_name");
     expect(firstQuery).toContain("e.event_date is not null and e.event_date <= current_date");
     expect(firstQuery).toContain("e.event_date desc nulls last");
+    expect(leaderboardQuery).toContain("er.session_kind::text in ('s', 'primary', 'f', 'secondary')");
+    expect(leaderboardQuery).toContain("er.session_kind = 'p'");
   });
 
   it("orders event participants by points first when canonical points rows exist", async () => {
@@ -390,7 +393,7 @@ describe("history repository", () => {
     ]);
   });
 
-  it("limits race-only aggregate queries to canonical f rows", async () => {
+  it("limits global race-only aggregate queries to canonical f rows while current standings count sprint and final rows", async () => {
     queryMock
       .mockResolvedValueOnce({
         rows: [
@@ -473,6 +476,8 @@ describe("history repository", () => {
     expect(current?.leaderboard[0]?.totalPoints).toBe(118.5);
     expect(String(queryMock.mock.calls[0]?.[0] ?? "")).toContain("er.session_kind::text in ('f', 'secondary')");
     expect(String(queryMock.mock.calls[1]?.[0] ?? "")).toContain("er.session_kind::text in ('f', 'secondary')");
-    expect(String(queryMock.mock.calls[6]?.[0] ?? "")).toContain("er.session_kind::text in ('f', 'secondary')");
+    expect(String(queryMock.mock.calls[6]?.[0] ?? "")).toContain(
+      "er.session_kind::text in ('s', 'primary', 'f', 'secondary')",
+    );
   });
 });
