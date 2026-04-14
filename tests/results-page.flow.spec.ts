@@ -1,15 +1,17 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { EventParticipationCard } from "@/lib/server/history/types";
 
 const {
   getFiltersMock,
+  getChampionshipStandingsMock,
   getCurrentChampionshipMock,
   getResultsStatsMock,
   getResultsEventParticipationMock,
 } = vi.hoisted(() => ({
   getFiltersMock: vi.fn(),
+  getChampionshipStandingsMock: vi.fn(),
   getCurrentChampionshipMock: vi.fn(),
   getResultsStatsMock: vi.fn(),
   getResultsEventParticipationMock: vi.fn(),
@@ -17,6 +19,7 @@ const {
 
 vi.mock("@/lib/server/history/service", () => ({
   getFilters: getFiltersMock,
+  getChampionshipStandings: getChampionshipStandingsMock,
   getCurrentChampionship: getCurrentChampionshipMock,
   getResultsStats: getResultsStatsMock,
   getResultsEventParticipation: getResultsEventParticipationMock,
@@ -38,6 +41,15 @@ import {
 } from "@/app/components/result-share";
 
 describe("results page flow", () => {
+  beforeEach(() => {
+    getFiltersMock.mockReset();
+    getChampionshipStandingsMock.mockReset();
+    getCurrentChampionshipMock.mockReset();
+    getResultsStatsMock.mockReset();
+    getResultsEventParticipationMock.mockReset();
+    getChampionshipStandingsMock.mockResolvedValue([]);
+  });
+
   it("uses shared event participation helpers for canonical columns and labels", () => {
     const event: EventParticipationCard = {
       eventId: "event-helpers",
@@ -210,6 +222,125 @@ describe("results page flow", () => {
     expect(html).toContain(
       "/results?year=2026&amp;championshipId=champ-1&amp;driver=kevin-fontana&amp;limit=10&amp;cursor=cursor-2&amp;lang=en",
     );
+  });
+
+  it("renders selected championship standings before the race history", async () => {
+    getFiltersMock.mockResolvedValueOnce({
+      years: [2026],
+      championships: [
+        {
+          id: "champ-1",
+          seasonYear: 2026,
+          slug: "tz-4000",
+          name: "TZ 4000",
+          organizerName: "SINTA",
+        },
+      ],
+      drivers: [],
+    });
+    getCurrentChampionshipMock.mockResolvedValueOnce(null);
+    getResultsStatsMock.mockResolvedValueOnce([]);
+    getChampionshipStandingsMock.mockResolvedValueOnce([
+      {
+        driverSlug: "points-leader",
+        driverName: "Points Leader",
+        wins: 1,
+        podiums: 3,
+        top10: 4,
+        totalPoints: 92.5,
+        completed: 4,
+        avgPosition: 2.5,
+      },
+      {
+        driverSlug: "race-winner",
+        driverName: "Race Winner",
+        wins: 3,
+        podiums: 3,
+        top10: 4,
+        totalPoints: 88,
+        completed: 4,
+        avgPosition: 1.8,
+      },
+    ]);
+    getResultsEventParticipationMock.mockResolvedValueOnce({
+      items: [
+        {
+          eventId: "event-1",
+          seasonYear: 2026,
+          championshipSlug: "tz-4000",
+          championshipName: "TZ 4000",
+          roundNumber: 3,
+          circuitName: "Interlagos",
+          eventDate: null,
+          participants: [],
+        },
+      ],
+      nextCursor: null,
+    });
+
+    const element = await ResultsPage({
+      searchParams: {
+        lang: "en",
+        championshipId: "champ-1",
+      },
+    });
+    const html = renderToStaticMarkup(element);
+
+    expect(html).toContain("Championship standings");
+    expect(html).toContain("Points Leader");
+    expect(html).toContain("Race Winner");
+    expect(html).toContain(">92.5<");
+    expect(html).toContain(">88<");
+    expect(html.indexOf("Points Leader")).toBeLessThan(html.indexOf("Race Winner"));
+    expect(html.indexOf("Championship standings")).toBeLessThan(html.indexOf("Interlagos"));
+    expect(html).not.toContain("Driver snapshot");
+  });
+
+  it("renders selected championship standings labels in Spanish", async () => {
+    getFiltersMock.mockResolvedValueOnce({
+      years: [2026],
+      championships: [
+        {
+          id: "champ-1",
+          seasonYear: 2026,
+          slug: "tz-4000",
+          name: "TZ 4000",
+          organizerName: "SINTA",
+        },
+      ],
+      drivers: [],
+    });
+    getCurrentChampionshipMock.mockResolvedValueOnce(null);
+    getResultsStatsMock.mockResolvedValueOnce([]);
+    getChampionshipStandingsMock.mockResolvedValueOnce([
+      {
+        driverSlug: "piloto-uno",
+        driverName: "Piloto Uno",
+        wins: 2,
+        podiums: 4,
+        top10: 5,
+        totalPoints: 101,
+        completed: 5,
+        avgPosition: 2.1,
+      },
+    ]);
+    getResultsEventParticipationMock.mockResolvedValueOnce({
+      items: [],
+      nextCursor: null,
+    });
+
+    const element = await ResultsPage({
+      searchParams: {
+        championshipId: "champ-1",
+      },
+    });
+    const html = renderToStaticMarkup(element);
+
+    expect(html).toContain("Posiciones del campeonato");
+    expect(html).toContain("Piloto Uno");
+    expect(html).toContain("Victorias");
+    expect(html).toContain("Podios");
+    expect(html).toContain("Puntos");
   });
 
   it("renders language switch hrefs preserving results filters", async () => {

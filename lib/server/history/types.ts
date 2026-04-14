@@ -172,6 +172,17 @@ export type CurrentChampionshipSummary = {
   }>;
 };
 
+export type ChampionshipStandingsEntry = {
+  driverSlug: string;
+  driverName: string;
+  wins: number;
+  podiums: number;
+  top10: number;
+  totalPoints: number;
+  completed: number;
+  avgPosition: number | null;
+};
+
 export type StreamOverrideMode = "auto" | "force_on" | "force_off";
 export type LiveBroadcastStatus = "upcoming" | "live";
 

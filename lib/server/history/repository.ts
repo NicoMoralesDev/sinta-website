@@ -1,6 +1,7 @@
 ﻿import type { QueryResult } from "pg";
 import { getDbPool } from "@/lib/server/db";
 import type {
+  ChampionshipStandingsEntry,
   CurrentChampionshipSummary,
   DriverListItem,
   DriverProfile,
@@ -118,6 +119,8 @@ type DbCurrentLeaderboardRow = {
   completed: number;
   avg_position: number | null;
 };
+
+type DbChampionshipStandingsRow = DbCurrentLeaderboardRow;
 
 type DbHomeLiveBroadcastRow = {
   event_id: string;
@@ -287,6 +290,19 @@ function toDriverStats(row: DbDriverStatsRow): DriverStats {
     dnq: Number(row.dnq ?? 0),
     dsq: Number(row.dsq ?? 0),
     absent: Number(row.absent ?? 0),
+  };
+}
+
+function toChampionshipStandingsEntry(row: DbChampionshipStandingsRow): ChampionshipStandingsEntry {
+  return {
+    driverSlug: row.driver_slug,
+    driverName: row.driver_name,
+    wins: Number(row.wins ?? 0),
+    podiums: Number(row.podiums ?? 0),
+    top10: Number(row.top_10 ?? 0),
+    totalPoints: Number(row.total_points ?? 0),
+    completed: Number(row.completed ?? 0),
+    avgPosition: row.avg_position === null ? null : Number(row.avg_position),
   };
 }
 
@@ -844,6 +860,41 @@ export async function getResultsOverview(query: OverviewQuery): Promise<TeamOver
   };
 }
 
+export async function getChampionshipStandings(
+  championshipId: string,
+): Promise<ChampionshipStandingsEntry[]> {
+  const result: QueryResult<DbChampionshipStandingsRow> = await getDbPool().query(
+    `
+      select
+        d.slug as driver_slug,
+        d.canonical_name as driver_name,
+        count(*) filter (where ${getChampionshipResultSessionFilter("er.session_kind")} and er.position = 1) as wins,
+        count(*) filter (where ${getChampionshipResultSessionFilter("er.session_kind")} and er.position is not null and er.position <= 3) as podiums,
+        count(*) filter (where ${getChampionshipResultSessionFilter("er.session_kind")} and er.position is not null and er.position <= 10) as top_10,
+        coalesce(sum(er.position) filter (where er.session_kind = 'p' and er.position is not null), 0)::double precision as total_points,
+        count(*) filter (where ${getChampionshipResultSessionFilter("er.session_kind")} and er.position is not null) as completed,
+        avg(er.position::double precision) filter (
+          where ${getChampionshipResultSessionFilter("er.session_kind")} and er.position is not null
+        ) as avg_position
+      from event_results er
+      join drivers d on d.id = er.driver_id
+      join events e on e.id = er.event_id
+      join championships c on c.id = e.championship_id
+      where
+        c.id = $1::uuid
+        and er.is_active = true
+        and d.is_active = true
+        and e.is_active = true
+        and c.is_active = true
+      group by d.id, d.slug, d.canonical_name
+      order by total_points desc, wins desc, podiums desc, top_10 desc, completed desc, avg_position asc nulls last, d.canonical_name asc
+    `,
+    [championshipId],
+  );
+
+  return result.rows.map(toChampionshipStandingsEntry);
+}
+
 export async function getCurrentChampionshipSummary(
   limitEvents = 5,
 ): Promise<CurrentChampionshipSummary | null> {
@@ -941,16 +992,7 @@ export async function getCurrentChampionshipSummary(
       organizerName: latest.organizer_name,
     },
     events,
-    leaderboard: leaderboardResult.rows.map((row) => ({
-      driverSlug: row.driver_slug,
-      driverName: row.driver_name,
-      wins: Number(row.wins ?? 0),
-      podiums: Number(row.podiums ?? 0),
-      top10: Number(row.top_10 ?? 0),
-      totalPoints: Number(row.total_points ?? 0),
-      completed: Number(row.completed ?? 0),
-      avgPosition: row.avg_position === null ? null : Number(row.avg_position),
-    })),
+    leaderboard: leaderboardResult.rows.map(toChampionshipStandingsEntry),
   };
 }
 

@@ -12,6 +12,7 @@ import {
 } from "@/app/components/result-share";
 import { resolveLanguage, siteCopy } from "@/app/content/site-content";
 import {
+  getChampionshipStandings,
   getCurrentChampionship,
   getFilters,
   getResultsEventParticipation,
@@ -148,6 +149,14 @@ type ResultsSummaryLabels = {
   totalPoints: { full: string; compact: string };
 };
 
+type ChampionshipStandingsEntry = ResultsSummaryEntry & {
+  rank: number;
+};
+
+type ChampionshipStandingsLabels = ResultsSummaryLabels & {
+  position: { full: string; compact: string };
+};
+
 function ResultsSummaryTable({
   entries,
   labels,
@@ -203,6 +212,67 @@ function ResultsSummaryTable({
   );
 }
 
+function ChampionshipStandingsTable({
+  entries,
+  labels,
+}: {
+  entries: ChampionshipStandingsEntry[];
+  labels: ChampionshipStandingsLabels;
+}) {
+  return (
+    <div className="mt-4 overflow-hidden rounded-sm border border-racing-steel/20 bg-racing-black/40">
+      <table className="w-full table-fixed border-collapse text-[11px] sm:text-xs">
+        <colgroup>
+          <col className="w-10 sm:w-12" />
+          <col />
+          <col className="w-12 sm:w-20" />
+          <col className="w-12 sm:w-20" />
+          <col className="w-14 sm:w-20" />
+          <col className="w-14 sm:w-24" />
+        </colgroup>
+        <thead className="border-b border-racing-steel/20 text-racing-white/55 uppercase">
+          <tr>
+            <th className="px-2 py-2 text-right">{labels.position.compact}</th>
+            <th className="px-3 py-2 text-left">{labels.driver}</th>
+            <th className="px-1.5 py-2 text-right sm:px-2">
+              <span className="sm:hidden">{labels.wins.compact}</span>
+              <span className="hidden sm:inline">{labels.wins.full}</span>
+            </th>
+            <th className="px-1.5 py-2 text-right sm:px-2">
+              <span className="sm:hidden">{labels.podiums.compact}</span>
+              <span className="hidden sm:inline">{labels.podiums.full}</span>
+            </th>
+            <th className="px-1.5 py-2 text-right sm:px-2">{labels.top10.compact}</th>
+            <th className="px-2 py-2 text-right">
+              <span className="sm:hidden">{labels.totalPoints.compact}</span>
+              <span className="hidden sm:inline">{labels.totalPoints.full}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {entries.map((entry, index) => (
+            <tr
+              key={entry.driverKey}
+              className={`border-b border-racing-steel/10 last:border-0 ${
+                index % 2 === 0 ? "bg-[#2c2c2c]" : "bg-[#202020]"
+              }`}
+            >
+              <td className="px-2 py-2 text-right font-mono text-racing-white/55">{entry.rank}</td>
+              <td className="px-3 py-2 text-racing-white/85">{entry.driverName}</td>
+              <td className="px-1.5 py-2 text-right font-mono text-racing-yellow sm:px-2">{entry.wins}</td>
+              <td className="px-1.5 py-2 text-right font-mono text-racing-yellow sm:px-2">
+                {entry.podiums}
+              </td>
+              <td className="px-1.5 py-2 text-right font-mono text-racing-yellow sm:px-2">{entry.top10}</td>
+              <td className="px-2 py-2 text-right font-mono text-racing-yellow">{entry.totalPoints}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default async function ResultsPage({ searchParams }: ResultsPageProps) {
   const rawInput = await Promise.resolve(searchParams);
   const query = toSearchParams(rawInput);
@@ -232,6 +302,7 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
           reset: "Reset",
           invalid: "Invalid filters. Check the URL parameters and try again.",
           rankingTitle: "Driver snapshot",
+          standingsTitle: "Championship standings",
           currentTitle: "Current championship",
           organizerLabel: "Organizer",
           shareImage: "Share image",
@@ -239,6 +310,7 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
           backHome: "Back to home",
           next: "Load more",
           noLeaderboard: "No ranking data for this filter.",
+          noStandings: "No standings data for this championship.",
           noCurrent: "Current championship is not available yet.",
           filterCurrent: "Open current championship",
           rankingDriver: "Driver",
@@ -248,6 +320,7 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
             podiums: { full: "Podiums", compact: "P" },
             top10: { full: "Top 10", compact: "T10" },
             totalPoints: { full: "Points", compact: "PTS" },
+            position: { full: "Position", compact: "#" },
           },
         }
       : {
@@ -264,6 +337,7 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
           reset: "Limpiar",
           invalid: "Filtros inválidos. Revisa los parámetros de la URL e intenta otra vez.",
           rankingTitle: "Resumen de pilotos",
+          standingsTitle: "Posiciones del campeonato",
           currentTitle: "Torneo vigente",
           organizerLabel: "Organizador",
           shareImage: "Imagen para compartir",
@@ -271,6 +345,7 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
           backHome: "Volver al inicio",
           next: "Cargar más",
           noLeaderboard: "No hay ranking para este filtro.",
+          noStandings: "No hay posiciones para este campeonato.",
           noCurrent: "Todavía no hay torneo vigente disponible.",
           filterCurrent: "Abrir torneo vigente",
           rankingDriver: "Piloto",
@@ -280,6 +355,7 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
             podiums: { full: "Podios", compact: "P" },
             top10: { full: "Top 10", compact: "T10" },
             totalPoints: { full: "Puntos", compact: "PTS" },
+            position: { full: "Posición", compact: "#" },
           },
         };
 
@@ -314,8 +390,14 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
     statsParams.set("championship", championship);
   }
 
-  const [ranking, eventsResult] = await Promise.all([
-    getResultsStats(statsParams).catch(() => []),
+  const standingsParams = new URLSearchParams();
+  if (selectedChampionshipId) {
+    standingsParams.set("championshipId", selectedChampionshipId);
+  }
+
+  const [ranking, standings, eventsResult] = await Promise.all([
+    selectedChampionshipId ? Promise.resolve([]) : getResultsStats(statsParams).catch(() => []),
+    selectedChampionshipId ? getChampionshipStandings(standingsParams).catch(() => []) : Promise.resolve([]),
     getResultsEventParticipation(query)
       .then((result) => ({ result, error: null as string | null }))
       .catch((error: unknown) => ({
@@ -473,6 +555,30 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
 
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div>
+              {selectedChampionshipId ? (
+                <section className="mb-6 rounded-sm border border-racing-steel/20 bg-racing-carbon/60 p-4">
+                  <h2 className="font-mono text-sm font-semibold tracking-wider text-racing-yellow uppercase">
+                    {i18n.standingsTitle}
+                  </h2>
+                  {standings.length === 0 ? (
+                    <p className="mt-3 text-sm text-racing-white/60">{i18n.noStandings}</p>
+                  ) : (
+                    <ChampionshipStandingsTable
+                      labels={i18n.summaryLabels}
+                      entries={standings.map((entry, index) => ({
+                        rank: index + 1,
+                        driverKey: entry.driverSlug,
+                        driverName: entry.driverName,
+                        wins: entry.wins,
+                        podiums: entry.podiums,
+                        top10: entry.top10,
+                        totalPoints: entry.totalPoints,
+                      }))}
+                    />
+                  )}
+                </section>
+              ) : null}
+
               {eventsResult.error ? (
                 <div className="rounded-sm border border-red-500/40 bg-red-500/10 p-5 text-sm text-red-100">
                   <p>{i18n.invalid}</p>
@@ -522,27 +628,29 @@ export default async function ResultsPage({ searchParams }: ResultsPageProps) {
             </div>
 
             <aside className="space-y-4">
-              <section className="rounded-sm border border-racing-steel/20 bg-racing-carbon/60 p-4">
-                <h2 className="font-mono text-sm font-semibold tracking-wider text-racing-yellow uppercase">
-                  {i18n.rankingTitle}
-                </h2>
-                {ranking.length === 0 ? (
-                  <p className="mt-3 text-sm text-racing-white/60">{i18n.noLeaderboard}</p>
-                ) : (
-                  <ResultsSummaryTable
-                    labels={i18n.summaryLabels}
-                    showTotalPoints={false}
-                    entries={ranking.slice(0, 8).map((entry) => ({
-                      driverKey: entry.driverSlug,
-                      driverName: entry.canonicalName,
-                      wins: entry.wins,
-                      podiums: entry.podiums,
-                      top10: entry.top10,
-                      totalPoints: entry.totalPoints,
-                    }))}
-                  />
-                )}
-              </section>
+              {selectedChampionshipId ? null : (
+                <section className="rounded-sm border border-racing-steel/20 bg-racing-carbon/60 p-4">
+                  <h2 className="font-mono text-sm font-semibold tracking-wider text-racing-yellow uppercase">
+                    {i18n.rankingTitle}
+                  </h2>
+                  {ranking.length === 0 ? (
+                    <p className="mt-3 text-sm text-racing-white/60">{i18n.noLeaderboard}</p>
+                  ) : (
+                    <ResultsSummaryTable
+                      labels={i18n.summaryLabels}
+                      showTotalPoints={false}
+                      entries={ranking.slice(0, 8).map((entry) => ({
+                        driverKey: entry.driverSlug,
+                        driverName: entry.canonicalName,
+                        wins: entry.wins,
+                        podiums: entry.podiums,
+                        top10: entry.top10,
+                        totalPoints: entry.totalPoints,
+                      }))}
+                    />
+                  )}
+                </section>
+              )}
 
               <section className="rounded-sm border border-racing-steel/20 bg-racing-carbon/60 p-4">
                 <h2 className="font-mono text-sm font-semibold tracking-wider text-racing-yellow uppercase">

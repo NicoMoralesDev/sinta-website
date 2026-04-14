@@ -1,4 +1,5 @@
 import {
+  getChampionshipStandings as getChampionshipStandingsRecord,
   getCurrentChampionshipSummary,
   getDriverBySlug,
   getDriverResultsPage,
@@ -15,6 +16,7 @@ import {
 } from "./repository";
 import { HistoryNotFoundError, HistoryValidationError } from "./errors";
 import type {
+  ChampionshipStandingsEntry,
   CurrentChampionshipSummary,
   CursorPage,
   DriverListItem,
@@ -242,6 +244,17 @@ export async function getResultsStats(searchParams: URLSearchParams): Promise<Dr
 
 export async function getResultsOverview(searchParams: URLSearchParams): Promise<TeamOverviewKpis> {
   return getResultsOverviewRecord(toOverviewQuery(searchParams));
+}
+
+export async function getChampionshipStandings(
+  searchParams: URLSearchParams,
+): Promise<ChampionshipStandingsEntry[]> {
+  const championshipId = parseUuid(searchParams.get("championshipId"), "championshipId");
+  if (!championshipId) {
+    return [];
+  }
+
+  return getChampionshipStandingsRecord(championshipId);
 }
 
 export async function getCurrentChampionship(

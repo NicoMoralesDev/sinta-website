@@ -9,6 +9,7 @@ vi.mock("@/lib/server/db", () => ({
 }));
 
 import {
+  getChampionshipStandings,
   getCurrentChampionshipSummary,
   getDriverStats,
   getEventParticipationPage,
@@ -239,6 +240,51 @@ describe("history repository", () => {
     expect(firstQuery).toContain("e.event_date desc nulls last");
     expect(leaderboardQuery).toContain("er.session_kind::text in ('s', 'primary', 'f', 'secondary')");
     expect(leaderboardQuery).toContain("er.session_kind = 'p'");
+  });
+
+  it("builds selected championship standings ordered by points first", async () => {
+    queryMock.mockResolvedValueOnce({
+      rows: [
+        {
+          driver_slug: "points-leader",
+          driver_name: "Points Leader",
+          wins: 1,
+          podiums: 3,
+          top_10: 4,
+          total_points: 92.5,
+          completed: 4,
+          avg_position: 2.5,
+        },
+        {
+          driver_slug: "race-winner",
+          driver_name: "Race Winner",
+          wins: 3,
+          podiums: 3,
+          top_10: 4,
+          total_points: 88,
+          completed: 4,
+          avg_position: 1.8,
+        },
+      ],
+    });
+
+    const standings = await getChampionshipStandings("550e8400-e29b-41d4-a716-446655440000");
+    const query = String(queryMock.mock.calls[0]?.[0] ?? "");
+    const values = queryMock.mock.calls[0]?.[1];
+
+    expect(standings.map((entry) => entry.driverSlug)).toEqual(["points-leader", "race-winner"]);
+    expect(standings[0]?.totalPoints).toBe(92.5);
+    expect(query).toContain("c.id = $1::uuid");
+    expect(query).toContain("er.is_active = true");
+    expect(query).toContain("d.is_active = true");
+    expect(query).toContain("e.is_active = true");
+    expect(query).toContain("c.is_active = true");
+    expect(query).toContain("er.session_kind::text in ('s', 'primary', 'f', 'secondary')");
+    expect(query).toContain("er.session_kind = 'p'");
+    expect(query).toContain(
+      "order by total_points desc, wins desc, podiums desc, top_10 desc, completed desc, avg_position asc nulls last, d.canonical_name asc",
+    );
+    expect(values).toEqual(["550e8400-e29b-41d4-a716-446655440000"]);
   });
 
   it("orders event participants by points first when canonical points rows exist", async () => {
